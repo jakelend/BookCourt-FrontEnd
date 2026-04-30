@@ -1,84 +1,13 @@
-<div class="dashboard-layout">
-  <aside class="sidebar">
-    <div class="sidebar-header">
-      <p class="app-name">BookCourt</p>
-
-      <h1>{{ dashboardTitle }}</h1>
-
-      <p *ngIf="roleLabel" class="role-label">
-        {{ roleLabel }}
-      </p>
+<main class="dashboard-content">
+  <section class="welcome-card">
+    <div class="welcome-icon">
+      <span class="material-symbols-outlined">{{ welcomeIcon }}</span>
     </div>
 
-    <nav class="sidebar-nav" aria-label="Menu dashboard">
-      <button
-        *ngFor="let item of sidebarItems; trackBy: trackByKey"
-        type="button"
-        class="sidebar-link"
-        [class.active]="selectedItemKey === item.key"
-        (click)="selectMenuItem(item)"
-      >
-        <span class="material-symbols-outlined">{{ item.icon }}</span>
-        <span>{{ item.label }}</span>
-      </button>
-    </nav>
+    <h2>{{ welcomeTitle }}</h2>
 
-    <div class="sidebar-footer">
-      <button type="button" class="logout-button" (click)="logout()">
-        <span class="material-symbols-outlined">logout</span>
-        <span>Logout</span>
-      </button>
-    </div>
-  </aside>
-
-  <section class="dashboard-main">
-    <header class="topbar">
-      <nav *ngIf="canViewStaffHeaderNav" class="topbar-nav" aria-label="Sezioni staff">
-        <button type="button" class="topbar-nav-link">Istruttori</button>
-        <button type="button" class="topbar-nav-link">Segretarie</button>
-        <button type="button" class="topbar-nav-link">Campi</button>
-      </nav>
-
-      <div class="profile-summary">
-        <div class="profile-text">
-          <strong>{{ fullName }}</strong>
-        </div>
-
-        <button type="button" class="profile-button" aria-label="Profilo utente">
-          <img
-            *ngIf="profileImageUrl"
-            [src]="profileImageUrl"
-            [alt]="fullName"
-            (error)="onProfileImageError()"
-          />
-
-          <span *ngIf="!profileImageUrl" class="profile-initials">
-            {{ userInitials }}
-          </span>
-        </button>
-      </div>
-    </header>
-
-    <main class="dashboard-content">
-      <section class="welcome-card">
-        <div class="welcome-icon">
-          <span class="material-symbols-outlined">{{ welcomeIcon }}</span>
-        </div>
-
-        <h2>{{ welcomeTitle }}</h2>
-
-        <p>
-          {{ welcomeMessage }}
-        </p>
-
-        <p *ngIf="profileError" class="profile-warning">
-          {{ profileError }}
-        </p>
-
-        <p *ngIf="isLoadingProfile" class="profile-loading">
-          Caricamento profilo...
-        </p>
-      </section>
-    </main>
+    <p>
+      {{ welcomeMessage }}
+    </p>
   </section>
-</div>
+</main>
