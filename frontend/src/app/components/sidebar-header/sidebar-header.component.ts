@@ -133,6 +133,11 @@ export class SidebarHeaderComponent implements OnInit {
       return;
     }
 
+    if (item.key === 'credentials') {
+      void this.router.navigate(['/dashboard/change-password']);
+      return;
+    }
+
     void this.router.navigate(['/dashboard']);
   }
 

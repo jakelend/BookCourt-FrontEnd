@@ -3,6 +3,7 @@ import { LoginComponent } from './components/auth/login/login.component';
 import { RegisterComponent } from './components/auth/register/register.component';
 import { ForgotPasswordComponent } from './components/auth/forgot-password/forgot-password.component';
 import { ResetPasswordComponent } from './components/auth/reset-password/reset-password.component';
+import { ChangePasswordComponent } from './components/change-password/change-password.component';
 import { DashboardComponent } from './components/dashboard/dashboard.component';
 import { CreateFieldComponent } from './components/fields/create-field/create-field.component';
 import { FieldsPageComponent } from './components/fields/fields-page/fields-page.component';
@@ -97,6 +98,10 @@ export const routes: Routes = [
         path: 'fields/modify/:id',
         component: ModifyFieldComponent,
       },
+      {
+        path: 'change-password',
+        component: ChangePasswordComponent,
+      },
     ],
   },
   {
@@ -134,6 +139,10 @@ export const routes: Routes = [
   {
     path: 'fields/modify/:id',
     redirectTo: 'dashboard/fields/modify/:id',
+  },
+  {
+    path: 'change-password',
+    redirectTo: 'dashboard/change-password',
   },
   {
     path: '**',
