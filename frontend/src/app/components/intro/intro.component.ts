@@ -17,12 +17,12 @@ interface ManagementFeature {
 }
 
 @Component({
-  selector: 'app-preview',
+  selector: 'app-intro',
   imports: [CommonModule],
-  templateUrl: './preview.component.html',
-  styleUrl: './preview.component.css',
+  templateUrl: './intro.component.html',
+  styleUrl: './intro.component.css',
 })
-export class PreviewComponent {
+export class IntroComponent {
   readonly currentYear = new Date().getFullYear();
 
   // Uso un array per evitare di ripetere tre blocchi HTML quasi uguali.

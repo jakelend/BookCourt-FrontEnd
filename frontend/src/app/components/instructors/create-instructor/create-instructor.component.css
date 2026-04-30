@@ -5,7 +5,7 @@
 
 .create-instructor-page {
   min-height: calc(100vh - 64px);
-  padding: 34px;
+  padding: 24px;
   color: #191c1e;
   font-family: Inter, Roboto, Arial, sans-serif;
   display: flex;
@@ -14,8 +14,8 @@
 }
 
 .instructor-form-panel {
-  width: min(980px, 100%);
-  padding: 36px;
+  width: min(860px, 100%);
+  padding: 28px;
   background: rgba(255, 255, 255, 0.96);
   border: 1px solid #e0e3e5;
   border-radius: 16px;
@@ -23,7 +23,7 @@
 }
 
 .form-panel-header {
-  margin-bottom: 34px;
+  margin-bottom: 24px;
 }
 
 .section-eyebrow,
@@ -38,10 +38,10 @@
 }
 
 .form-panel-header h1 {
-  margin: 8px 0;
+  margin: 6px 0;
   color: #191c1e;
   font-family: Lexend, Inter, Roboto, Arial, sans-serif;
-  font-size: 32px;
+  font-size: 28px;
   font-weight: 900;
   letter-spacing: -0.04em;
 }
@@ -51,7 +51,7 @@
 .password-note p {
   margin: 0;
   color: #5f6472;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 500;
   line-height: 1.5;
 }
@@ -59,13 +59,13 @@
 .instructor-form {
   display: flex;
   flex-direction: column;
-  gap: 34px;
+  gap: 24px;
 }
 
 .profile-upload-section {
   display: flex;
   align-items: center;
-  gap: 24px;
+  gap: 18px;
 }
 
 .visually-hidden {
@@ -81,8 +81,8 @@
 }
 
 .photo-upload-button {
-  width: 128px;
-  height: 128px;
+  width: 104px;
+  height: 104px;
   border: 2px dashed #c9ced8;
   border-radius: 12px;
   background: #f2f4f6;
@@ -105,7 +105,7 @@
 }
 
 .photo-upload-button > .material-symbols-outlined:first-child {
-  font-size: 38px;
+  font-size: 32px;
 }
 
 .photo-upload-button img {
@@ -135,7 +135,7 @@
   margin: 0 0 6px;
   color: #191c1e;
   font-family: Lexend, Inter, Roboto, Arial, sans-serif;
-  font-size: 20px;
+  font-size: 18px;
   font-weight: 800;
   letter-spacing: -0.02em;
 }
@@ -177,22 +177,22 @@
 .form-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 24px 34px;
+  gap: 18px 26px;
 }
 
 .form-field {
   display: flex;
   flex-direction: column;
-  gap: 9px;
+  gap: 7px;
 }
 
 .form-field input {
   width: 100%;
-  min-height: 48px;
+  min-height: 42px;
   border: 1px solid transparent;
   border-bottom-color: #d7dce5;
   border-radius: 10px;
-  padding: 0 14px;
+  padding: 0 12px;
   background: #f2f4f6;
   color: #191c1e;
   font-size: 14px;
@@ -222,30 +222,30 @@
 }
 
 .rates-section {
-  padding-top: 30px;
+  padding-top: 22px;
   border-top: 1px solid #e0e3e5;
 }
 
 .rates-section h2 {
-  margin-bottom: 18px;
+  margin-bottom: 14px;
 }
 
 .rates-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 20px;
+  gap: 16px;
 }
 
 .rate-card {
-  min-height: 104px;
-  padding: 20px;
+  min-height: 88px;
+  padding: 16px;
   border: 1px solid #e0e3e5;
   border-radius: 12px;
   background: #f7f9fb;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 18px;
+  gap: 14px;
 }
 
 .rate-info {
@@ -255,8 +255,8 @@
 }
 
 .rate-icon {
-  width: 48px;
-  height: 48px;
+  width: 42px;
+  height: 42px;
   border-radius: 999px;
   background: rgba(33, 112, 228, 0.12);
   color: #0058be;
@@ -274,13 +274,13 @@
   display: block;
   margin-top: 4px;
   color: #191c1e;
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 900;
 }
 
 .rate-input {
-  min-width: 116px;
-  min-height: 48px;
+  min-width: 104px;
+  min-height: 42px;
   border: 1px solid #d7dce5;
   border-radius: 12px;
   padding: 0 12px;
@@ -308,14 +308,14 @@
   background: transparent;
   color: inherit;
   font-family: Lexend, Inter, Roboto, Arial, sans-serif;
-  font-size: 24px;
+  font-size: 21px;
   font-weight: 900;
   outline: none;
   text-align: right;
 }
 
 .form-actions {
-  padding-top: 28px;
+  padding-top: 22px;
   border-top: 1px solid #e0e3e5;
   display: flex;
   justify-content: flex-end;
@@ -324,11 +324,11 @@
 
 .secondary-action,
 .primary-action {
-  min-height: 48px;
+  min-height: 42px;
   border: 0;
   border-radius: 10px;
-  padding: 0 24px;
-  font-size: 15px;
+  padding: 0 20px;
+  font-size: 14px;
   font-weight: 900;
   transition:
     background-color 160ms ease,

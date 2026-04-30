@@ -15,6 +15,7 @@
     <app-instructor-card
       *ngFor="let instructor of instructors; trackBy: trackByInstructorName"
       [instructor]="instructor"
+      (editInstructor)="modifyInstructor($event)"
     />
   </section>
 </main>

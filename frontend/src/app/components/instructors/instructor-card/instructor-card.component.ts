@@ -1,9 +1,9 @@
 import { CommonModule } from '@angular/common';
-import { Component, Input } from '@angular/core';
+import { Component, EventEmitter, Input, Output } from '@angular/core';
 
 export interface InstructorCardData {
+  id: number;
   fullName: string;
-  role: string;
   imageUrl: string;
   status: string;
   active: boolean;
@@ -19,4 +19,15 @@ export interface InstructorCardData {
 })
 export class InstructorCardComponent {
   @Input({ required: true }) instructor!: InstructorCardData;
+  @Output() editInstructor = new EventEmitter<InstructorCardData>();
+
+  edit(): void {
+    this.editInstructor.emit(this.instructor);
+  }
+
+  toggleActive(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    this.instructor.active = input.checked;
+    this.instructor.status = input.checked ? 'Disponibile' : 'Non Disponibile';
+  }
 }

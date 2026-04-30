@@ -1,8 +1,8 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { Router, RouterOutlet } from '@angular/router';
-import { Role } from '../../../enumeration/role.enum';
-import { AuthService, ProfileResponseDto } from '../../../services/auth.service';
+import { Role } from '../../enumeration/role.enum';
+import { AuthService, ProfileResponseDto } from '../../services/auth.service';
 
 interface SidebarItem {
   label: string;
@@ -11,12 +11,12 @@ interface SidebarItem {
 }
 
 @Component({
-  selector: 'app-shell',
+  selector: 'sidebar-header',
   imports: [CommonModule, RouterOutlet],
-  templateUrl: './app-shell.component.html',
-  styleUrl: './app-shell.component.css',
+  templateUrl: './sidebar-header.component.html',
+  styleUrl: './sidebar-header.component.css',
 })
-export class AppShellComponent implements OnInit {
+export class SidebarHeaderComponent implements OnInit {
   profile: ProfileResponseDto | null = null;
   profileImageUrl = '';
   selectedItemKey = '';
@@ -118,7 +118,9 @@ export class AppShellComponent implements OnInit {
   private get isStaffManagementActive(): boolean {
     return (
       this.selectedItemKey === 'center-management' ||
-      (!this.selectedItemKey && this.router.url.startsWith('/dashboard/instructors'))
+      (!this.selectedItemKey &&
+        (this.router.url.startsWith('/dashboard/instructors') ||
+          this.router.url.startsWith('/dashboard/secretaries')))
     );
   }
 
@@ -144,6 +146,11 @@ export class AppShellComponent implements OnInit {
   openInstructors(): void {
     this.selectedItemKey = 'center-management';
     void this.router.navigate(['/dashboard/instructors']);
+  }
+
+  openSecretaries(): void {
+    this.selectedItemKey = 'center-management';
+    void this.router.navigate(['/dashboard/secretaries']);
   }
 
   logout(): void {

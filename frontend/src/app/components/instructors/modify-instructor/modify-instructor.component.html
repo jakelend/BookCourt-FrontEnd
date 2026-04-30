@@ -2,11 +2,11 @@
   <section class="instructor-form-panel">
     <header class="form-panel-header">
       <span class="section-eyebrow">Profilo personale</span>
-      <h1>Crea istruttore</h1>
-      <p>Inserisci credenziali, dati profilo e tariffe professionali.</p>
+      <h1>Modifica istruttore</h1>
+      <p>Aggiorna credenziali, dati profilo e tariffe professionali.</p>
     </header>
 
-    <form class="instructor-form" (submit)="createInstructor($event)">
+    <form class="instructor-form" (submit)="modifyInstructor($event)">
       <section class="profile-upload-section" aria-label="Foto profilo">
         <input
           #profilePhotoInput
@@ -40,7 +40,7 @@
             type="button"
             class="text-action text-action-danger"
             (click)="clearProfilePhoto()"
-          >Rimuovi foto
+          >Ripristina foto
           </button>
           <p *ngIf="profilePhotoFile" class="upload-file-name">
             {{ profilePhotoFile.name }}
@@ -54,27 +54,32 @@
       <section class="form-grid" aria-label="Dati istruttore">
         <label class="form-field">
           <span>Nome</span>
-          <input type="text" name="nome" placeholder="es. Sebastian" />
+          <input type="text" name="nome" [(ngModel)]="instructor.nome" />
         </label>
 
         <label class="form-field">
           <span>Cognome</span>
-          <input type="text" name="cognome" placeholder="es. Vettel" />
+          <input type="text" name="cognome" [(ngModel)]="instructor.cognome" />
         </label>
 
         <label class="form-field">
           <span>Email</span>
-          <input type="email" name="email" placeholder="istruttore@bookcourt.it" />
+          <input type="email" name="email" [(ngModel)]="instructor.email" />
         </label>
 
         <label class="form-field">
           <span>Telefono</span>
-          <input type="tel" name="telefono" placeholder="+39 333 123 4567" />
+          <input type="tel" name="telefono" [(ngModel)]="instructor.telefono" />
         </label>
 
         <label class="form-field">
           <span>Password</span>
-          <input type="password" name="password" placeholder="Password temporanea" />
+          <input
+            type="password"
+            name="password"
+            placeholder="Lascia vuoto per non modificarla"
+            [(ngModel)]="instructor.password"
+          />
         </label>
       </section>
 
@@ -93,7 +98,13 @@
 
             <label class="rate-input">
               <span>EUR</span>
-              <input type="number" name="costoOrarioTennis" min="0" step="1" value="0" />
+              <input
+                type="number"
+                name="costoOrarioTennis"
+                min="0"
+                step="1"
+                [(ngModel)]="instructor.costoOrarioTennis"
+              />
             </label>
           </article>
 
@@ -110,7 +121,13 @@
 
             <label class="rate-input rate-input-secondary">
               <span>EUR</span>
-              <input type="number" name="costoOrarioPadel" min="0" step="1" value="0" />
+              <input
+                type="number"
+                name="costoOrarioPadel"
+                min="0"
+                step="1"
+                [(ngModel)]="instructor.costoOrarioPadel"
+              />
             </label>
           </article>
         </div>
@@ -118,7 +135,7 @@
 
       <div class="form-actions">
         <button type="button" class="secondary-action" (click)="cancel()">Annulla</button>
-        <button type="submit" class="primary-action">Crea istruttore</button>
+        <button type="submit" class="primary-action">Salva modifiche</button>
       </div>
     </form>
   </section>

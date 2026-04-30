@@ -3,12 +3,12 @@ import { Component, ElementRef, OnDestroy, ViewChild } from '@angular/core';
 import { Router } from '@angular/router';
 
 @Component({
-  selector: 'app-create-instructor',
+  selector: 'app-create-secretary',
   imports: [CommonModule],
-  templateUrl: './create-instructor.component.html',
-  styleUrl: './create-instructor.component.css',
+  templateUrl: './create-secretary.component.html',
+  styleUrl: './create-secretary.component.css',
 })
-export class CreateInstructorComponent implements OnDestroy {
+export class CreateSecretaryComponent implements OnDestroy {
   @ViewChild('profilePhotoInput') private readonly profilePhotoInput?: ElementRef<HTMLInputElement>;
 
   profilePhotoFile: File | null = null;
@@ -17,7 +17,7 @@ export class CreateInstructorComponent implements OnDestroy {
 
   constructor(private readonly router: Router) {}
 
-  createInstructor(event: SubmitEvent): void {
+  createSecretary(event: SubmitEvent): void {
     event.preventDefault();
   }
 
@@ -65,7 +65,7 @@ export class CreateInstructorComponent implements OnDestroy {
 
   cancel(): void {
     this.clearProfilePhoto();
-    void this.router.navigate(['/dashboard/instructors']);
+    void this.router.navigate(['/dashboard/secretaries']);
   }
 
   ngOnDestroy(): void {

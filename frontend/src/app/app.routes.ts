@@ -6,19 +6,23 @@ import { ResetPasswordComponent } from './components/auth/reset-password/reset-p
 import { DashboardComponent } from './components/dashboard/dashboard.component';
 import { CreateInstructorComponent } from './components/instructors/create-instructor/create-instructor.component';
 import { InstructorsPageComponent } from './components/instructors/instructors-page/instructors-page.component';
-import { AppShellComponent } from './components/layout/app-shell/app-shell.component';
-import { PreviewComponent } from './components/preview/preview.component';
+import { ModifyInstructorComponent } from './components/instructors/modify-instructor/modify-instructor.component';
+import { CreateSecretaryComponent } from './components/secretaries/create-secretary/create-secretary.component';
+import { ModifySecretaryComponent } from './components/secretaries/modify-secretary/modify-secretary.component';
+import { SecretariesPageComponent } from './components/secretaries/secretaries-page/secretaries-page.component';
+import { SidebarHeaderComponent } from './components/sidebar-header/sidebar-header.component';
+import { IntroComponent } from './components/intro/intro.component';
 import { AuthGuard } from './guard/auth.guard';
 import { GuestGuard } from './guard/guest.guard';
 
 export const routes: Routes = [
   {
     path: '',
-    component: PreviewComponent,
+    component: IntroComponent,
   },
   {
-    path: 'preview',
-    component: PreviewComponent,
+    path: 'intro',
+    component: IntroComponent,
   },
   {
     path: 'login',
@@ -47,7 +51,7 @@ export const routes: Routes = [
   },
   {
     path: 'dashboard',
-    component: AppShellComponent,
+    component: SidebarHeaderComponent,
     canActivate: [AuthGuard],
     children: [
       {
@@ -62,6 +66,22 @@ export const routes: Routes = [
         path: 'instructors/create',
         component: CreateInstructorComponent,
       },
+      {
+        path: 'instructors/modify/:id',
+        component: ModifyInstructorComponent,
+      },
+      {
+        path: 'secretaries',
+        component: SecretariesPageComponent,
+      },
+      {
+        path: 'secretaries/create',
+        component: CreateSecretaryComponent,
+      },
+      {
+        path: 'secretaries/modify/:id',
+        component: ModifySecretaryComponent,
+      },
     ],
   },
   {
@@ -71,6 +91,22 @@ export const routes: Routes = [
   {
     path: 'instructors/create',
     redirectTo: 'dashboard/instructors/create',
+  },
+  {
+    path: 'instructors/modify/:id',
+    redirectTo: 'dashboard/instructors/modify/:id',
+  },
+  {
+    path: 'secretaries',
+    redirectTo: 'dashboard/secretaries',
+  },
+  {
+    path: 'secretaries/create',
+    redirectTo: 'dashboard/secretaries/create',
+  },
+  {
+    path: 'secretaries/modify/:id',
+    redirectTo: 'dashboard/secretaries/modify/:id',
   },
   {
     path: '**',
