@@ -1,0 +1,22 @@
+@import '../create-field/create-field.component.css';
+
+.field-active-control {
+  min-height: 42px;
+  align-self: end;
+  border-radius: 10px;
+  padding: 0 14px;
+  background: #f2f4f6;
+  color: #45464d;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.field-active-control input {
+  width: 18px;
+  height: 18px;
+  accent-color: #2170e4;
+}

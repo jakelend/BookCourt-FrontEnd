@@ -1,0 +1,126 @@
+@import '../../instructors/create-instructor/create-instructor.component.css';
+
+.form-field select {
+  width: 100%;
+  min-height: 42px;
+  height: 42px;
+  border: 1px solid transparent;
+  border-bottom-color: #d7dce5;
+  border-radius: 10px;
+  padding: 0 12px;
+  background: #f2f4f6;
+  color: #191c1e;
+  font-family: Inter, Roboto, Arial, sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  outline: none;
+}
+
+.form-field select:focus {
+  border-color: #2170e4;
+  background: #ffffff;
+  box-shadow: 0 0 0 4px rgba(33, 112, 228, 0.11);
+}
+
+.images-upload-section {
+  padding-bottom: 22px;
+  border-bottom: 1px solid #e0e3e5;
+}
+
+.images-header {
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.images-header h2 {
+  margin: 0 0 6px;
+  color: #191c1e;
+  font-family: Lexend, Inter, Roboto, Arial, sans-serif;
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.images-header p {
+  margin: 0;
+  color: #5f6472;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.images-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.image-preview {
+  aspect-ratio: 16 / 10;
+  margin: 0;
+  border-radius: 10px;
+  background: #f2f4f6;
+  overflow: hidden;
+  position: relative;
+}
+
+.image-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.image-preview button {
+  width: 30px;
+  height: 30px;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(25, 28, 30, 0.78);
+  color: #ffffff;
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.image-preview .material-symbols-outlined {
+  font-size: 18px;
+}
+
+.empty-images-button {
+  width: 100%;
+  min-height: 116px;
+  border: 2px dashed #c9ced8;
+  border-radius: 12px;
+  background: #f2f4f6;
+  color: #5f6472;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.empty-images-button .material-symbols-outlined {
+  font-size: 28px;
+}
+
+.secondary-action:disabled {
+  opacity: 0.45;
+  pointer-events: none;
+}
+
+@media (max-width: 720px) {
+  .images-header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .images-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

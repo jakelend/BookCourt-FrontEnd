@@ -4,6 +4,9 @@ import { RegisterComponent } from './components/auth/register/register.component
 import { ForgotPasswordComponent } from './components/auth/forgot-password/forgot-password.component';
 import { ResetPasswordComponent } from './components/auth/reset-password/reset-password.component';
 import { DashboardComponent } from './components/dashboard/dashboard.component';
+import { CreateFieldComponent } from './components/fields/create-field/create-field.component';
+import { FieldsPageComponent } from './components/fields/fields-page/fields-page.component';
+import { ModifyFieldComponent } from './components/fields/modify-field/modify-field.component';
 import { CreateInstructorComponent } from './components/instructors/create-instructor/create-instructor.component';
 import { InstructorsPageComponent } from './components/instructors/instructors-page/instructors-page.component';
 import { ModifyInstructorComponent } from './components/instructors/modify-instructor/modify-instructor.component';
@@ -82,6 +85,18 @@ export const routes: Routes = [
         path: 'secretaries/modify/:id',
         component: ModifySecretaryComponent,
       },
+      {
+        path: 'fields',
+        component: FieldsPageComponent,
+      },
+      {
+        path: 'fields/create',
+        component: CreateFieldComponent,
+      },
+      {
+        path: 'fields/modify/:id',
+        component: ModifyFieldComponent,
+      },
     ],
   },
   {
@@ -107,6 +122,18 @@ export const routes: Routes = [
   {
     path: 'secretaries/modify/:id',
     redirectTo: 'dashboard/secretaries/modify/:id',
+  },
+  {
+    path: 'fields',
+    redirectTo: 'dashboard/fields',
+  },
+  {
+    path: 'fields/create',
+    redirectTo: 'dashboard/fields/create',
+  },
+  {
+    path: 'fields/modify/:id',
+    redirectTo: 'dashboard/fields/modify/:id',
   },
   {
     path: '**',

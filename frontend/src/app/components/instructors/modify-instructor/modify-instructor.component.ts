@@ -101,6 +101,32 @@ export class ModifyInstructorComponent implements OnInit, OnDestroy {
     event.preventDefault();
   }
 
+  preventNegativeValue(event: KeyboardEvent): void {
+    if (event.key === '-' || event.key === '+') {
+      event.preventDefault();
+    }
+  }
+
+  normalizeTennisRate(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const value = Number(input.value);
+
+    if (value < 0) {
+      input.value = '0';
+      this.instructor.costoOrarioTennis = 0;
+    }
+  }
+
+  normalizePadelRate(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const value = Number(input.value);
+
+    if (value < 0) {
+      input.value = '0';
+      this.instructor.costoOrarioPadel = 0;
+    }
+  }
+
   openProfilePhotoPicker(): void {
     this.profilePhotoInput?.nativeElement.click();
   }

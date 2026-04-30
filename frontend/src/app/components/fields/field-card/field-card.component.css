@@ -1,0 +1,15 @@
+@import '../../instructors/instructor-card/instructor-card.component.css';
+
+.field-image-placeholder {
+  width: 100%;
+  height: 100%;
+  background: #eef2f6;
+  color: #5f6472;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.field-image-placeholder .material-symbols-outlined {
+  font-size: 44px;
+}

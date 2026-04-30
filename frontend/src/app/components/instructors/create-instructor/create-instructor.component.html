@@ -93,7 +93,15 @@
 
             <label class="rate-input">
               <span>EUR</span>
-              <input type="number" name="costoOrarioTennis" min="0" step="1" value="0" />
+              <input
+                type="number"
+                name="costoOrarioTennis"
+                min="0"
+                step="1"
+                value="0"
+                (keydown)="preventNegativeValue($event)"
+                (input)="normalizeHourlyRate($event)"
+              />
             </label>
           </article>
 
@@ -110,7 +118,15 @@
 
             <label class="rate-input rate-input-secondary">
               <span>EUR</span>
-              <input type="number" name="costoOrarioPadel" min="0" step="1" value="0" />
+              <input
+                type="number"
+                name="costoOrarioPadel"
+                min="0"
+                step="1"
+                value="0"
+                (keydown)="preventNegativeValue($event)"
+                (input)="normalizeHourlyRate($event)"
+              />
             </label>
           </article>
         </div>

@@ -120,7 +120,8 @@ export class SidebarHeaderComponent implements OnInit {
       this.selectedItemKey === 'center-management' ||
       (!this.selectedItemKey &&
         (this.router.url.startsWith('/dashboard/instructors') ||
-          this.router.url.startsWith('/dashboard/secretaries')))
+          this.router.url.startsWith('/dashboard/secretaries') ||
+          this.router.url.startsWith('/dashboard/fields')))
     );
   }
 
@@ -151,6 +152,11 @@ export class SidebarHeaderComponent implements OnInit {
   openSecretaries(): void {
     this.selectedItemKey = 'center-management';
     void this.router.navigate(['/dashboard/secretaries']);
+  }
+
+  openFields(): void {
+    this.selectedItemKey = 'center-management';
+    void this.router.navigate(['/dashboard/fields']);
   }
 
   logout(): void {

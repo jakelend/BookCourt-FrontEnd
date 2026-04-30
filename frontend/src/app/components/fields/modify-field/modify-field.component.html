@@ -1,0 +1,100 @@
+<main class="create-instructor-page">
+  <section class="instructor-form-panel">
+    <header class="form-panel-header">
+      <span class="section-eyebrow">Gestione campo</span>
+      <h1>Modifica campo</h1>
+      <p>Aggiorna dati sportivi, tariffa oraria, stato e immagini del campo.</p>
+    </header>
+
+    <form class="instructor-form" (submit)="modifyField($event)">
+      <section class="images-upload-section" aria-label="Immagini campo">
+        <div class="images-header">
+          <div>
+            <h2>Immagini campo</h2>
+            <p>{{ imagePreviews.length }}/{{ maxImages }} immagini caricate</p>
+          </div>
+
+          <button
+            type="button"
+            class="secondary-action"
+            [disabled]="imagePreviews.length >= maxImages"
+            (click)="openImagesPicker()"
+          >
+            Aggiungi immagini
+          </button>
+        </div>
+
+        <input
+          #fieldImagesInput
+          type="file"
+          class="visually-hidden"
+          accept="image/png,image/jpeg"
+          multiple
+          (change)="onImagesSelected($event)"
+        />
+
+        <div class="images-grid" *ngIf="imagePreviews.length; else emptyImages">
+          <figure
+            *ngFor="let preview of imagePreviews; let index = index; trackBy: trackByImageUrl"
+            class="image-preview"
+          >
+            <img [src]="preview.url" [alt]="'Immagine campo ' + (index + 1)" />
+            <button type="button" aria-label="Rimuovi immagine" (click)="removeImage(index)">
+              <span class="material-symbols-outlined">close</span>
+            </button>
+          </figure>
+        </div>
+
+        <ng-template #emptyImages>
+          <button type="button" class="empty-images-button" (click)="openImagesPicker()">
+            <span class="material-symbols-outlined">add_photo_alternate</span>
+            <span>Carica fino a 6 immagini</span>
+          </button>
+        </ng-template>
+
+        <p *ngIf="imagesError" class="upload-error">
+          {{ imagesError }}
+        </p>
+      </section>
+
+      <section class="form-grid" aria-label="Dati campo">
+        <label class="form-field">
+          <span>Nome campo</span>
+          <input type="text" name="name" [(ngModel)]="field.name" />
+        </label>
+
+        <label class="form-field">
+          <span>Tipo sport</span>
+          <select name="sportType" [(ngModel)]="field.sportType">
+            <option *ngFor="let sportType of sportTypes" [value]="sportType">
+              {{ sportType }}
+            </option>
+          </select>
+        </label>
+
+        <label class="form-field">
+          <span>Tariffa oraria</span>
+          <input
+            type="number"
+            name="hourlyRate"
+            min="0"
+            step="1"
+            [(ngModel)]="field.hourlyRate"
+            (keydown)="preventNegativeValue($event)"
+            (input)="normalizeHourlyRate($event)"
+          />
+        </label>
+
+        <label class="field-active-control">
+          <span>{{ field.active ? 'Attivo' : 'Inattivo' }}</span>
+          <input type="checkbox" name="active" [(ngModel)]="field.active" />
+        </label>
+      </section>
+
+      <div class="form-actions">
+        <button type="button" class="secondary-action" (click)="cancel()">Annulla</button>
+        <button type="submit" class="primary-action">Salva modifiche</button>
+      </div>
+    </form>
+  </section>
+</main>

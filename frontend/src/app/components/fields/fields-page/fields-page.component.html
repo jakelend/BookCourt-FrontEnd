@@ -1,0 +1,21 @@
+<main class="instructors-page">
+  <header class="page-header">
+    <div>
+      <h1>Campi</h1>
+      <p>Gestisci campi, sport associati, tariffe e disponibilità.</p>
+    </div>
+
+    <button type="button" class="add-instructor-button" (click)="addField()">
+      <span class="material-symbols-outlined">add</span>
+      <span>Aggiungi campo</span>
+    </button>
+  </header>
+
+  <section class="instructors-grid" aria-label="Lista campi">
+    <app-field-card
+      *ngFor="let field of fields; trackBy: trackByFieldId"
+      [field]="field"
+      (editField)="modifyField($event)"
+    />
+  </section>
+</main>
