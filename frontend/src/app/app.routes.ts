@@ -5,6 +5,7 @@ import { ForgotPasswordComponent } from './components/auth/forgot-password/forgo
 import { ResetPasswordComponent } from './components/auth/reset-password/reset-password.component';
 import { DashboardComponent } from './components/dashboard/dashboard.component';
 import { CreateInstructorComponent } from './components/instructors/create-instructor/create-instructor.component';
+import { InstructorsPageComponent } from './components/instructors/instructors-page/instructors-page.component';
 import { AppShellComponent } from './components/layout/app-shell/app-shell.component';
 import { PreviewComponent } from './components/preview/preview.component';
 import { AuthGuard } from './guard/auth.guard';
@@ -54,10 +55,18 @@ export const routes: Routes = [
         component: DashboardComponent,
       },
       {
+        path: 'instructors',
+        component: InstructorsPageComponent,
+      },
+      {
         path: 'instructors/create',
         component: CreateInstructorComponent,
       },
     ],
+  },
+  {
+    path: 'instructors',
+    redirectTo: 'dashboard/instructors',
   },
   {
     path: 'instructors/create',

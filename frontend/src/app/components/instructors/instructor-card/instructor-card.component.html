@@ -1,0 +1,51 @@
+<article class="instructor-card">
+  <div class="card-media">
+    <img [src]="instructor.imageUrl" [alt]="instructor.fullName" />
+    <div class="media-overlay"></div>
+
+    <div class="media-title">
+      <h3>{{ instructor.fullName }}</h3>
+      <p>{{ instructor.role }}</p>
+    </div>
+  </div>
+
+  <div class="card-body">
+    <div class="status-row">
+      <span class="status-pill" [class.status-muted]="!instructor.active">
+        {{ instructor.status }}
+      </span>
+    </div>
+
+    <div class="rates-panel" [class.rates-muted]="!instructor.active">
+      <div class="rate-row">
+        <div class="rate-name">
+          <span class="material-symbols-outlined">sports_tennis</span>
+          <span>Tennis</span>
+        </div>
+        <strong>EUR {{ instructor.tennisRate }}/h</strong>
+      </div>
+
+      <div class="rate-divider"></div>
+
+      <div class="rate-row">
+        <div class="rate-name">
+          <span class="material-symbols-outlined">sports_score</span>
+          <span>Padel</span>
+        </div>
+        <strong>EUR {{ instructor.padelRate }}/h</strong>
+      </div>
+    </div>
+
+    <div class="active-row">
+      <span>Stato attivo</span>
+      <label class="switch">
+        <input type="checkbox" [checked]="instructor.active" />
+        <span></span>
+      </label>
+    </div>
+  </div>
+
+  <button type="button" class="edit-button" aria-label="Modifica istruttore">
+    <span class="material-symbols-outlined">edit</span>
+  </button>
+</article>

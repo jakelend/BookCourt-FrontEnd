@@ -1,0 +1,97 @@
+:host {
+  display: block;
+  flex: 1;
+}
+
+.instructors-page {
+  width: min(1440px, 100%);
+  margin: 0 auto;
+  min-height: calc(100vh - 64px);
+  padding: 32px;
+  color: #191c1e;
+  font-family: Inter, Roboto, Arial, sans-serif;
+}
+
+.page-header {
+  margin-bottom: 32px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid #e0e3e5;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.page-header h1 {
+  margin: 0;
+  color: #000000;
+  font-family: Lexend, Inter, Roboto, Arial, sans-serif;
+  font-size: 32px;
+  font-weight: 900;
+  letter-spacing: -0.03em;
+}
+
+.page-header p {
+  margin: 6px 0 0;
+  color: #45464d;
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.add-instructor-button {
+  min-height: 42px;
+  border: 0;
+  border-radius: 8px;
+  padding: 0 16px;
+  background: #0058be;
+  color: #ffffff;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  font-weight: 900;
+  box-shadow: 0 6px 16px rgba(0, 88, 190, 0.16);
+  transition:
+    background-color 160ms ease,
+    transform 160ms ease;
+}
+
+.add-instructor-button:hover {
+  background: #2170e4;
+  transform: translateY(-1px);
+}
+
+.add-instructor-button .material-symbols-outlined {
+  font-size: 19px;
+}
+
+.instructors-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 24px;
+}
+
+@media (max-width: 1120px) {
+  .instructors-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  .instructors-page {
+    padding: 24px;
+  }
+
+  .page-header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .add-instructor-button {
+    justify-content: center;
+  }
+
+  .instructors-grid {
+    grid-template-columns: 1fr;
+  }
+}

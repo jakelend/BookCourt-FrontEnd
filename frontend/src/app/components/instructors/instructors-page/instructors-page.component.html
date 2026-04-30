@@ -1,0 +1,20 @@
+<main class="instructors-page">
+  <header class="page-header">
+    <div>
+      <h1>Istruttori</h1>
+      <p>Gestisci lo staff tecnico e le tariffe orarie.</p>
+    </div>
+
+    <button type="button" class="add-instructor-button" (click)="addInstructor()">
+      <span class="material-symbols-outlined">add</span>
+      <span>Aggiungi istruttore</span>
+    </button>
+  </header>
+
+  <section class="instructors-grid" aria-label="Lista istruttori">
+    <app-instructor-card
+      *ngFor="let instructor of instructors; trackBy: trackByInstructorName"
+      [instructor]="instructor"
+    />
+  </section>
+</main>

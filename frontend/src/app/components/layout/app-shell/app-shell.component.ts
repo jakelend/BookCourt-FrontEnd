@@ -141,9 +141,9 @@ export class AppShellComponent implements OnInit {
     return item.key === 'center-management' && this.isStaffManagementActive;
   }
 
-  openCreateInstructor(): void {
+  openInstructors(): void {
     this.selectedItemKey = 'center-management';
-    void this.router.navigate(['/dashboard/instructors/create']);
+    void this.router.navigate(['/dashboard/instructors']);
   }
 
   logout(): void {
