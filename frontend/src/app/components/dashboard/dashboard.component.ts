@@ -82,7 +82,7 @@ export class DashboardComponent implements OnInit {
 
     [Role.MANAGER]: [
       {
-        label: 'Center Management',
+        label: 'Staff Management',
         icon: 'settings',
         key: 'center-management',
       },
@@ -194,7 +194,7 @@ export class DashboardComponent implements OnInit {
   }
 
   get canViewStaffHeaderNav(): boolean {
-    return this.currentRole === Role.MANAGER;
+    return this.currentRole === Role.MANAGER && this.selectedItemKey === 'center-management';
   }
 
   get fullName(): string {
@@ -252,20 +252,12 @@ export class DashboardComponent implements OnInit {
         this.profileImageUrl = this.buildProfileImageUrl(profile.fotoProfiloUrl);
         this.authService.updateCurrentUserProfilePhoto(profile.fotoProfiloUrl);
 
-        if (!this.selectedItemKey && this.sidebarItems.length > 0) {
-          this.selectedItemKey = this.sidebarItems[0].key;
-        }
-
         this.isLoadingProfile = false;
       },
       error: () => {
         // Se il profilo completo non arriva, mostro comunque la dashboard usando i dati salvati al login.
         this.profileError = 'Non è stato possibile recuperare il profilo completo.';
         this.isLoadingProfile = false;
-
-        if (!this.selectedItemKey && this.sidebarItems.length > 0) {
-          this.selectedItemKey = this.sidebarItems[0].key;
-        }
       },
     });
   }
