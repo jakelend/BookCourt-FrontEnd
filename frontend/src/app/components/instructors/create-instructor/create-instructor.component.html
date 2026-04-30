@@ -1,0 +1,94 @@
+<main class="create-instructor-page">
+  <section class="instructor-form-panel">
+    <header class="form-panel-header">
+      <span class="section-eyebrow">Profilo personale</span>
+      <h1>Crea istruttore</h1>
+      <p>Inserisci credenziali, dati profilo e tariffe professionali.</p>
+    </header>
+
+    <form class="instructor-form" (submit)="createInstructor($event)">
+      <section class="profile-upload-section" aria-label="Foto profilo">
+        <button type="button" class="photo-upload-button" aria-label="Carica foto profilo">
+          <span class="material-symbols-outlined">add_a_photo</span>
+          <span class="upload-badge material-symbols-outlined">upload</span>
+        </button>
+
+        <div>
+          <h2>Foto profilo</h2>
+          <p>Formato consigliato: JPG o PNG, massimo 5MB.</p>
+          <button type="button" class="text-action">Sfoglia galleria</button>
+        </div>
+      </section>
+
+      <section class="form-grid" aria-label="Dati istruttore">
+        <label class="form-field">
+          <span>Nome</span>
+          <input type="text" name="nome" placeholder="es. Sebastian" />
+        </label>
+
+        <label class="form-field">
+          <span>Cognome</span>
+          <input type="text" name="cognome" placeholder="es. Vettel" />
+        </label>
+
+        <label class="form-field">
+          <span>Email</span>
+          <input type="email" name="email" placeholder="istruttore@bookcourt.it" />
+        </label>
+
+        <label class="form-field">
+          <span>Telefono</span>
+          <input type="tel" name="telefono" placeholder="+39 333 123 4567" />
+        </label>
+
+        <label class="form-field">
+          <span>Password</span>
+          <input type="password" name="password" placeholder="Password temporanea" />
+        </label>
+      </section>
+
+      <section class="rates-section" aria-label="Tariffe servizio">
+        <h2>Tariffe servizio</h2>
+
+        <div class="rates-grid">
+          <article class="rate-card">
+            <div class="rate-info">
+              <span class="rate-icon material-symbols-outlined">sports_tennis</span>
+              <div>
+                <span class="rate-label">Tennis</span>
+                <strong>Tariffa oraria</strong>
+              </div>
+            </div>
+
+            <label class="rate-input">
+              <span>EUR</span>
+              <input type="number" name="costoOrarioTennis" min="0" step="1" value="0" />
+            </label>
+          </article>
+
+          <article class="rate-card">
+            <div class="rate-info">
+              <span class="rate-icon rate-icon-secondary material-symbols-outlined">
+                sports_handball
+              </span>
+              <div>
+                <span class="rate-label">Padel</span>
+                <strong>Tariffa oraria</strong>
+              </div>
+            </div>
+
+            <label class="rate-input rate-input-secondary">
+              <span>EUR</span>
+              <input type="number" name="costoOrarioPadel" min="0" step="1" value="0" />
+            </label>
+          </article>
+        </div>
+      </section>
+
+      <div class="form-actions">
+        <button type="button" class="secondary-action" (click)="cancel()">Annulla</button>
+        <button type="submit" class="primary-action">Crea istruttore</button>
+      </div>
+    </form>
+  </section>
+</main>
