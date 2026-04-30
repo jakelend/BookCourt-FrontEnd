@@ -1,0 +1,144 @@
+<div class="preview-page">
+  <nav class="preview-navbar">
+    <div class="navbar-inner">
+      <button type="button" class="navbar-brand" aria-label="BookCourt home">
+        <span class="material-symbols-outlined">sports_score</span>
+        BookCourt
+      </button>
+
+      <div class="navbar-actions">
+        <button type="button" class="nav-link" (click)="goToLogin()">Login</button>
+        <button type="button" class="nav-primary" (click)="goToRegister()">Registrati</button>
+      </div>
+    </div>
+  </nav>
+
+  <main>
+    <header class="hero-section">
+      <div class="hero-overlay"></div>
+
+      <section class="hero-content">
+        <div class="hero-pill">
+          <span class="material-symbols-outlined">bolt</span>
+          <span>Esperienza di Prenotazione Semplificata</span>
+        </div>
+
+        <h1>BookCourt - Eleva il Tuo Gioco</h1>
+        <p>
+          La piattaforma definitiva per la gestione e le prenotazioni di campi sportivi.
+          Connetti senza problemi giocatori, gestori e istruttori.
+        </p>
+      </section>
+    </header>
+
+    <section class="sports-section">
+      <div class="section-heading">
+        <h2>Tutto Ciò di cui Hai Bisogno per Giocare</h2>
+        <p>
+          Trova e prenota il campo perfetto per la tua prossima partita. Dal calcetto amatoriale
+          al padel competitivo.
+        </p>
+      </div>
+
+      <div class="sports-grid">
+        <article
+          *ngFor="let card of sportCards; trackBy: trackByTitle"
+          class="sport-card"
+          [ngClass]="card.layoutClass"
+        >
+          <img [src]="card.imageUrl" [alt]="card.title" loading="lazy" />
+
+          <div class="sport-overlay"></div>
+
+          <div class="sport-content">
+            <span *ngIf="card.label" class="sport-label">{{ card.label }}</span>
+            <h3>{{ card.title }}</h3>
+            <p>{{ card.description }}</p>
+          </div>
+        </article>
+
+        <article class="lesson-card">
+          <span class="material-symbols-outlined lesson-icon">school</span>
+          <h3>Istruttori Professionisti</h3>
+          <p>
+            Prenota sessioni individuali o lezioni con professionisti certificati per migliorare
+            tecnica, strategia e preparazione.
+          </p>
+        </article>
+      </div>
+    </section>
+
+    <section class="management-section">
+      <div class="management-inner">
+        <section class="management-content">
+          <div class="management-pill">
+            <span class="material-symbols-outlined">dashboard</span>
+            <span>Amministratore Piattaforma</span>
+          </div>
+
+          <h2>Strumenti di Gestione Professionale</h2>
+
+          <p class="management-description">
+            Una suite completa progettata per le realtà operative dei centri sportivi moderni.
+            Gestisci personale, strutture e orari giornalieri da un'unica piattaforma.
+          </p>
+
+          <div class="feature-list">
+            <article
+              *ngFor="let feature of managementFeatures; trackBy: trackByTitle"
+              class="feature-item"
+            >
+              <div class="feature-icon">
+                <span class="material-symbols-outlined">{{ feature.icon }}</span>
+              </div>
+
+              <div>
+                <h3>{{ feature.title }}</h3>
+                <p>{{ feature.description }}</p>
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <section class="mockup-card" aria-label="Anteprima dashboard amministrativa">
+          <div class="mockup-window">
+            <div class="mockup-header">
+              <span></span>
+              <span></span>
+              <span></span>
+            </div>
+
+            <div class="mockup-body">
+              <aside class="mockup-sidebar">
+                <div class="active-line"></div>
+                <div></div>
+                <div></div>
+              </aside>
+
+              <div class="mockup-main">
+                <div class="mockup-stats">
+                  <div></div>
+                  <div></div>
+                </div>
+
+                <div class="mockup-calendar">
+                  <span></span>
+                  <span></span>
+                  <span></span>
+                  <span></span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </section>
+  </main>
+
+  <footer class="preview-footer">
+    <div>
+      <strong>BookCourt</strong>
+      <p>© {{ currentYear }} Piattaforma di Gestione Sportiva BookCourt. Tutti i diritti riservati.</p>
+    </div>
+  </footer>
+</div>

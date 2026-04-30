@@ -1,0 +1,82 @@
+<div class="auth-page auth-page-login">
+  <main class="auth-card auth-card-small">
+    <header class="auth-header">
+      <button type="button" class="brand-button" (click)="onPreview()">BookCourt</button>
+      <p>Elevate Your Game</p>
+    </header>
+
+    <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" novalidate class="auth-form">
+      <div class="form-field">
+        <label for="email">Email address</label>
+
+        <div class="input-wrapper">
+          <input
+            id="email"
+            type="email"
+            formControlName="email"
+            autocomplete="email"
+            placeholder="name@sportsclub.com"
+          />
+          <span class="material-symbols-outlined input-icon">mail</span>
+        </div>
+
+        <p *ngIf="(submitted || email?.touched) && email?.errors?.['required']" class="field-error">
+          Inserisci l'email.
+        </p>
+
+        <p *ngIf="(submitted || email?.touched) && email?.errors?.['email']" class="field-error">
+          Inserisci un'email valida.
+        </p>
+      </div>
+
+      <div class="form-field">
+        <div class="label-row">
+          <label for="password">Password</label>
+
+          <button type="button" class="forgot-button" (click)="onForgotPassword()">
+            Forgot password?
+          </button>
+        </div>
+
+        <div class="input-wrapper">
+          <input
+            id="password"
+            type="password"
+            formControlName="password"
+            autocomplete="current-password"
+            placeholder="••••••••"
+          />
+          <span class="material-symbols-outlined input-icon">lock</span>
+        </div>
+
+        <p
+          *ngIf="(submitted || password?.touched) && password?.errors?.['required']"
+          class="field-error"
+        >
+          Inserisci la password.
+        </p>
+
+        <p
+          *ngIf="(submitted || password?.touched) && password?.errors?.['minlength']"
+          class="field-error"
+        >
+          La password deve avere almeno 6 caratteri.
+        </p>
+      </div>
+
+      <div *ngIf="loginError" class="form-message error-message">
+        {{ loginError }}
+      </div>
+
+      <button type="submit" class="primary-button" [disabled]="loginForm.invalid || isLoading">
+        <span *ngIf="!isLoading">Login</span>
+        <span *ngIf="isLoading">Accesso in corso...</span>
+      </button>
+    </form>
+
+    <footer class="auth-footer">
+      <span>Don't have an account?</span>
+      <button type="button" (click)="onRegister()">Register here</button>
+    </footer>
+  </main>
+</div>
