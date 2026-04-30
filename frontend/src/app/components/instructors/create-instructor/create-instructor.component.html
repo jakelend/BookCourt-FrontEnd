@@ -8,15 +8,47 @@
 
     <form class="instructor-form" (submit)="createInstructor($event)">
       <section class="profile-upload-section" aria-label="Foto profilo">
-        <button type="button" class="photo-upload-button" aria-label="Carica foto profilo">
-          <span class="material-symbols-outlined">add_a_photo</span>
-          <span class="upload-badge material-symbols-outlined">upload</span>
+        <input
+          #profilePhotoInput
+          type="file"
+          class="visually-hidden"
+          accept="image/png,image/jpeg"
+          (change)="onProfilePhotoSelected($event)"
+        />
+
+        <button
+          type="button"
+          class="photo-upload-button"
+          aria-label="Carica foto profilo"
+          (click)="openProfilePhotoPicker()"
+        >
+          <img
+            *ngIf="profilePhotoPreviewUrl; else uploadIcon"
+            [src]="profilePhotoPreviewUrl"
+            alt="Anteprima foto profilo"
+          />
+
+          <ng-template #uploadIcon>
+            <span class="material-symbols-outlined">add_a_photo</span>
+          </ng-template>
         </button>
 
         <div>
           <h2>Foto profilo</h2>
-          <p>Formato consigliato: JPG o PNG, massimo 5MB.</p>
-          <button type="button" class="text-action">Sfoglia galleria</button>
+          <button
+            *ngIf="profilePhotoFile"
+            type="button"
+            class="text-action text-action-danger"
+            (click)="clearProfilePhoto()"
+          >
+            Rimuovi foto
+          </button>
+          <p *ngIf="profilePhotoFile" class="upload-file-name">
+            {{ profilePhotoFile.name }}
+          </p>
+          <p *ngIf="profilePhotoError" class="upload-error">
+            {{ profilePhotoError }}
+          </p>
         </div>
       </section>
 

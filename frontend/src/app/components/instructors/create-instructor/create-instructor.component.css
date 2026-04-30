@@ -68,6 +68,18 @@
   gap: 24px;
 }
 
+.visually-hidden {
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  border: 0;
+  padding: 0;
+  position: absolute;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
 .photo-upload-button {
   width: 128px;
   height: 128px;
@@ -79,6 +91,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  overflow: hidden;
   transition:
     border-color 160ms ease,
     color 160ms ease,
@@ -93,6 +106,12 @@
 
 .photo-upload-button > .material-symbols-outlined:first-child {
   font-size: 38px;
+}
+
+.photo-upload-button img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .upload-badge {
@@ -133,6 +152,26 @@
 
 .text-action:hover {
   text-decoration: underline;
+}
+
+.text-action-danger {
+  margin-left: 14px;
+  color: #ba1a1a;
+}
+
+.upload-file-name,
+.upload-error {
+  margin-top: 8px !important;
+  font-size: 12px !important;
+  font-weight: 800 !important;
+}
+
+.upload-file-name {
+  color: #526600 !important;
+}
+
+.upload-error {
+  color: #ba1a1a !important;
 }
 
 .form-grid {
