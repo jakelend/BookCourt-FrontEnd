@@ -174,6 +174,29 @@ export class AuthService {
     );
   }
 
+  updateCurrentUserFromProfile(profile: ProfileResponseDto): void {
+    const currentUser = this.getCurrentUser();
+    const token = this.getToken();
+
+    if (!currentUser && !token) {
+      return;
+    }
+
+    localStorage.setItem(
+      this.userKey,
+      JSON.stringify({
+        token: currentUser?.token ?? token,
+        type: currentUser?.type ?? 'Bearer',
+        id: profile.id,
+        email: profile.email,
+        nome: profile.nome,
+        cognome: profile.cognome,
+        ruolo: profile.ruolo,
+        fotoProfiloUrl: profile.fotoProfiloUrl,
+      }),
+    );
+  }
+
   getRedirectUrlForRole(role: Role | null): string {
     switch (role) {
       case Role.CLIENTE:

@@ -48,22 +48,20 @@
   font-weight: 500;
 }
 
-.refresh-button {
+.auto-refresh-status {
   min-height: 42px;
-  border: 0;
   border-radius: 999px;
   padding: 0 16px;
-  background: #2170e4;
-  color: #ffffff;
+  background: #edf4ff;
+  color: #0058be;
   display: inline-flex;
   align-items: center;
   gap: 8px;
   font-weight: 800;
 }
 
-.refresh-button:disabled {
-  opacity: 0.55;
-  cursor: not-allowed;
+.auto-refresh-status .material-symbols-outlined {
+  font-size: 20px;
 }
 
 .alert {
@@ -85,13 +83,14 @@
 }
 
 .chat-shell {
-  min-height: calc(100vh - 220px);
+  min-height: calc(100vh - 120px);
   display: grid;
   grid-template-columns: 360px minmax(0, 1fr);
   gap: 18px;
 }
 
 .chat-shell.client-shell {
+  min-height: calc(100vh - 220px);
   grid-template-columns: minmax(0, 1fr);
 }
 

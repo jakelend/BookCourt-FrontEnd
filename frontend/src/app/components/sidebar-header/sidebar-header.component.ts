@@ -3,6 +3,7 @@ import { Component, OnInit } from '@angular/core';
 import { Router, RouterOutlet } from '@angular/router';
 import { Role } from '../../enumeration/role.enum';
 import { AuthService, ProfileResponseDto } from '../../services/auth.service';
+import { ChatService } from '../../services/chat.service';
 import { ManagerService } from '../../services/manager.service';
 
 interface SidebarItem {
@@ -52,12 +53,14 @@ export class SidebarHeaderComponent implements OnInit {
 
   constructor(
     private readonly authService: AuthService,
+    private readonly chatService: ChatService,
     private readonly managerService: ManagerService,
     private readonly router: Router,
   ) {}
 
   ngOnInit(): void {
     this.initializeProfileImageFromSession();
+    this.preloadRoleData();
     this.loadCurrentProfile();
   }
 
@@ -207,9 +210,16 @@ export class SidebarHeaderComponent implements OnInit {
       next: (profile) => {
         this.profile = profile;
         this.profileImageUrl = this.buildProfileImageUrl(profile.fotoProfiloUrl);
-        this.authService.updateCurrentUserProfilePhoto(profile.fotoProfiloUrl);
+        this.authService.updateCurrentUserFromProfile(profile);
+        this.preloadRoleData();
       },
     });
+  }
+
+  private preloadRoleData(): void {
+    if (this.currentRole === Role.SEGRETARIA || this.currentRole === Role.MANAGER) {
+      this.chatService.preloadCentroChat();
+    }
   }
 
   private initializeProfileImageFromSession(): void {

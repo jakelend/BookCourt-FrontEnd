@@ -1,27 +1,24 @@
 <main class="chat-page">
-  <section class="chat-header-card">
+  <section *ngIf="isCliente" class="chat-header-card">
     <div>
       <p class="eyebrow">BookCourt</p>
       <h2>{{ pageTitle }}</h2>
       <p>{{ pageSubtitle }}</p>
     </div>
-
-    <button
-      *ngIf="isCentroReadRole"
-      type="button"
-      class="refresh-button"
-      [disabled]="loadingConversations"
-      (click)="loadConversations()"
-    >
-      <span class="material-symbols-outlined">refresh</span>
-      Aggiorna lista
-    </button>
   </section>
 
   <p *ngIf="errorMessage" class="alert alert-error">{{ errorMessage }}</p>
   <p *ngIf="websocketError" class="alert alert-warning">{{ websocketError }}</p>
 
-  <section class="chat-shell" [class.client-shell]="isCliente">
+  <section *ngIf="initializingChat" class="chat-panel no-conversation">
+    <div class="empty-state big">
+      <span class="material-symbols-outlined">sync</span>
+      <h3>Caricamento chat</h3>
+      <p>Stiamo preparando conversazioni e profilo utente.</p>
+    </div>
+  </section>
+
+  <section *ngIf="!initializingChat" class="chat-shell" [class.client-shell]="isCliente">
     <aside *ngIf="isCentroReadRole" class="conversation-list">
       <div class="conversation-list-header">
         <h3>Clienti</h3>
@@ -107,7 +104,7 @@
           <button
             type="button"
             class="send-button"
-            [disabled]="sending || !newMessage.trim()"
+            [disabled]="!newMessage.trim()"
             (click)="sendMessage()"
           >
             <span class="material-symbols-outlined">send</span>
