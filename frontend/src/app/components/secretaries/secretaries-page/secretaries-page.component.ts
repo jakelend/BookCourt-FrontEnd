@@ -1,10 +1,11 @@
 import { CommonModule } from '@angular/common';
-import { Component } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
-import {
-  SecretaryCardComponent,
-  SecretaryCardData,
-} from '../secretary-card/secretary-card.component';
+import { Subscription } from 'rxjs';
+import { finalize } from 'rxjs/operators';
+import { ManagerSecretaryResponseDto } from '../../../dto/response/manager/manager-secretary-response.dto';
+import { ManagerService } from '../../../services/manager.service';
+import { SecretaryCardComponent, SecretaryToggleEvent } from '../secretary-card/secretary-card.component';
 
 @Component({
   selector: 'app-secretaries-page',
@@ -12,51 +13,121 @@ import {
   templateUrl: './secretaries-page.component.html',
   styleUrl: './secretaries-page.component.css',
 })
-export class SecretariesPageComponent {
-  readonly secretaries: SecretaryCardData[] = [
-    {
-      id: 1,
-      fullName: 'Giulia Conti',
-      imageUrl:
-        'https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&w=900&q=80',
-      status: 'Disponibile',
-      active: true,
-      email: 'giulia.conti@bookcourt.it',
-      phone: '+39 333 210 4567',
-    },
-    {
-      id: 2,
-      fullName: 'Laura Bianchi',
-      imageUrl:
-        'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=900&q=80',
-      status: 'Disponibile',
-      active: true,
-      email: 'laura.bianchi@bookcourt.it',
-      phone: '+39 333 654 9988',
-    },
-    {
-      id: 3,
-      fullName: 'Marta Ferri',
-      imageUrl:
-        'https://images.unsplash.com/photo-1551836022-d5d88e9218df?auto=format&fit=crop&w=900&q=80',
-      status: 'In pausa',
-      active: false,
-      email: 'marta.ferri@bookcourt.it',
-      phone: '+39 333 900 1122',
-    },
-  ];
+export class SecretariesPageComponent implements OnInit, OnDestroy {
+  secretaries: ManagerSecretaryResponseDto[] = [];
+  loading = true;
+  errorMessage = '';
+  toggleError = '';
+  private readonly toggleRequests = new Map<number, Subscription>();
 
-  constructor(private readonly router: Router) {}
+  constructor(
+    private readonly router: Router,
+    private readonly managerService: ManagerService,
+  ) {}
+
+  ngOnInit(): void {
+    this.loadSecretaries();
+  }
+
+  ngOnDestroy(): void {
+    this.toggleRequests.forEach((request) => request.unsubscribe());
+    this.toggleRequests.clear();
+  }
 
   addSecretary(): void {
     void this.router.navigate(['/dashboard/secretaries/create']);
   }
 
-  modifySecretary(secretary: SecretaryCardData): void {
+  modifySecretary(secretary: ManagerSecretaryResponseDto): void {
     void this.router.navigate(['/dashboard/secretaries/modify', secretary.id]);
   }
 
-  trackBySecretaryId(_: number, secretary: SecretaryCardData): string {
+  onToggleSecretary(event: SecretaryToggleEvent): void {
+    this.toggleError = '';
+    const previousActive = event.secretary.attivo;
+
+    this.toggleRequests.get(event.secretary.id)?.unsubscribe();
+    this.setSecretaryActive(event.secretary.id, event.nextActive);
+
+    const request$ = event.nextActive
+      ? this.managerService.riattivaUtente(event.secretary.id)
+      : this.managerService.disattivaUtente(event.secretary.id);
+
+    const request = request$.subscribe({
+      next: () => {
+        if (this.toggleRequests.get(event.secretary.id) === request) {
+          this.toggleRequests.delete(event.secretary.id);
+        }
+      },
+      error: (error) => {
+        if (this.toggleRequests.get(event.secretary.id) !== request) {
+          return;
+        }
+
+        this.toggleRequests.delete(event.secretary.id);
+        this.setSecretaryActive(event.secretary.id, previousActive);
+        this.toggleError = this.extractErrorMessage(error, 'Impossibile aggiornare lo stato della segretaria.');
+      },
+    });
+
+    this.toggleRequests.set(event.secretary.id, request);
+  }
+
+  isToggling(id: number): boolean {
+    return this.toggleRequests.has(id);
+  }
+
+  trackBySecretaryId(_: number, secretary: ManagerSecretaryResponseDto): string {
     return String(secretary.id);
+  }
+
+  retry(): void {
+    this.loadSecretaries();
+  }
+
+  private loadSecretaries(): void {
+    this.loading = true;
+    this.errorMessage = '';
+
+    this.managerService
+      .getSegreterie()
+      .pipe(finalize(() => (this.loading = false)))
+      .subscribe({
+        next: (secretaries) => {
+          this.secretaries = secretaries;
+        },
+        error: (error) => {
+          this.errorMessage = this.extractErrorMessage(error, 'Impossibile caricare le segretarie.');
+        },
+      });
+  }
+
+  private setSecretaryActive(id: number, active: boolean): void {
+    this.secretaries = this.secretaries.map((secretary) =>
+      secretary.id === id
+        ? {
+            ...secretary,
+            attivo: active,
+          }
+        : secretary,
+    );
+  }
+
+  private extractErrorMessage(error: unknown, fallback: string): string {
+    const maybeError = error as { error?: { message?: string; fields?: Record<string, string> }; status?: number };
+
+    if (maybeError?.error?.message) {
+      return maybeError.error.message;
+    }
+
+    if (maybeError?.error?.fields) {
+      return Object.values(maybeError.error.fields)[0] ?? fallback;
+    }
+
+    if (maybeError?.status === 0) {
+      return 'Backend non raggiungibile. Controlla che Spring Boot sia avviato sulla porta 8080.';
+    }
+
+    return fallback;
   }
 }

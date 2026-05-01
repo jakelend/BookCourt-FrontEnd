@@ -1,15 +1,12 @@
 import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { ManagerFieldResponseDto } from '../../../dto/response/manager/manager-field-response.dto';
 
 export type FieldSportType = 'CALCETTO' | 'TENNIS' | 'PADEL';
 
-export interface FieldCardData {
-  id: number;
-  name: string;
-  sportType: FieldSportType;
-  hourlyRate: number;
-  active: boolean;
-  images: string[];
+export interface FieldToggleEvent {
+  field: ManagerFieldResponseDto;
+  nextActive: boolean;
 }
 
 @Component({
@@ -19,15 +16,33 @@ export interface FieldCardData {
   styleUrl: './field-card.component.css',
 })
 export class FieldCardComponent {
-  @Input({ required: true }) field!: FieldCardData;
-  @Output() editField = new EventEmitter<FieldCardData>();
+  @Input({ required: true }) field!: ManagerFieldResponseDto;
+  @Input() togglePending = false;
+  @Output() editField = new EventEmitter<ManagerFieldResponseDto>();
+  @Output() toggleField = new EventEmitter<FieldToggleEvent>();
+
+  private readonly backendBaseUrl = 'http://localhost:8080';
 
   get coverImageUrl(): string {
-    return this.field.images[0] ?? '';
+    const path = this.field.urlImmaginePrincipale;
+
+    if (!path) {
+      return '';
+    }
+
+    if (path.startsWith('http://') || path.startsWith('https://')) {
+      return path;
+    }
+
+    return path.startsWith('/') ? `${this.backendBaseUrl}${path}` : `${this.backendBaseUrl}/${path}`;
   }
 
   get statusLabel(): string {
-    return this.field.active ? 'Disponibile' : 'Disattivo';
+    return this.field.attivo ? 'Disponibile' : 'Disattivo';
+  }
+
+  get hourlyRateLabel(): string {
+    return `EUR ${this.field.costoOrario}/h`;
   }
 
   edit(): void {
@@ -36,6 +51,10 @@ export class FieldCardComponent {
 
   toggleActive(event: Event): void {
     const input = event.target as HTMLInputElement;
-    this.field.active = input.checked;
+
+    this.toggleField.emit({
+      field: this.field,
+      nextActive: input.checked,
+    });
   }
 }

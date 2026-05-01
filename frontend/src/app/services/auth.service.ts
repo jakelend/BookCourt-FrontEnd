@@ -18,6 +18,13 @@ export interface RegisterClienteRequestDto {
   fotoProfiloUrl?: string | null;
 }
 
+export interface ChangePasswordRequestDto {
+  email: string;
+  passwordCorrente: string;
+  passwordNuova: string;
+  ripetutaPasswordNuova: string;
+}
+
 export interface ForgotPasswordRequestDto {
   email: string;
 }
@@ -86,6 +93,10 @@ export class AuthService {
     return this.http
       .post<LoginResponseDto>(`${this.apiUrl}/registrazione/cliente`, payload)
       .pipe(tap((response) => this.saveSession(response)));
+  }
+
+  changePassword(payload: ChangePasswordRequestDto): Observable<MessageResponseDto> {
+    return this.http.patch<MessageResponseDto>(`${this.apiUrl}/cambia-password`, payload);
   }
 
   forgotPassword(payload: ForgotPasswordRequestDto): Observable<MessageResponseDto> {

@@ -2,6 +2,10 @@ import { CommonModule } from '@angular/common';
 import { Component, ElementRef, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
+import { finalize } from 'rxjs/operators';
+import { ManagerUpdateInstructorRequestDto } from '../../../dto/request/manager/manager-create-instructor-request.dto';
+import { ManagerInstructorResponseDto } from '../../../dto/response/manager/manager-instructor-response.dto';
+import { ManagerService } from '../../../services/manager.service';
 
 interface EditableInstructor {
   id: number;
@@ -9,10 +13,9 @@ interface EditableInstructor {
   cognome: string;
   email: string;
   telefono: string;
-  password: string;
-  costoOrarioTennis: number;
-  costoOrarioPadel: number;
-  fotoProfiloUrl: string;
+  costoOrarioTennis: number | null;
+  costoOrarioPadel: number | null;
+  fotoProfiloUrl: string | null;
 }
 
 @Component({
@@ -27,6 +30,10 @@ export class ModifyInstructorComponent implements OnInit, OnDestroy {
   profilePhotoFile: File | null = null;
   profilePhotoPreviewUrl = '';
   profilePhotoError = '';
+  loading = true;
+  submitError = '';
+  submitSuccess = '';
+  isSaving = false;
 
   instructor: EditableInstructor = {
     id: 0,
@@ -34,71 +41,95 @@ export class ModifyInstructorComponent implements OnInit, OnDestroy {
     cognome: '',
     email: '',
     telefono: '',
-    password: '',
-    costoOrarioTennis: 0,
-    costoOrarioPadel: 0,
+    costoOrarioTennis: null,
+    costoOrarioPadel: null,
     fotoProfiloUrl: '',
   };
-
-  private readonly instructors: EditableInstructor[] = [
-    {
-      id: 1,
-      nome: 'Elena',
-      cognome: 'Rodriguez',
-      email: 'elena.rodriguez@bookcourt.it',
-      telefono: '+39 333 111 2233',
-      password: '',
-      costoOrarioTennis: 75,
-      costoOrarioPadel: 70,
-      fotoProfiloUrl:
-        'https://images.unsplash.com/photo-1544717302-de2939b7ef71?auto=format&fit=crop&w=900&q=80',
-    },
-    {
-      id: 2,
-      nome: 'Marco',
-      cognome: 'Silva',
-      email: 'marco.silva@bookcourt.it',
-      telefono: '+39 333 444 5566',
-      password: '',
-      costoOrarioTennis: 65,
-      costoOrarioPadel: 75,
-      fotoProfiloUrl:
-        'https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=900&q=80',
-    },
-    {
-      id: 3,
-      nome: 'Sarah',
-      cognome: 'Chen',
-      email: 'sarah.chen@bookcourt.it',
-      telefono: '+39 333 777 8899',
-      password: '',
-      costoOrarioTennis: 50,
-      costoOrarioPadel: 50,
-      fotoProfiloUrl:
-        'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=900&q=80',
-    },
-  ];
 
   constructor(
     private readonly route: ActivatedRoute,
     private readonly router: Router,
+    private readonly managerService: ManagerService,
   ) {}
 
   ngOnInit(): void {
     const instructorId = Number(this.route.snapshot.paramMap.get('id'));
-    const selectedInstructor = this.instructors.find((instructor) => instructor.id === instructorId);
 
-    if (!selectedInstructor) {
-      void this.router.navigate(['/dashboard/instructors']);
-      return;
-    }
+    this.managerService
+      .getIstruttori()
+      .pipe(finalize(() => (this.loading = false)))
+      .subscribe({
+        next: (instructors) => {
+          const selectedInstructor = instructors.find((instructor) => instructor.id === instructorId);
 
-    this.instructor = { ...selectedInstructor };
-    this.profilePhotoPreviewUrl = selectedInstructor.fotoProfiloUrl;
+          if (!selectedInstructor) {
+            void this.router.navigate(['/dashboard/instructors']);
+            return;
+          }
+
+          this.hydrateInstructor(selectedInstructor);
+        },
+        error: () => {
+          this.submitError = "Impossibile caricare i dati dell'istruttore.";
+        },
+      });
   }
 
   modifyInstructor(event: SubmitEvent): void {
     event.preventDefault();
+    this.submitError = '';
+    this.submitSuccess = '';
+
+    if (!this.instructor.nome || !this.instructor.cognome || !this.instructor.email || !this.instructor.telefono) {
+      this.submitError = 'Compila tutti i campi obbligatori.';
+      return;
+    }
+
+    if (!this.isValidEmail(this.instructor.email.trim())) {
+      this.submitError = 'Inserisci un indirizzo email valido.';
+      return;
+    }
+
+    if (!/^[0-9]{10}$/.test(this.instructor.telefono.trim())) {
+      this.submitError = 'Il telefono deve contenere esattamente 10 cifre.';
+      return;
+    }
+
+    if (!this.isValidOptionalRate(this.instructor.costoOrarioTennis) || !this.isValidOptionalRate(this.instructor.costoOrarioPadel)) {
+      this.submitError = 'Le tariffe inserite devono essere maggiori di 0.';
+      return;
+    }
+
+    if (this.instructor.costoOrarioTennis == null && this.instructor.costoOrarioPadel == null) {
+      this.submitError = 'Devi impostare almeno una tariffa oraria maggiore di 0 per tennis o padel.';
+      return;
+    }
+
+    const payload: ManagerUpdateInstructorRequestDto = {
+      nome: this.instructor.nome.trim(),
+      cognome: this.instructor.cognome.trim(),
+      email: this.instructor.email.trim(),
+      telefono: this.instructor.telefono.trim(),
+      costoOrarioTennis: this.instructor.costoOrarioTennis,
+      costoOrarioPadel: this.instructor.costoOrarioPadel,
+    };
+
+    this.isSaving = true;
+
+    this.managerService
+      .aggiornaIstruttore(this.instructor.id, payload, this.profilePhotoFile)
+      .pipe(finalize(() => (this.isSaving = false)))
+      .subscribe({
+        next: (updatedInstructor) => {
+          this.submitSuccess = 'Istruttore aggiornato con successo.';
+          this.profilePhotoFile = null;
+          this.hydrateInstructor(updatedInstructor);
+          void this.router.navigate(['/dashboard/instructors']);
+        },
+        error: (error) => {
+          this.submitError = this.extractErrorMessage(error, "Impossibile aggiornare l'istruttore.");
+        },
+      });
   }
 
   preventNegativeValue(event: KeyboardEvent): void {
@@ -163,7 +194,7 @@ export class ModifyInstructorComponent implements OnInit, OnDestroy {
   clearProfilePhoto(): void {
     this.profilePhotoFile = null;
     this.revokeUploadedProfilePhotoPreview();
-    this.profilePhotoPreviewUrl = this.instructor.fotoProfiloUrl;
+    this.profilePhotoPreviewUrl = this.buildImageUrl(this.instructor.fotoProfiloUrl);
 
     if (this.profilePhotoInput) {
       this.profilePhotoInput.nativeElement.value = '';
@@ -179,12 +210,67 @@ export class ModifyInstructorComponent implements OnInit, OnDestroy {
     this.revokeUploadedProfilePhotoPreview();
   }
 
+  private isValidEmail(email: string): boolean {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  }
+
+  private isValidOptionalRate(value: number | null): boolean {
+    return value == null || (Number.isFinite(Number(value)) && Number(value) > 0);
+  }
+
+  private hydrateInstructor(instructor: ManagerInstructorResponseDto): void {
+    this.instructor = {
+      id: instructor.id,
+      nome: instructor.nome,
+      cognome: instructor.cognome,
+      email: instructor.email,
+      telefono: instructor.telefono,
+        costoOrarioTennis: instructor.costoOrarioTennis,
+      costoOrarioPadel: instructor.costoOrarioPadel,
+      fotoProfiloUrl: instructor.fotoProfiloUrl,
+    };
+
+    if (!this.profilePhotoFile) {
+      this.profilePhotoPreviewUrl = this.buildImageUrl(instructor.fotoProfiloUrl);
+    }
+  }
+
+  private buildImageUrl(path: string | null): string {
+    if (!path) {
+      return '';
+    }
+
+    if (path.startsWith('http://') || path.startsWith('https://')) {
+      return path;
+    }
+
+    return path.startsWith('/') ? `http://localhost:8080${path}` : `http://localhost:8080/${path}`;
+  }
+
   private revokeUploadedProfilePhotoPreview(): void {
-    if (!this.profilePhotoFile || !this.profilePhotoPreviewUrl.startsWith('blob:')) {
+    if (!this.profilePhotoPreviewUrl.startsWith('blob:')) {
       return;
     }
 
     URL.revokeObjectURL(this.profilePhotoPreviewUrl);
     this.profilePhotoPreviewUrl = '';
+  }
+
+  private extractErrorMessage(error: unknown, fallback: string): string {
+    const maybeError = error as { error?: { message?: string; fields?: Record<string, string> }; status?: number };
+
+    if (maybeError?.error?.message) {
+      return maybeError.error.message;
+    }
+
+    if (maybeError?.error?.fields) {
+      return Object.values(maybeError.error.fields)[0] ?? fallback;
+    }
+
+    if (maybeError?.status === 0) {
+      return 'Backend non raggiungibile. Controlla che Spring Boot sia avviato sulla porta 8080.';
+    }
+
+    return fallback;
   }
 }

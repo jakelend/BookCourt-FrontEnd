@@ -18,6 +18,8 @@ import { SidebarHeaderComponent } from './components/sidebar-header/sidebar-head
 import { IntroComponent } from './components/intro/intro.component';
 import { AuthGuard } from './guard/auth.guard';
 import { GuestGuard } from './guard/guest.guard';
+import { RoleGuard } from './guard/role.guard';
+import { Role } from './enumeration/role.enum';
 
 export const routes: Routes = [
   {
@@ -65,38 +67,56 @@ export const routes: Routes = [
       {
         path: 'instructors',
         component: InstructorsPageComponent,
+        canActivate: [RoleGuard],
+        data: { roles: [Role.MANAGER] },
       },
       {
         path: 'instructors/create',
         component: CreateInstructorComponent,
+        canActivate: [RoleGuard],
+        data: { roles: [Role.MANAGER] },
       },
       {
         path: 'instructors/modify/:id',
         component: ModifyInstructorComponent,
+        canActivate: [RoleGuard],
+        data: { roles: [Role.MANAGER] },
       },
       {
         path: 'secretaries',
         component: SecretariesPageComponent,
+        canActivate: [RoleGuard],
+        data: { roles: [Role.MANAGER] },
       },
       {
         path: 'secretaries/create',
         component: CreateSecretaryComponent,
+        canActivate: [RoleGuard],
+        data: { roles: [Role.MANAGER] },
       },
       {
         path: 'secretaries/modify/:id',
         component: ModifySecretaryComponent,
+        canActivate: [RoleGuard],
+        data: { roles: [Role.MANAGER] },
       },
       {
         path: 'fields',
         component: FieldsPageComponent,
+        canActivate: [RoleGuard],
+        data: { roles: [Role.MANAGER] },
       },
       {
         path: 'fields/create',
         component: CreateFieldComponent,
+        canActivate: [RoleGuard],
+        data: { roles: [Role.MANAGER] },
       },
       {
         path: 'fields/modify/:id',
         component: ModifyFieldComponent,
+        canActivate: [RoleGuard],
+        data: { roles: [Role.MANAGER] },
       },
       {
         path: 'change-password',

@@ -78,7 +78,7 @@
             type="number"
             name="hourlyRate"
             min="0"
-            step="1"
+            step="0.01"
             placeholder="0"
             (keydown)="preventNegativeValue($event)"
             (input)="normalizeHourlyRate($event)"
@@ -86,9 +86,14 @@
         </label>
       </section>
 
+      <div *ngIf="submitError" class="form-message error-message">{{ submitError }}</div>
+      <div *ngIf="submitSuccess" class="form-message success-message">{{ submitSuccess }}</div>
+
       <div class="form-actions">
         <button type="button" class="secondary-action" (click)="cancel()">Annulla</button>
-        <button type="submit" class="primary-action">Crea campo</button>
+        <button type="submit" class="primary-action" [disabled]="isLoading">
+          {{ isLoading ? 'Creazione...' : 'Crea campo' }}
+        </button>
       </div>
     </form>
   </section>

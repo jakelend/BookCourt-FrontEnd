@@ -24,6 +24,8 @@ export class ResetPasswordComponent implements OnInit {
   resetPasswordError = '';
   resetPasswordSuccess = '';
   token = '';
+  showNewPassword = false;
+  showConfirmNewPassword = false;
 
   resetPasswordForm: FormGroup;
 
@@ -117,6 +119,14 @@ export class ResetPasswordComponent implements OnInit {
 
   onLogin(): void {
     void this.router.navigate(['/login']);
+  }
+
+  toggleNewPasswordVisibility(): void {
+    this.showNewPassword = !this.showNewPassword;
+  }
+
+  toggleConfirmNewPasswordVisibility(): void {
+    this.showConfirmNewPassword = !this.showConfirmNewPassword;
   }
 
   private passwordsMatchValidator(control: AbstractControl): ValidationErrors | null {

@@ -2,6 +2,11 @@ import { CommonModule } from '@angular/common';
 import { Component, ElementRef, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
+import { forkJoin, Observable, of } from 'rxjs';
+import { finalize, switchMap } from 'rxjs/operators';
+import { ManagerFieldImageResponseDto } from '../../../dto/response/manager/manager-field-image-response.dto';
+import { ManagerFieldResponseDto } from '../../../dto/response/manager/manager-field-response.dto';
+import { ManagerService } from '../../../services/manager.service';
 import { FieldSportType } from '../field-card/field-card.component';
 
 interface EditableField {
@@ -10,13 +15,13 @@ interface EditableField {
   sportType: FieldSportType;
   hourlyRate: number;
   active: boolean;
-  images: string[];
 }
 
 interface FieldImagePreview {
   file: File | null;
   url: string;
   uploaded: boolean;
+  existingImageId: number | null;
 }
 
 @Component({
@@ -33,6 +38,10 @@ export class ModifyFieldComponent implements OnInit, OnDestroy {
 
   imagePreviews: FieldImagePreview[] = [];
   imagesError = '';
+  loading = true;
+  submitError = '';
+  submitSuccess = '';
+  isSaving = false;
 
   field: EditableField = {
     id: 0,
@@ -40,62 +49,89 @@ export class ModifyFieldComponent implements OnInit, OnDestroy {
     sportType: 'TENNIS',
     hourlyRate: 0,
     active: true,
-    images: [],
   };
 
-  private readonly fields: EditableField[] = [
-    {
-      id: 1,
-      name: 'Campo Tennis Centrale',
-      sportType: 'TENNIS',
-      hourlyRate: 32,
-      active: true,
-      images: [
-        'https://images.unsplash.com/photo-1622279457486-62dcc4a431d6?auto=format&fit=crop&w=900&q=80',
-      ],
-    },
-    {
-      id: 2,
-      name: 'Campo Padel Indoor',
-      sportType: 'PADEL',
-      hourlyRate: 40,
-      active: true,
-      images: [
-        'https://images.unsplash.com/photo-1626224583764-f87db24ac4ea?auto=format&fit=crop&w=900&q=80',
-      ],
-    },
-    {
-      id: 3,
-      name: 'Campo Calcetto 5',
-      sportType: 'CALCETTO',
-      hourlyRate: 55,
-      active: false,
-      images: [
-        'https://images.unsplash.com/photo-1556056504-5c7696c4c28d?auto=format&fit=crop&w=900&q=80',
-      ],
-    },
-  ];
+  private deletedExistingImageIds = new Set<number>();
 
   constructor(
     private readonly route: ActivatedRoute,
     private readonly router: Router,
+    private readonly managerService: ManagerService,
   ) {}
 
   ngOnInit(): void {
     const fieldId = Number(this.route.snapshot.paramMap.get('id'));
-    const selectedField = this.fields.find((field) => field.id === fieldId);
 
-    if (!selectedField) {
-      void this.router.navigate(['/dashboard/fields']);
-      return;
-    }
+    forkJoin({
+      fields: this.managerService.getCampi(),
+      images: this.managerService.getImmaginiCampo(fieldId),
+    })
+      .pipe(finalize(() => (this.loading = false)))
+      .subscribe({
+        next: ({ fields, images }) => {
+          const selectedField = fields.find((field) => field.id === fieldId);
 
-    this.field = { ...selectedField, images: [...selectedField.images] };
-    this.imagePreviews = selectedField.images.map((url) => ({ file: null, url, uploaded: false }));
+          if (!selectedField) {
+            void this.router.navigate(['/dashboard/fields']);
+            return;
+          }
+
+          this.hydrateField(selectedField, images);
+        },
+        error: () => {
+          this.submitError = 'Impossibile caricare i dati del campo.';
+        },
+      });
   }
 
   modifyField(event: SubmitEvent): void {
     event.preventDefault();
+    this.submitError = '';
+    this.submitSuccess = '';
+
+    if (!this.field.name || !this.field.sportType) {
+      this.submitError = 'Compila tutti i campi obbligatori.';
+      return;
+    }
+
+    if (!Number.isFinite(this.field.hourlyRate) || this.field.hourlyRate < 0) {
+      this.submitError = 'Inserisci una tariffa oraria valida.';
+      return;
+    }
+
+    const payload = {
+      nome: this.field.name.trim(),
+      sport: this.field.sportType,
+      costoOrario: this.field.hourlyRate,
+      attivo: this.field.active,
+    };
+
+    const uploadedImages = this.imagePreviews
+      .filter((preview) => preview.uploaded && preview.file)
+      .map((preview) => preview.file as File);
+
+    this.isSaving = true;
+
+    const deleteRequest$: Observable<null> = this.deletedExistingImageIds.size
+      ? this.managerService
+          .eliminaImmaginiCampo(this.field.id, Array.from(this.deletedExistingImageIds))
+          .pipe(switchMap(() => of(null)))
+      : of(null);
+
+    deleteRequest$
+      .pipe(
+        switchMap(() => this.managerService.aggiornaCampo(this.field.id, payload, uploadedImages)),
+        finalize(() => (this.isSaving = false)),
+      )
+      .subscribe({
+        next: () => {
+          this.submitSuccess = 'Campo aggiornato con successo.';
+          void this.router.navigate(['/dashboard/fields']);
+        },
+        error: (error) => {
+          this.submitError = this.extractErrorMessage(error, 'Impossibile aggiornare il campo.');
+        },
+      });
   }
 
   preventNegativeValue(event: KeyboardEvent): void {
@@ -154,6 +190,7 @@ export class ModifyFieldComponent implements OnInit, OnDestroy {
         file,
         url: URL.createObjectURL(file),
         uploaded: true,
+        existingImageId: null,
       })),
     ];
     input.value = '';
@@ -168,6 +205,10 @@ export class ModifyFieldComponent implements OnInit, OnDestroy {
 
     if (preview.uploaded) {
       URL.revokeObjectURL(preview.url);
+    }
+
+    if (!preview.uploaded && preview.existingImageId != null) {
+      this.deletedExistingImageIds.add(preview.existingImageId);
     }
 
     this.imagePreviews = this.imagePreviews.filter((_, currentIndex) => currentIndex !== index);
@@ -186,6 +227,36 @@ export class ModifyFieldComponent implements OnInit, OnDestroy {
     return preview.url;
   }
 
+  private hydrateField(field: ManagerFieldResponseDto, images: ManagerFieldImageResponseDto[]): void {
+    this.field = {
+      id: field.id,
+      name: field.nome,
+      sportType: field.sport,
+      hourlyRate: field.costoOrario,
+      active: field.attivo,
+    };
+
+    this.deletedExistingImageIds.clear();
+    this.imagePreviews = images.map((image) => ({
+      file: null,
+      url: this.buildImageUrl(image.urlImmagine),
+      uploaded: false,
+      existingImageId: image.id,
+    }));
+  }
+
+  private buildImageUrl(path: string): string {
+    if (!path) {
+      return '';
+    }
+
+    if (path.startsWith('http://') || path.startsWith('https://')) {
+      return path;
+    }
+
+    return path.startsWith('/') ? `http://localhost:8080${path}` : `http://localhost:8080/${path}`;
+  }
+
   private clearUploadedImages(): void {
     for (const preview of this.imagePreviews) {
       if (preview.uploaded) {
@@ -196,5 +267,23 @@ export class ModifyFieldComponent implements OnInit, OnDestroy {
     if (this.fieldImagesInput) {
       this.fieldImagesInput.nativeElement.value = '';
     }
+  }
+
+  private extractErrorMessage(error: unknown, fallback: string): string {
+    const maybeError = error as { error?: { message?: string; fields?: Record<string, string> }; status?: number };
+
+    if (maybeError?.error?.message) {
+      return maybeError.error.message;
+    }
+
+    if (maybeError?.error?.fields) {
+      return Object.values(maybeError.error.fields)[0] ?? fallback;
+    }
+
+    if (maybeError?.status === 0) {
+      return 'Backend non raggiungibile. Controlla che Spring Boot sia avviato sulla porta 8080.';
+    }
+
+    return fallback;
   }
 }

@@ -1,31 +1,31 @@
 <article class="instructor-card">
   <div class="card-media">
-    <img *ngIf="coverImageUrl" [src]="coverImageUrl" [alt]="field.name" />
+    <img *ngIf="coverImageUrl" [src]="coverImageUrl" [alt]="field.nome" />
     <div *ngIf="!coverImageUrl" class="field-image-placeholder">
       <span class="material-symbols-outlined">stadium</span>
     </div>
     <div class="media-overlay"></div>
 
     <div class="media-title">
-      <h3>{{ field.name }}</h3>
-      <p>{{ field.sportType }}</p>
+      <h3>{{ field.nome }}</h3>
+      <p>{{ field.sport }}</p>
     </div>
   </div>
 
   <div class="card-body">
     <div class="status-row">
-      <span class="status-pill" [class.status-muted]="!field.active">
+      <span class="status-pill" [class.status-muted]="!field.attivo">
         {{ statusLabel }}
       </span>
     </div>
 
-    <div class="rates-panel" [class.rates-muted]="!field.active">
+    <div class="rates-panel" [class.rates-muted]="!field.attivo">
       <div class="rate-row">
         <div class="rate-name">
           <span class="material-symbols-outlined">sports_soccer</span>
           <span>Sport</span>
         </div>
-        <strong>{{ field.sportType }}</strong>
+        <strong>{{ field.sport }}</strong>
       </div>
 
       <div class="rate-divider"></div>
@@ -35,14 +35,18 @@
           <span class="material-symbols-outlined">payments</span>
           <span>Tariffa</span>
         </div>
-        <strong>EUR {{ field.hourlyRate }}/h</strong>
+        <strong>{{ hourlyRateLabel }}</strong>
       </div>
     </div>
 
     <div class="active-row">
-      <span>{{ field.active ? 'Attivo' : 'Inattivo' }}</span>
+      <span>{{ field.attivo ? 'Attivo' : 'Inattivo' }}</span>
       <label class="switch">
-        <input type="checkbox" [checked]="field.active" (change)="toggleActive($event)" />
+        <input
+          type="checkbox"
+          [checked]="field.attivo"
+          (change)="toggleActive($event)"
+        />
         <span></span>
       </label>
     </div>

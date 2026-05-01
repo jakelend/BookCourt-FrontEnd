@@ -16,6 +16,7 @@ export class LoginComponent {
   submitted = false;
   isLoading = false;
   loginError = '';
+  showPassword = false;
 
   loginForm: FormGroup;
 
@@ -95,6 +96,10 @@ export class LoginComponent {
   onForgotPassword(): void {
     // Collegamento alla pagina dove l'utente inserisce l'email per il recupero password.
     void this.router.navigate(['/forgot-password']);
+  }
+
+  togglePasswordVisibility(): void {
+    this.showPassword = !this.showPassword;
   }
 
   onRegister(): void {

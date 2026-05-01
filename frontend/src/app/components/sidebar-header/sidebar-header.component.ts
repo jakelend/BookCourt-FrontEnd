@@ -3,6 +3,7 @@ import { Component, OnInit } from '@angular/core';
 import { Router, RouterOutlet } from '@angular/router';
 import { Role } from '../../enumeration/role.enum';
 import { AuthService, ProfileResponseDto } from '../../services/auth.service';
+import { ManagerService } from '../../services/manager.service';
 
 interface SidebarItem {
   label: string;
@@ -50,6 +51,7 @@ export class SidebarHeaderComponent implements OnInit {
 
   constructor(
     private readonly authService: AuthService,
+    private readonly managerService: ManagerService,
     private readonly router: Router,
   ) {}
 
@@ -129,6 +131,7 @@ export class SidebarHeaderComponent implements OnInit {
     this.selectedItemKey = item.key;
 
     if (item.key === 'center-management') {
+      this.managerService.preloadStaffManagementLists();
       void this.router.navigate(['/dashboard']);
       return;
     }
@@ -154,14 +157,26 @@ export class SidebarHeaderComponent implements OnInit {
     void this.router.navigate(['/dashboard/instructors']);
   }
 
+  isInstructorsActive(): boolean {
+    return this.router.url.startsWith('/dashboard/instructors');
+  }
+
   openSecretaries(): void {
     this.selectedItemKey = 'center-management';
     void this.router.navigate(['/dashboard/secretaries']);
   }
 
+  isSecretariesActive(): boolean {
+    return this.router.url.startsWith('/dashboard/secretaries');
+  }
+
   openFields(): void {
     this.selectedItemKey = 'center-management';
     void this.router.navigate(['/dashboard/fields']);
+  }
+
+  isFieldsActive(): boolean {
+    return this.router.url.startsWith('/dashboard/fields');
   }
 
   logout(): void {

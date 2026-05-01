@@ -36,7 +36,7 @@ export class AuthInterceptor implements HttpInterceptor {
   }
 
   private shouldClearSession(error: HttpErrorResponse, url: string): boolean {
-    const isUnauthorized = error.status === 401 || error.status === 403;
+    const isUnauthorized = error.status === 401;
     const isLoginRequest = url.includes('/api/auth/login');
 
     return isUnauthorized && !isLoginRequest;

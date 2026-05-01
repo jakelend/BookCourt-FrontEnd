@@ -1,27 +1,32 @@
 <article class="instructor-card">
   <div class="card-media">
-    <img [src]="instructor.imageUrl" [alt]="instructor.fullName" />
+    <img *ngIf="imageUrl; else instructorPlaceholder" [src]="imageUrl" [alt]="fullName" />
+    <ng-template #instructorPlaceholder>
+      <div class="field-image-placeholder">
+        <span class="material-symbols-outlined">person</span>
+      </div>
+    </ng-template>
     <div class="media-overlay"></div>
 
     <div class="media-title">
-      <h3>{{ instructor.fullName }}</h3>
+      <h3>{{ fullName }}</h3>
     </div>
   </div>
 
   <div class="card-body">
     <div class="status-row">
-      <span class="status-pill" [class.status-muted]="!instructor.active">
-        {{ instructor.status }}
+      <span class="status-pill" [class.status-muted]="!instructor.attivo">
+        {{ statusLabel }}
       </span>
     </div>
 
-    <div class="rates-panel" [class.rates-muted]="!instructor.active">
+    <div class="rates-panel" [class.rates-muted]="!instructor.attivo">
       <div class="rate-row">
         <div class="rate-name">
           <span class="material-symbols-outlined">sports_tennis</span>
           <span>Tennis</span>
         </div>
-        <strong>EUR {{ instructor.tennisRate }}/h</strong>
+        <strong>{{ tennisRateLabel }}</strong>
       </div>
 
       <div class="rate-divider"></div>
@@ -31,14 +36,18 @@
           <span class="material-symbols-outlined">sports_score</span>
           <span>Padel</span>
         </div>
-        <strong>EUR {{ instructor.padelRate }}/h</strong>
+        <strong>{{ padelRateLabel }}</strong>
       </div>
     </div>
 
     <div class="active-row">
-      <span>{{ instructor.active ? 'Attivo' : 'Inattivo' }}</span>
+      <span>{{ instructor.attivo ? 'Attivo' : 'Inattivo' }}</span>
       <label class="switch">
-        <input type="checkbox" [checked]="instructor.active" (change)="toggleActive($event)" />
+        <input
+          type="checkbox"
+          [checked]="instructor.attivo"
+          (change)="toggleActive($event)"
+        />
         <span></span>
       </label>
     </div>

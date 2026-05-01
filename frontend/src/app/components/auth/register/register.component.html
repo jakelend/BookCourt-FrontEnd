@@ -105,15 +105,23 @@
         <div class="form-field">
           <label for="password">Password</label>
 
-          <div class="input-wrapper">
+          <div class="input-wrapper has-password-toggle">
             <input
               id="password"
-              type="password"
+              [type]="showPassword ? 'text' : 'password'"
               formControlName="password"
               autocomplete="new-password"
               placeholder="••••••••"
             />
             <span class="material-symbols-outlined input-icon">lock</span>
+            <button
+              type="button"
+              class="password-toggle-button"
+              [attr.aria-label]="showPassword ? 'Nascondi password' : 'Mostra password'"
+              (click)="togglePasswordVisibility()"
+            >
+              <span class="material-symbols-outlined">{{ showPassword ? 'visibility' : 'visibility_off' }}</span>
+            </button>
           </div>
 
           <p
@@ -134,15 +142,23 @@
         <div class="form-field">
           <label for="confirmPassword">Conferma</label>
 
-          <div class="input-wrapper">
+          <div class="input-wrapper has-password-toggle">
             <input
               id="confirmPassword"
-              type="password"
+              [type]="showConfirmPassword ? 'text' : 'password'"
               formControlName="confirmPassword"
               autocomplete="new-password"
               placeholder="••••••••"
             />
             <span class="material-symbols-outlined input-icon">lock_reset</span>
+            <button
+              type="button"
+              class="password-toggle-button"
+              [attr.aria-label]="showConfirmPassword ? 'Nascondi conferma password' : 'Mostra conferma password'"
+              (click)="toggleConfirmPasswordVisibility()"
+            >
+              <span class="material-symbols-outlined">{{ showConfirmPassword ? 'visibility' : 'visibility_off' }}</span>
+            </button>
           </div>
 
           <p

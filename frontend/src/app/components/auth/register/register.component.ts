@@ -22,6 +22,8 @@ export class RegisterComponent {
   submitted = false;
   isLoading = false;
   registerError = '';
+  showPassword = false;
+  showConfirmPassword = false;
 
   registerForm: FormGroup;
 
@@ -108,6 +110,14 @@ export class RegisterComponent {
 
   onLogin(): void {
     void this.router.navigate(['/login']);
+  }
+
+  togglePasswordVisibility(): void {
+    this.showPassword = !this.showPassword;
+  }
+
+  toggleConfirmPasswordVisibility(): void {
+    this.showConfirmPassword = !this.showConfirmPassword;
   }
 
   onPreview(): void {

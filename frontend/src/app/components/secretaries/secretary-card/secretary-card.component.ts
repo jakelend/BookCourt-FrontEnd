@@ -1,14 +1,10 @@
 import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { ManagerSecretaryResponseDto } from '../../../dto/response/manager/manager-secretary-response.dto';
 
-export interface SecretaryCardData {
-  id: number;
-  fullName: string;
-  imageUrl: string;
-  status: string;
-  active: boolean;
-  email: string;
-  phone: string;
+export interface SecretaryToggleEvent {
+  secretary: ManagerSecretaryResponseDto;
+  nextActive: boolean;
 }
 
 @Component({
@@ -18,8 +14,34 @@ export interface SecretaryCardData {
   styleUrl: './secretary-card.component.css',
 })
 export class SecretaryCardComponent {
-  @Input({ required: true }) secretary!: SecretaryCardData;
-  @Output() editSecretary = new EventEmitter<SecretaryCardData>();
+  @Input({ required: true }) secretary!: ManagerSecretaryResponseDto;
+  @Input() togglePending = false;
+  @Output() editSecretary = new EventEmitter<ManagerSecretaryResponseDto>();
+  @Output() toggleSecretary = new EventEmitter<SecretaryToggleEvent>();
+
+  private readonly backendBaseUrl = 'http://localhost:8080';
+
+  get fullName(): string {
+    return `${this.secretary.nome} ${this.secretary.cognome}`.trim();
+  }
+
+  get imageUrl(): string {
+    const path = this.secretary.fotoProfiloUrl;
+
+    if (!path) {
+      return '';
+    }
+
+    if (path.startsWith('http://') || path.startsWith('https://')) {
+      return path;
+    }
+
+    return path.startsWith('/') ? `${this.backendBaseUrl}${path}` : `${this.backendBaseUrl}/${path}`;
+  }
+
+  get statusLabel(): string {
+    return this.secretary.attivo ? 'Disponibile' : 'In pausa';
+  }
 
   edit(): void {
     this.editSecretary.emit(this.secretary);
@@ -27,7 +49,10 @@ export class SecretaryCardComponent {
 
   toggleActive(event: Event): void {
     const input = event.target as HTMLInputElement;
-    this.secretary.active = input.checked;
-    this.secretary.status = input.checked ? 'Disponibile' : 'In pausa';
+
+    this.toggleSecretary.emit({
+      secretary: this.secretary,
+      nextActive: input.checked,
+    });
   }
 }

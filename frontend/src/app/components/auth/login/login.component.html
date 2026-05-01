@@ -38,15 +38,23 @@
           </button>
         </div>
 
-        <div class="input-wrapper">
+        <div class="input-wrapper has-password-toggle">
           <input
             id="password"
-            type="password"
+            [type]="showPassword ? 'text' : 'password'"
             formControlName="password"
             autocomplete="current-password"
             placeholder="••••••••"
           />
           <span class="material-symbols-outlined input-icon">lock</span>
+          <button
+            type="button"
+            class="password-toggle-button"
+            [attr.aria-label]="showPassword ? 'Nascondi password' : 'Mostra password'"
+            (click)="togglePasswordVisibility()"
+          >
+            <span class="material-symbols-outlined">{{ showPassword ? 'visibility' : 'visibility_off' }}</span>
+          </button>
         </div>
 
         <p

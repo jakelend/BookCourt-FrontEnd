@@ -1,7 +1,12 @@
 import { CommonModule } from '@angular/common';
 import { Component, ElementRef, OnDestroy, ViewChild } from '@angular/core';
-import { FieldSportType } from '../field-card/field-card.component';
 import { Router } from '@angular/router';
+import { of } from 'rxjs';
+import { catchError, finalize, switchMap } from 'rxjs/operators';
+import { ManagerCreateFieldRequestDto } from '../../../dto/request/manager/manager-create-field-request.dto';
+import { ManagerFieldSport } from '../../../dto/response/manager/manager-field-response.dto';
+import { ManagerService } from '../../../services/manager.service';
+import { FieldSportType } from '../field-card/field-card.component';
 
 interface FieldImagePreview {
   file: File;
@@ -22,11 +27,70 @@ export class CreateFieldComponent implements OnDestroy {
 
   imagePreviews: FieldImagePreview[] = [];
   imagesError = '';
+  submitError = '';
+  submitSuccess = '';
+  isLoading = false;
 
-  constructor(private readonly router: Router) {}
+  constructor(
+    private readonly router: Router,
+    private readonly managerService: ManagerService,
+  ) {}
 
   createField(event: SubmitEvent): void {
     event.preventDefault();
+    this.submitError = '';
+    this.submitSuccess = '';
+
+    const form = event.target as HTMLFormElement | null;
+    if (!form) {
+      return;
+    }
+
+    const formData = new FormData(form);
+    const nome = String(formData.get('name') ?? '').trim();
+    const sport = String(formData.get('sportType') ?? '').trim() as ManagerFieldSport;
+    const costoOrario = Number(formData.get('hourlyRate') ?? 0);
+
+    if (!nome || !sport) {
+      this.submitError = 'Compila tutti i campi obbligatori.';
+      return;
+    }
+
+    if (!Number.isFinite(costoOrario) || costoOrario < 0) {
+      this.submitError = 'Inserisci una tariffa oraria valida.';
+      return;
+    }
+
+    const payload: ManagerCreateFieldRequestDto = {
+      nome,
+      sport,
+      costoOrario,
+      attivo: true,
+    };
+
+    this.isLoading = true;
+
+    this.managerService
+      .creaCampo(payload, this.imagePreviews.map((preview) => preview.file))
+      .pipe(
+        switchMap(() =>
+          this.managerService.refreshCampi().pipe(
+            catchError(() => of([])),
+          ),
+        ),
+        finalize(() => (this.isLoading = false)),
+      )
+      .subscribe({
+        next: () => {
+          this.submitSuccess = 'Campo creato con successo.';
+          this.clearImages();
+          form.reset();
+          void this.router.navigate(['/dashboard/fields']);
+        },
+        error: (error) => {
+          this.submitError = this.extractErrorMessage(error, 'Impossibile creare il campo.');
+        },
+      });
   }
 
   preventNegativeValue(event: KeyboardEvent): void {
@@ -119,5 +183,23 @@ export class CreateFieldComponent implements OnDestroy {
     if (this.fieldImagesInput) {
       this.fieldImagesInput.nativeElement.value = '';
     }
+  }
+
+  private extractErrorMessage(error: unknown, fallback: string): string {
+    const maybeError = error as { error?: { message?: string; fields?: Record<string, string> }; status?: number };
+
+    if (maybeError?.error?.message) {
+      return maybeError.error.message;
+    }
+
+    if (maybeError?.error?.fields) {
+      return Object.values(maybeError.error.fields)[0] ?? fallback;
+    }
+
+    if (maybeError?.status === 0) {
+      return 'Backend non raggiungibile. Controlla che Spring Boot sia avviato sulla porta 8080.';
+    }
+
+    return fallback;
   }
 }

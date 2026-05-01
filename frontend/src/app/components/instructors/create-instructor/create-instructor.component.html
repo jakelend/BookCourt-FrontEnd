@@ -69,12 +69,26 @@
 
         <label class="form-field">
           <span>Telefono</span>
-          <input type="tel" name="telefono" placeholder="+39 333 123 4567" />
+          <input type="tel" name="telefono" placeholder="3331234567" />
         </label>
 
         <label class="form-field">
           <span>Password</span>
-          <input type="password" name="password" placeholder="Password temporanea" />
+          <div class="password-field-wrapper">
+            <input
+              [type]="showPassword ? 'text' : 'password'"
+              name="password"
+              placeholder="Password temporanea"
+            />
+            <button
+              type="button"
+              class="password-toggle-button"
+              [attr.aria-label]="showPassword ? 'Nascondi password' : 'Mostra password'"
+              (click)="togglePasswordVisibility()"
+            >
+              <span class="material-symbols-outlined">{{ showPassword ? 'visibility' : 'visibility_off' }}</span>
+            </button>
+          </div>
         </label>
       </section>
 
@@ -97,8 +111,9 @@
                 type="number"
                 name="costoOrarioTennis"
                 min="0"
-                step="1"
-                value="0"
+                step="0.01"
+                value=""
+                placeholder="0.00"
                 (keydown)="preventNegativeValue($event)"
                 (input)="normalizeHourlyRate($event)"
               />
@@ -122,8 +137,9 @@
                 type="number"
                 name="costoOrarioPadel"
                 min="0"
-                step="1"
-                value="0"
+                step="0.01"
+                value=""
+                placeholder="0.00"
                 (keydown)="preventNegativeValue($event)"
                 (input)="normalizeHourlyRate($event)"
               />
@@ -132,9 +148,14 @@
         </div>
       </section>
 
+      <div *ngIf="submitError" class="form-message error-message">{{ submitError }}</div>
+      <div *ngIf="submitSuccess" class="form-message success-message">{{ submitSuccess }}</div>
+
       <div class="form-actions">
         <button type="button" class="secondary-action" (click)="cancel()">Annulla</button>
-        <button type="submit" class="primary-action">Crea istruttore</button>
+        <button type="submit" class="primary-action" [disabled]="isLoading">
+          {{ isLoading ? 'Creazione...' : 'Crea istruttore' }}
+        </button>
       </div>
     </form>
   </section>

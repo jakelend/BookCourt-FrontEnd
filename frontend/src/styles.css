@@ -176,6 +176,10 @@ a {
   box-shadow: 0 0 0 4px rgba(11, 75, 204, 0.1);
 }
 
+.input-wrapper.has-password-toggle input {
+  padding-right: 76px;
+}
+
 .input-icon {
   position: absolute;
   top: 50%;
@@ -184,6 +188,39 @@ a {
   color: #aeb8cc;
   font-size: 20px;
   pointer-events: none;
+}
+
+.input-wrapper.has-password-toggle .input-icon {
+  right: 50px;
+}
+
+.password-toggle-button {
+  width: 34px;
+  height: 34px;
+  border: 0;
+  border-radius: 8px;
+  padding: 0;
+  background: transparent;
+  color: #7c879c;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: absolute;
+  top: 50%;
+  right: 7px;
+  transform: translateY(-50%);
+  transition:
+    background-color 160ms ease,
+    color 160ms ease;
+}
+
+.password-toggle-button:hover {
+  background: rgba(11, 75, 204, 0.1);
+  color: #0b4bcc;
+}
+
+.password-toggle-button .material-symbols-outlined {
+  font-size: 20px;
 }
 
 .field-error {
