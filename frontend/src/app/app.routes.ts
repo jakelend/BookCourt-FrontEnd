@@ -16,6 +16,7 @@ import { ModifySecretaryComponent } from './components/secretaries/modify-secret
 import { SecretariesPageComponent } from './components/secretaries/secretaries-page/secretaries-page.component';
 import { SidebarHeaderComponent } from './components/sidebar-header/sidebar-header.component';
 import { IntroComponent } from './components/intro/intro.component';
+import { ChatPageComponent } from './components/chat/chat-page/chat-page.component';
 import { AuthGuard } from './guard/auth.guard';
 import { GuestGuard } from './guard/guest.guard';
 import { RoleGuard } from './guard/role.guard';
@@ -67,60 +68,48 @@ export const routes: Routes = [
       {
         path: 'instructors',
         component: InstructorsPageComponent,
-        canActivate: [RoleGuard],
-        data: { roles: [Role.MANAGER] },
       },
       {
         path: 'instructors/create',
         component: CreateInstructorComponent,
-        canActivate: [RoleGuard],
-        data: { roles: [Role.MANAGER] },
       },
       {
         path: 'instructors/modify/:id',
         component: ModifyInstructorComponent,
-        canActivate: [RoleGuard],
-        data: { roles: [Role.MANAGER] },
       },
       {
         path: 'secretaries',
         component: SecretariesPageComponent,
-        canActivate: [RoleGuard],
-        data: { roles: [Role.MANAGER] },
       },
       {
         path: 'secretaries/create',
         component: CreateSecretaryComponent,
-        canActivate: [RoleGuard],
-        data: { roles: [Role.MANAGER] },
       },
       {
         path: 'secretaries/modify/:id',
         component: ModifySecretaryComponent,
-        canActivate: [RoleGuard],
-        data: { roles: [Role.MANAGER] },
       },
       {
         path: 'fields',
         component: FieldsPageComponent,
-        canActivate: [RoleGuard],
-        data: { roles: [Role.MANAGER] },
       },
       {
         path: 'fields/create',
         component: CreateFieldComponent,
-        canActivate: [RoleGuard],
-        data: { roles: [Role.MANAGER] },
       },
       {
         path: 'fields/modify/:id',
         component: ModifyFieldComponent,
-        canActivate: [RoleGuard],
-        data: { roles: [Role.MANAGER] },
       },
       {
         path: 'change-password',
         component: ChangePasswordComponent,
+      },
+      {
+        path: 'chat',
+        component: ChatPageComponent,
+        canActivate: [RoleGuard],
+        data: { roles: [Role.CLIENTE, Role.SEGRETARIA, Role.MANAGER] },
       },
     ],
   },
@@ -163,6 +152,10 @@ export const routes: Routes = [
   {
     path: 'change-password',
     redirectTo: 'dashboard/change-password',
+  },
+  {
+    path: 'chat',
+    redirectTo: 'dashboard/chat',
   },
   {
     path: '**',

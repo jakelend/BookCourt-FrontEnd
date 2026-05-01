@@ -9,6 +9,7 @@ interface SidebarItem {
   label: string;
   icon: string;
   key: string;
+  route?: string;
 }
 
 @Component({
@@ -26,7 +27,7 @@ export class SidebarHeaderComponent implements OnInit {
 
   readonly menuByRole: Record<Role, SidebarItem[]> = {
     [Role.SEGRETARIA]: [
-      { label: 'Chat', icon: 'chat', key: 'chat' },
+      { label: 'Chat', icon: 'chat', key: 'chat', route: '/dashboard/chat' },
       { label: 'Manutenzione', icon: 'engineering', key: 'maintenance' },
       { label: 'Calendario Istruttori', icon: 'calendar_today', key: 'instructor-calendar' },
       { label: 'Orari centro', icon: 'schedule', key: 'center-hours' },
@@ -38,14 +39,14 @@ export class SidebarHeaderComponent implements OnInit {
 
     [Role.CLIENTE]: [
       { label: 'Prenotazioni', icon: 'event_note', key: 'bookings' },
-      { label: 'Chat', icon: 'chat', key: 'chat' },
+      { label: 'Chat', icon: 'chat', key: 'chat', route: '/dashboard/chat' },
       { label: 'Gestione Credenziali', icon: 'key', key: 'credentials' },
       { label: 'Gestione account', icon: 'manage_accounts', key: 'account-management' },
     ],
 
     [Role.MANAGER]: [
       { label: 'Staff Management', icon: 'settings', key: 'center-management' },
-      { label: 'Chat', icon: 'chat', key: 'chat' },
+      { label: 'Chat', icon: 'chat', key: 'chat', route: '/dashboard/chat' },
     ],
   };
 
@@ -141,10 +142,19 @@ export class SidebarHeaderComponent implements OnInit {
       return;
     }
 
+    if (item.route) {
+      void this.router.navigateByUrl(item.route);
+      return;
+    }
+
     void this.router.navigate(['/dashboard']);
   }
 
   isSidebarItemActive(item: SidebarItem): boolean {
+    if (item.route && this.router.url.startsWith(item.route)) {
+      return true;
+    }
+
     if (this.selectedItemKey) {
       return this.selectedItemKey === item.key;
     }
