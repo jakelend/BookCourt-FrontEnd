@@ -83,14 +83,15 @@
 }
 
 .chat-shell {
-  min-height: calc(100vh - 120px);
+  height: calc(100vh - 120px);
+  min-height: 580px;
   display: grid;
   grid-template-columns: 360px minmax(0, 1fr);
   gap: 18px;
 }
 
 .chat-shell.client-shell {
-  min-height: calc(100vh - 220px);
+  height: calc(100vh - 220px);
   grid-template-columns: minmax(0, 1fr);
 }
 
@@ -100,22 +101,29 @@
   border-radius: 18px;
   background: #ffffff;
   overflow: hidden;
+  min-height: 0;
   box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
 }
 
 .conversation-list {
   display: flex;
   flex-direction: column;
-  min-height: 580px;
+  height: 100%;
+  overflow-y: auto;
 }
 
 .conversation-list-header {
   height: 66px;
+  flex: 0 0 66px;
   padding: 0 18px;
   border-bottom: 1px solid #e0e3e5;
+  background: #ffffff;
   display: flex;
   align-items: center;
   justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 1;
 }
 
 .conversation-list-header h3 {
@@ -209,7 +217,7 @@
 }
 
 .chat-panel {
-  min-height: 580px;
+  height: 100%;
   display: flex;
   flex-direction: column;
 }
@@ -254,6 +262,7 @@
 
 .messages-container {
   flex: 1;
+  min-height: 0;
   padding: 20px;
   overflow-y: auto;
   background:
@@ -430,16 +439,18 @@
 
 @media (max-width: 980px) {
   .chat-shell {
+    height: auto;
+    min-height: 0;
     grid-template-columns: 1fr;
   }
 
-  .conversation-list,
   .chat-panel {
-    min-height: auto;
+    height: min(620px, calc(100vh - 150px));
+    min-height: 420px;
   }
 
   .conversation-list {
-    max-height: 360px;
+    height: 360px;
     overflow-y: auto;
   }
 }

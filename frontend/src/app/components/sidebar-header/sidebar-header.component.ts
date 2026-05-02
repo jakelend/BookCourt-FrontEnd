@@ -35,7 +35,7 @@ export class SidebarHeaderComponent implements OnInit {
     ],
 
     [Role.ISTRUTTORE]: [
-      { label: 'Calendario Istruttore', icon: 'calendar_month', key: 'instructor-calendar' },
+      { label: 'Calendario Istruttore', icon: 'calendar_month', key: 'instructor-calendar', route: '/dashboard/instructor-calendar' },
     ],
 
     [Role.CLIENTE]: [

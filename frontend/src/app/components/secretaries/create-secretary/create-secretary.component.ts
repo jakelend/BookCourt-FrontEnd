@@ -1,8 +1,8 @@
 import { CommonModule } from '@angular/common';
 import { Component, ElementRef, OnDestroy, ViewChild } from '@angular/core';
 import { Router } from '@angular/router';
-import { EMPTY, of } from 'rxjs';
-import { catchError, finalize, switchMap, take } from 'rxjs/operators';
+import { EMPTY, Observable, of } from 'rxjs';
+import { catchError, finalize, switchMap, take, timeout } from 'rxjs/operators';
 import { ManagerCreateSecretaryRequestDto } from '../../../dto/request/manager/manager-create-secretary-request.dto';
 import { ManagerService } from '../../../services/manager.service';
 
@@ -30,18 +30,25 @@ export class CreateSecretaryComponent implements OnDestroy {
 
   createSecretary(event: SubmitEvent): void {
     event.preventDefault();
+
     this.submitError = '';
     this.submitSuccess = '';
+    this.profilePhotoError = '';
 
     const form = event.target as HTMLFormElement | null;
+
     if (!form) {
+      this.submitError = 'Errore nel form. Riprova.';
       return;
     }
 
     const formData = new FormData(form);
+
     const nome = String(formData.get('nome') ?? '').trim();
     const cognome = String(formData.get('cognome') ?? '').trim();
-    const email = String(formData.get('email') ?? '').trim();
+    const email = String(formData.get('email') ?? '')
+      .trim()
+      .toLowerCase();
     const telefono = String(formData.get('telefono') ?? '').trim();
     const password = String(formData.get('password') ?? '');
 
@@ -55,13 +62,18 @@ export class CreateSecretaryComponent implements OnDestroy {
       return;
     }
 
+    if (!/^[0-9]{10}$/.test(telefono)) {
+      this.submitError = 'Il telefono deve contenere esattamente 10 cifre.';
+      return;
+    }
+
     if (password.length < 6 || password.length > 72) {
       this.submitError = 'La password deve contenere tra 6 e 72 caratteri.';
       return;
     }
 
-    if (!/^[0-9]{10}$/.test(telefono)) {
-      this.submitError = 'Il telefono deve contenere esattamente 10 cifre.';
+    if (this.profilePhotoError) {
+      this.submitError = this.profilePhotoError;
       return;
     }
 
@@ -75,12 +87,29 @@ export class CreateSecretaryComponent implements OnDestroy {
 
     this.isLoading = true;
 
-    this.managerService
-      .getSegreterie()
+    this.loadSegreterieForDuplicateCheck()
       .pipe(
         take(1),
+
+        /*
+         * Se il controllo preventivo fallisce, non blocchiamo la creazione:
+         * sarà comunque il backend a bloccare email/telefono duplicati con 409.
+         */
         catchError(() => of([])),
+
         switchMap((segretarie) => {
+          const emailDuplicata = segretarie.some(
+            (segretaria) =>
+              String(segretaria.email ?? '')
+                .trim()
+                .toLowerCase() === email,
+          );
+
+          if (emailDuplicata) {
+            this.submitError = 'Email già registrata. Inserisci un altro indirizzo email.';
+            return EMPTY;
+          }
+
           const telefonoDuplicato = segretarie.some(
             (segretaria) => String(segretaria.telefono ?? '').trim() === telefono,
           );
@@ -90,16 +119,24 @@ export class CreateSecretaryComponent implements OnDestroy {
             return EMPTY;
           }
 
-          return this.managerService.creaSegreteria(payload, this.profilePhotoFile);
+          return this.managerService
+            .creaSegreteria(payload, this.profilePhotoFile)
+            .pipe(timeout(10000));
         }),
-        finalize(() => (this.isLoading = false)),
+
+        finalize(() => {
+          this.isLoading = false;
+        }),
       )
       .subscribe({
         next: () => {
           this.submitSuccess = 'Segretaria creata con successo.';
           this.clearProfilePhoto();
           form.reset();
-          setTimeout(() => void this.router.navigate(['/dashboard/secretaries']), 300);
+
+          setTimeout(() => {
+            void this.router.navigate(['/dashboard/secretaries']);
+          }, 300);
         },
         error: (error) => {
           this.submitError = this.extractErrorMessage(error, 'Impossibile creare la segretaria.');
@@ -120,6 +157,7 @@ export class CreateSecretaryComponent implements OnDestroy {
     const file = input.files?.[0] ?? null;
 
     this.profilePhotoError = '';
+    this.submitError = '';
 
     if (!file) {
       return;
@@ -162,6 +200,22 @@ export class CreateSecretaryComponent implements OnDestroy {
     this.revokeProfilePhotoPreview();
   }
 
+  private loadSegreterieForDuplicateCheck(): Observable<
+    Array<{ email?: string; telefono?: string }>
+  > {
+    const serviceWithRefresh = this.managerService as ManagerService & {
+      refreshSegreterie?: () => Observable<Array<{ email?: string; telefono?: string }>>;
+    };
+
+    if (typeof serviceWithRefresh.refreshSegreterie === 'function') {
+      return serviceWithRefresh.refreshSegreterie();
+    }
+
+    return this.managerService.getSegreterie() as Observable<
+      Array<{ email?: string; telefono?: string }>
+    >;
+  }
+
   private isValidEmail(email: string): boolean {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   }
@@ -183,7 +237,12 @@ export class CreateSecretaryComponent implements OnDestroy {
         error?: string;
       };
       status?: number;
+      name?: string;
     };
+
+    if (maybeError?.name === 'TimeoutError') {
+      return 'Richiesta scaduta: il backend non ha risposto. Controlla il terminale Spring Boot.';
+    }
 
     if (maybeError?.error?.message) {
       return maybeError.error.message;

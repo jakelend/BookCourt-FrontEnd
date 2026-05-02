@@ -9,6 +9,7 @@ import { CreateFieldComponent } from './components/fields/create-field/create-fi
 import { FieldsPageComponent } from './components/fields/fields-page/fields-page.component';
 import { ModifyFieldComponent } from './components/fields/modify-field/modify-field.component';
 import { CreateInstructorComponent } from './components/instructors/create-instructor/create-instructor.component';
+import { InstructorCalendarComponent } from './components/instructors/instructor-calendar/instructor-calendar.component';
 import { InstructorsPageComponent } from './components/instructors/instructors-page/instructors-page.component';
 import { ModifyInstructorComponent } from './components/instructors/modify-instructor/modify-instructor.component';
 import { CreateSecretaryComponent } from './components/secretaries/create-secretary/create-secretary.component';
@@ -78,6 +79,12 @@ export const routes: Routes = [
         component: ModifyInstructorComponent,
       },
       {
+        path: 'instructor-calendar',
+        component: InstructorCalendarComponent,
+        canActivate: [RoleGuard],
+        data: { roles: [Role.ISTRUTTORE] },
+      },
+      {
         path: 'secretaries',
         component: SecretariesPageComponent,
       },
@@ -124,6 +131,10 @@ export const routes: Routes = [
   {
     path: 'instructors/modify/:id',
     redirectTo: 'dashboard/instructors/modify/:id',
+  },
+  {
+    path: 'instructor-calendar',
+    redirectTo: 'dashboard/instructor-calendar',
   },
   {
     path: 'secretaries',

@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
-import { Component, ElementRef, OnDestroy, OnInit, ViewChild } from '@angular/core';
+import { Component, ElementRef, OnDestroy, OnInit, ViewChild, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { interval, Subscription } from 'rxjs';
+import { Subscription } from 'rxjs';
 import { finalize } from 'rxjs/operators';
 import { ConversazioneChatResponseDto } from '../../../dto/response/chat/conversazione-chat-response.dto';
 import { MessaggioChatResponseDto } from '../../../dto/response/chat/messaggio-chat-response.dto';
@@ -19,24 +19,23 @@ import { ChatWebsocketService } from '../../../services/chat-websocket.service';
 export class ChatPageComponent implements OnInit, OnDestroy {
   @ViewChild('messagesContainer') private messagesContainer?: ElementRef<HTMLDivElement>;
 
-  conversations: ConversazioneChatResponseDto[] = [];
-  selectedConversation: ConversazioneChatResponseDto | null = null;
-  messages: MessaggioChatResponseDto[] = [];
+  private readonly conversationsSignal = signal<ConversazioneChatResponseDto[]>([]);
+  private readonly selectedConversationSignal = signal<ConversazioneChatResponseDto | null>(null);
+  private readonly messagesSignal = signal<MessaggioChatResponseDto[]>([]);
+
   newMessage = '';
 
   loadingConversations = false;
   loadingMessages = false;
   sending = false;
-  errorMessage = '';
-  websocketError = '';
   initializingChat = false;
 
-  private profileRole: Role | null = null;
-  private websocketSubscription?: Subscription;
-  private conversationsRefreshSubscription?: Subscription;
-  private readonly conversationRealtimeSubscriptions = new Map<number, Subscription>();
-  private initializedChat = false;
-  private nextTemporaryMessageId = -1;
+  errorMessage = '';
+  websocketError = '';
+
+  private connectionErrorsSubscription?: Subscription;
+  private conversationListRealtimeSubscription?: Subscription;
+  private readonly realtimeSubscriptions = new Map<number, Subscription>();
 
   constructor(
     private readonly authService: AuthService,
@@ -45,35 +44,11 @@ export class ChatPageComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
-    if (this.currentRole) {
-      this.initializeChatForRole();
-      return;
-    }
-
-    this.initializingChat = true;
-    this.loadingConversations = true;
-    this.authService.getCurrentProfile().subscribe({
-      next: (profile) => {
-        this.profileRole = profile.ruolo;
-        this.authService.updateCurrentUserFromProfile(profile);
-        this.initializingChat = false;
-        this.initializeChatForRole();
-      },
-      error: (error) => {
-        this.initializingChat = false;
-        this.loadingConversations = false;
-        this.errorMessage = this.extractErrorMessage(error, 'Impossibile inizializzare la chat.');
+    this.connectionErrorsSubscription = this.chatWebsocketService.connectionErrors$.subscribe({
+      next: (message) => {
+        this.websocketError = message;
       },
     });
-  }
-
-  private initializeChatForRole(): void {
-    if (this.initializedChat) {
-      return;
-    }
-
-    this.initializedChat = true;
-    this.loadingConversations = false;
 
     if (this.isCliente) {
       this.loadClienteConversation();
@@ -82,18 +57,34 @@ export class ChatPageComponent implements OnInit, OnDestroy {
 
     if (this.isCentroReadRole) {
       this.loadConversations();
-      this.startConversationsAutoRefresh();
+      this.subscribeRealtimeConversationList();
+      return;
     }
+
+    this.errorMessage = 'Ruolo utente non abilitato alla chat.';
   }
 
   ngOnDestroy(): void {
-    this.closeWebsocketSubscription();
-    this.closeConversationRealtimeSubscriptions();
-    this.conversationsRefreshSubscription?.unsubscribe();
+    this.closeRealtimeSubscriptions();
+    this.conversationListRealtimeSubscription?.unsubscribe();
+    this.connectionErrorsSubscription?.unsubscribe();
+    this.chatWebsocketService.disconnect();
+  }
+
+  get conversations(): ConversazioneChatResponseDto[] {
+    return this.conversationsSignal();
+  }
+
+  get selectedConversation(): ConversazioneChatResponseDto | null {
+    return this.selectedConversationSignal();
+  }
+
+  get messages(): MessaggioChatResponseDto[] {
+    return this.messagesSignal();
   }
 
   get currentRole(): Role | null {
-    return this.authService.getCurrentUserRole() ?? this.profileRole;
+    return this.authService.getCurrentUserRole();
   }
 
   get currentUserId(): number | null {
@@ -117,7 +108,7 @@ export class ChatPageComponent implements OnInit, OnDestroy {
   }
 
   get canWrite(): boolean {
-    return !!this.selectedConversation && !this.isManager;
+    return !!this.selectedConversation?.scrivibile && !this.isManager;
   }
 
   get pageTitle(): string {
@@ -146,6 +137,7 @@ export class ChatPageComponent implements OnInit, OnDestroy {
 
   loadClienteConversation(): void {
     this.errorMessage = '';
+    this.websocketError = '';
     this.loadingConversations = true;
 
     this.chatService
@@ -153,7 +145,7 @@ export class ChatPageComponent implements OnInit, OnDestroy {
       .pipe(finalize(() => (this.loadingConversations = false)))
       .subscribe({
         next: (conversation) => {
-          this.conversations = [conversation];
+          this.conversationsSignal.set([conversation]);
           this.openConversation(conversation);
         },
         error: (error) => {
@@ -167,17 +159,23 @@ export class ChatPageComponent implements OnInit, OnDestroy {
 
   loadConversations(): void {
     this.errorMessage = '';
+    this.websocketError = '';
     this.loadingConversations = true;
 
+    /*
+     * Uso refreshConversazioni() e non getConversazioni().
+     *
+     * Motivo:
+     * getConversazioni() può restituire cache/localStorage.
+     * Per la lista in stile WhatsApp vogliamo sempre rispettare il backend:
+     * la segretaria deve vedere solo clienti che hanno almeno un messaggio.
+     */
     this.chatService
-      .getConversazioni()
+      .refreshConversazioni()
       .pipe(finalize(() => (this.loadingConversations = false)))
       .subscribe({
         next: (conversations) => {
-          this.conversations = conversations;
-          this.updateSelectedConversation(conversations);
-          this.preloadConversationMessages(conversations);
-          this.syncConversationRealtimeSubscriptions(conversations);
+          this.applyConversations(conversations);
         },
         error: (error) => {
           this.errorMessage = this.extractErrorMessage(
@@ -195,74 +193,41 @@ export class ChatPageComponent implements OnInit, OnDestroy {
 
     this.chatService.refreshConversazioni().subscribe({
       next: (conversations) => {
-        this.conversations = conversations;
-        this.preloadConversationMessages(conversations);
-        this.syncConversationRealtimeSubscriptions(conversations);
-
-        if (!this.selectedConversation) {
-          return;
-        }
-
-        this.updateSelectedConversation(conversations);
+        this.applyConversations(conversations);
       },
       error: () => undefined,
     });
   }
 
   openConversation(conversation: ConversazioneChatResponseDto): void {
-    if (this.selectedConversation?.id === conversation.id && this.websocketSubscription) {
-      this.chatService.setSelectedConversationId(conversation.id);
-      return;
-    }
-
-    this.chatService.setSelectedConversationId(conversation.id);
-    this.selectedConversation = conversation;
-    const cachedMessages = this.chatService.getCachedMessages(conversation.id);
-    this.messages = cachedMessages ?? [];
+    this.selectedConversationSignal.set(conversation);
+    this.messagesSignal.set([]);
     this.websocketError = '';
-    this.closeWebsocketSubscription();
-    this.loadMessages(conversation.id, !!cachedMessages);
 
-    if (!this.isCentroReadRole) {
-      this.listenRealtime(conversation.id);
-    }
+    this.subscribeRealtimeForConversation(conversation.id);
+    this.loadMessages(conversation.id);
   }
 
   sendMessage(): void {
+    const conversation = this.selectedConversation;
     const contenuto = this.newMessage.trim();
 
-    if (!contenuto || !this.selectedConversation || !this.canWrite) {
+    if (!contenuto || !conversation || !this.canWrite || this.sending) {
       return;
     }
 
-    const conversationId = this.selectedConversation.id;
-    const temporaryMessage = this.createTemporaryMessage(conversationId, contenuto);
-
     this.sending = true;
     this.errorMessage = '';
-    this.newMessage = '';
-    this.appendMessageIfMissing(temporaryMessage);
-    this.chatService.addMessageToCache(temporaryMessage);
-    this.updateConversationPreview(temporaryMessage);
 
     this.chatService
-      .inviaMessaggio(conversationId, { contenuto })
+      .inviaMessaggio(conversation.id, { contenuto })
       .pipe(finalize(() => (this.sending = false)))
       .subscribe({
         next: (message) => {
-          this.replaceTemporaryMessage(temporaryMessage.id, message);
-          this.chatService.replaceMessageInCache(conversationId, temporaryMessage.id, message);
-          this.updateConversationPreview(message);
-
-          if (this.isCentroReadRole) {
-            this.refreshConversationsSilently();
-          }
+          this.newMessage = '';
+          this.handleRealtimeMessage(message);
         },
         error: (error) => {
-          this.removeMessageById(temporaryMessage.id);
-          this.chatService.removeMessageFromCache(conversationId, temporaryMessage.id);
-          this.rebuildConversationPreviewFromMessages(conversationId);
-          this.newMessage = this.newMessage || contenuto;
           this.errorMessage = this.extractErrorMessage(error, 'Impossibile inviare il messaggio.');
         },
       });
@@ -323,19 +288,24 @@ export class ChatPageComponent implements OnInit, OnDestroy {
     return message.id;
   }
 
-  private loadMessages(conversationId: number, refreshSilently = false): void {
-    this.loadingMessages = !refreshSilently;
+  private applyConversations(conversations: ConversazioneChatResponseDto[]): void {
+    const sortedConversations = this.sortConversations(conversations);
+
+    this.conversationsSignal.set(sortedConversations);
+    this.updateSelectedConversation(sortedConversations);
+    this.subscribeRealtimeForConversations(sortedConversations);
+  }
+
+  private loadMessages(conversationId: number): void {
+    this.loadingMessages = true;
     this.errorMessage = '';
 
-    const messagesRequest = refreshSilently
-      ? this.chatService.refreshMessaggi(conversationId)
-      : this.chatService.getMessaggi(conversationId);
-
-    messagesRequest
+    this.chatService
+      .getMessaggi(conversationId)
       .pipe(finalize(() => (this.loadingMessages = false)))
       .subscribe({
         next: (messages) => {
-          this.messages = messages;
+          this.messagesSignal.set(messages);
           this.scrollMessagesToBottom();
         },
         error: (error) => {
@@ -347,129 +317,158 @@ export class ChatPageComponent implements OnInit, OnDestroy {
       });
   }
 
-  private refreshCurrentChatAfterSend(): void {
-    const conversationId = this.selectedConversation?.id;
+  private subscribeRealtimeForConversations(conversations: ConversazioneChatResponseDto[]): void {
+    conversations.forEach((conversation) => {
+      this.subscribeRealtimeForConversation(conversation.id);
+    });
+  }
 
-    if (!conversationId) {
+  private subscribeRealtimeForConversation(conversationId: number): void {
+    if (this.realtimeSubscriptions.has(conversationId)) {
       return;
     }
 
-    this.chatService.refreshMessaggi(conversationId).subscribe({
-      next: (messages) => {
-        this.messages = messages;
-        this.scrollMessagesToBottom();
+    const subscription = this.chatWebsocketService.listenToConversation(conversationId).subscribe({
+      next: (message) => {
+        this.handleRealtimeMessage(message);
       },
-      error: () => undefined,
-    });
-
-    if (this.isCentroReadRole) {
-      this.refreshConversationsSilently();
-    }
-  }
-
-  private listenRealtime(conversationId: number): void {
-    this.websocketSubscription = this.chatWebsocketService.listenToConversation(conversationId).subscribe({
-      next: (message) => this.handleRealtimeMessage(message),
       error: (error) => {
         this.websocketError = error?.message ?? 'Connessione realtime non disponibile.';
       },
     });
+
+    this.realtimeSubscriptions.set(conversationId, subscription);
   }
 
-  private appendMessageIfMissing(message: MessaggioChatResponseDto): void {
-    const alreadyExists = this.messages.some((existingMessage) => existingMessage.id === message.id);
-
-    if (alreadyExists) {
+  private subscribeRealtimeConversationList(): void {
+    if (!this.isCentroReadRole) {
       return;
     }
 
-    this.messages = [...this.messages, message];
+    this.conversationListRealtimeSubscription?.unsubscribe();
+
+    this.conversationListRealtimeSubscription = this.chatWebsocketService
+      .listenToConversationList()
+      .subscribe({
+        next: (message) => {
+          this.handleRealtimeConversationListEvent(message);
+        },
+        error: (error) => {
+          this.websocketError = error?.message ?? 'Realtime lista conversazioni non disponibile.';
+        },
+      });
+  }
+
+  private handleRealtimeConversationListEvent(message: MessaggioChatResponseDto): void {
+    const conversationAlreadyVisible = this.conversations.some(
+      (conversation) => conversation.id === message.conversazioneId,
+    );
+
+    this.handleRealtimeMessage(message);
+
+    /*
+     * Caso WhatsApp:
+     * se la conversazione non era in lista, vuol dire che probabilmente
+     * è appena arrivato il primo messaggio di un cliente.
+     *
+     * In quel caso facciamo una singola chiamata HTTP per recuperare
+     * il DTO completo della conversazione e mostrarla in lista.
+     */
+    if (!conversationAlreadyVisible) {
+      this.refreshConversationsSilently();
+    }
+  }
+
+  private handleRealtimeMessage(message: MessaggioChatResponseDto): void {
+    this.websocketError = '';
+    this.updateConversationPreview(message);
+
+    if (message.conversazioneId !== this.selectedConversation?.id) {
+      return;
+    }
+
+    this.appendMessageIfMissing(message);
+  }
+
+  private appendMessageIfMissing(message: MessaggioChatResponseDto): void {
+    this.messagesSignal.update((currentMessages) => {
+      const alreadyExists = currentMessages.some(
+        (existingMessage) => existingMessage.id === message.id,
+      );
+
+      if (alreadyExists) {
+        return currentMessages;
+      }
+
+      return [...currentMessages, message];
+    });
+
     this.scrollMessagesToBottom();
-  }
-
-  private replaceTemporaryMessage(
-    temporaryMessageId: number,
-    savedMessage: MessaggioChatResponseDto,
-  ): void {
-    const withoutSavedDuplicate = this.messages.filter((message) => message.id !== savedMessage.id);
-    const hasTemporaryMessage = withoutSavedDuplicate.some((message) => message.id === temporaryMessageId);
-
-    this.messages = hasTemporaryMessage
-      ? withoutSavedDuplicate.map((message) => (message.id === temporaryMessageId ? savedMessage : message))
-      : [...withoutSavedDuplicate, savedMessage];
-    this.scrollMessagesToBottom();
-  }
-
-  private removeMessageById(messageId: number): void {
-    this.messages = this.messages.filter((message) => message.id !== messageId);
-  }
-
-  private createTemporaryMessage(
-    conversazioneId: number,
-    contenuto: string,
-  ): MessaggioChatResponseDto {
-    const currentUser = this.authService.getCurrentUser();
-    const nome = currentUser?.nome ?? '';
-    const cognome = currentUser?.cognome ?? '';
-    const nomeCompleto = `${nome} ${cognome}`.trim();
-
-    return {
-      id: this.nextTemporaryMessageId--,
-      conversazioneId,
-      mittenteId: currentUser?.id ?? 0,
-      mittenteRuolo: this.currentRole ?? '',
-      mittenteNome: nome,
-      mittenteCognome: cognome,
-      mittenteNomeCompleto: nomeCompleto,
-      autoreDisplay: nomeCompleto || (this.isCentroReadRole ? 'Segreteria centro sportivo' : 'Cliente'),
-      inviatoDalCentro: this.isCentroReadRole,
-      contenuto,
-      inviatoIl: new Date().toISOString(),
-    };
   }
 
   private updateConversationPreview(message: MessaggioChatResponseDto): void {
-    this.conversations = this.conversations.map((conversation) => {
-      if (conversation.id !== message.conversazioneId) {
-        return conversation;
-      }
+    let conversationFound = false;
 
-      return {
-        ...conversation,
+    this.conversationsSignal.update((currentConversations) => {
+      const updatedConversations = currentConversations.map((conversation) => {
+        if (conversation.id !== message.conversazioneId) {
+          return conversation;
+        }
+
+        conversationFound = true;
+
+        return {
+          ...conversation,
+          ultimoMessaggioPreview: message.contenuto,
+          ultimoMessaggioIl: message.inviatoIl,
+        };
+      });
+
+      return this.sortConversations(updatedConversations);
+    });
+
+    if (!conversationFound && this.isCentroReadRole) {
+      return;
+    }
+
+    const selected = this.selectedConversation;
+
+    if (selected?.id === message.conversazioneId) {
+      this.selectedConversationSignal.set({
+        ...selected,
         ultimoMessaggioPreview: message.contenuto,
         ultimoMessaggioIl: message.inviatoIl,
-      };
-    }).sort((left, right) => this.getConversationTimestamp(right) - this.getConversationTimestamp(left));
-
-    if (this.selectedConversation?.id === message.conversazioneId) {
-      this.selectedConversation = {
-        ...this.selectedConversation,
-        ultimoMessaggioPreview: message.contenuto,
-        ultimoMessaggioIl: message.inviatoIl,
-      };
+      });
     }
   }
 
-  private rebuildConversationPreviewFromMessages(conversationId: number): void {
-    const lastMessage = this.messages.at(-1);
+  private updateSelectedConversation(conversations: ConversazioneChatResponseDto[]): void {
+    const selected = this.selectedConversation;
 
-    this.conversations = this.conversations.map((conversation) =>
-      conversation.id === conversationId
-        ? {
-            ...conversation,
-            ultimoMessaggioPreview: lastMessage?.contenuto ?? null,
-            ultimoMessaggioIl: lastMessage?.inviatoIl ?? null,
-          }
-        : conversation,
-    );
-
-    if (this.selectedConversation?.id === conversationId) {
-      this.selectedConversation = {
-        ...this.selectedConversation,
-        ultimoMessaggioPreview: lastMessage?.contenuto ?? null,
-        ultimoMessaggioIl: lastMessage?.inviatoIl ?? null,
-      };
+    if (!selected) {
+      return;
     }
+
+    const updatedSelected = conversations.find((conversation) => conversation.id === selected.id);
+
+    if (updatedSelected) {
+      this.selectedConversationSignal.set(updatedSelected);
+    }
+  }
+
+  private sortConversations(
+    conversations: ConversazioneChatResponseDto[],
+  ): ConversazioneChatResponseDto[] {
+    return [...conversations].sort(
+      (left, right) => this.getConversationTimestamp(right) - this.getConversationTimestamp(left),
+    );
+  }
+
+  private getConversationTimestamp(conversation: ConversazioneChatResponseDto): number {
+    const timestamp = conversation.ultimoMessaggioIl || conversation.creataIl;
+    const date = new Date(timestamp);
+
+    return Number.isNaN(date.getTime()) ? 0 : date.getTime();
   }
 
   private scrollMessagesToBottom(): void {
@@ -484,103 +483,9 @@ export class ChatPageComponent implements OnInit, OnDestroy {
     });
   }
 
-  private closeWebsocketSubscription(): void {
-    this.websocketSubscription?.unsubscribe();
-    this.websocketSubscription = undefined;
-  }
-
-  private syncConversationRealtimeSubscriptions(conversations: ConversazioneChatResponseDto[]): void {
-    if (!this.isCentroReadRole) {
-      return;
-    }
-
-    const visibleConversationIds = new Set(conversations.map((conversation) => conversation.id));
-
-    for (const [conversationId, subscription] of this.conversationRealtimeSubscriptions) {
-      if (!visibleConversationIds.has(conversationId)) {
-        subscription.unsubscribe();
-        this.conversationRealtimeSubscriptions.delete(conversationId);
-      }
-    }
-
-    conversations.forEach((conversation) => {
-      if (this.conversationRealtimeSubscriptions.has(conversation.id)) {
-        return;
-      }
-
-      const subscription = this.chatWebsocketService.listenToConversation(conversation.id).subscribe({
-        next: (message) => this.handleRealtimeMessage(message),
-        error: (error) => {
-          this.websocketError = error?.message ?? 'Connessione realtime non disponibile.';
-        },
-      });
-
-      this.conversationRealtimeSubscriptions.set(conversation.id, subscription);
-    });
-  }
-
-  private closeConversationRealtimeSubscriptions(): void {
-    this.conversationRealtimeSubscriptions.forEach((subscription) => subscription.unsubscribe());
-    this.conversationRealtimeSubscriptions.clear();
-  }
-
-  private handleRealtimeMessage(message: MessaggioChatResponseDto): void {
-    this.chatService.addMessageToCache(message);
-    this.updateConversationPreview(message);
-
-    if (message.conversazioneId !== this.selectedConversation?.id) {
-      return;
-    }
-
-    const temporaryMessage = this.findMatchingTemporaryMessage(message);
-
-    if (temporaryMessage) {
-      this.replaceTemporaryMessage(temporaryMessage.id, message);
-      this.chatService.replaceMessageInCache(message.conversazioneId, temporaryMessage.id, message);
-      return;
-    }
-
-    this.appendMessageIfMissing(message);
-  }
-
-  private findMatchingTemporaryMessage(message: MessaggioChatResponseDto): MessaggioChatResponseDto | null {
-    return (
-      this.messages.find(
-        (candidate) =>
-          candidate.id < 0 &&
-          candidate.mittenteId === message.mittenteId &&
-          candidate.contenuto === message.contenuto,
-      ) ?? null
-    );
-  }
-
-  private startConversationsAutoRefresh(): void {
-    this.conversationsRefreshSubscription?.unsubscribe();
-    this.conversationsRefreshSubscription = interval(5000).subscribe(() => this.refreshConversationsSilently());
-  }
-
-  private preloadConversationMessages(conversations: ConversazioneChatResponseDto[]): void {
-    this.chatService.preloadMessagesForConversations(conversations);
-  }
-
-  private updateSelectedConversation(conversations: ConversazioneChatResponseDto[]): void {
-    if (!this.selectedConversation) {
-      return;
-    }
-
-    const updatedSelected = conversations.find(
-      (conversation) => conversation.id === this.selectedConversation?.id,
-    );
-
-    if (updatedSelected) {
-      this.selectedConversation = updatedSelected;
-    }
-  }
-
-  private getConversationTimestamp(conversation: ConversazioneChatResponseDto): number {
-    const timestamp = conversation.ultimoMessaggioIl || conversation.creataIl;
-    const date = new Date(timestamp);
-    return Number.isNaN(date.getTime()) ? 0 : date.getTime();
+  private closeRealtimeSubscriptions(): void {
+    this.realtimeSubscriptions.forEach((subscription) => subscription.unsubscribe());
+    this.realtimeSubscriptions.clear();
   }
 
   private extractErrorMessage(error: any, fallbackMessage: string): string {

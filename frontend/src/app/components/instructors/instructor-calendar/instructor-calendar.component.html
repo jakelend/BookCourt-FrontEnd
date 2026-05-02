@@ -1,0 +1,95 @@
+<main class="instructor-calendar-page">
+  <section class="calendar-toolbar-card">
+    <div class="toolbar-title-block">
+      <span class="material-symbols-outlined toolbar-icon">calendar_month</span>
+      <div>
+        <p class="eyebrow">Calendario istruttore</p>
+        <h2>{{ selectedDateTitle }}</h2>
+        <p class="subtitle">{{ instructorName }}</p>
+      </div>
+    </div>
+
+    <div class="toolbar-actions">
+      <button type="button" class="day-nav-button" aria-label="Giorno precedente" (click)="goToPreviousDay()">
+        <span class="material-symbols-outlined">chevron_left</span>
+      </button>
+
+      <button type="button" class="today-button" (click)="goToToday()">
+        Oggi
+      </button>
+
+      <button type="button" class="day-nav-button" aria-label="Giorno successivo" (click)="goToNextDay()">
+        <span class="material-symbols-outlined">chevron_right</span>
+      </button>
+
+      <mat-form-field appearance="outline" class="date-picker-field">
+        <mat-label>Scegli giorno</mat-label>
+        <input
+          matInput
+          [matDatepicker]="picker"
+          [ngModel]="selectedDate"
+          (ngModelChange)="onDateSelected($event)"
+          readonly
+        />
+        <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
+        <mat-datepicker #picker></mat-datepicker>
+      </mat-form-field>
+    </div>
+  </section>
+
+  <section *ngIf="errorMessage" class="feedback-panel feedback-panel-error">
+    <div>
+      <strong>Errore caricamento calendario</strong>
+      <p>{{ errorMessage }}</p>
+    </div>
+
+    <button type="button" class="retry-button" (click)="retry()">Riprova</button>
+  </section>
+
+  <section class="calendar-shell" [class.loading-state]="loading">
+    <div *ngIf="loading" class="loading-overlay">
+      <mat-spinner diameter="42"></mat-spinner>
+      <p>Caricamento calendario...</p>
+    </div>
+
+    <div class="calendar-scroll-area">
+      <div class="time-column">
+        <div
+          *ngFor="let slot of hourSlots; trackBy: trackByHour"
+          class="time-label"
+          [style.top.%]="slot.topPct"
+        >
+          {{ slot.label }}
+        </div>
+      </div>
+
+      <div class="day-column">
+        <div
+          *ngFor="let slot of hourSlots; trackBy: trackByHour"
+          class="hour-line"
+          [style.top.%]="slot.topPct"
+        ></div>
+
+        <article
+          *ngFor="let event of events; trackBy: trackByEvent"
+          class="calendar-event"
+          [ngClass]="event.cssClass"
+          [style.top.%]="event.topPct"
+          [style.height.%]="event.heightPct"
+          [style.left.%]="event.leftPct"
+          [style.width.%]="event.widthPct"
+        >
+          <div class="event-main-row">
+            <span class="material-symbols-outlined event-icon">{{ event.icon }}</span>
+            <div class="event-content">
+              <h3>{{ event.source.titolo }}</h3>
+              <p class="event-time">{{ event.timeLabel }} · {{ event.durationLabel }}</p>
+              <p class="event-subtitle">{{ event.subtitle }}</p>
+              <p *ngIf="event.details" class="event-details">{{ event.details }}</p>
+            </div>
+          </div>
+        </article>
+      </div>
+    </div>
+  </section>
+</main>
