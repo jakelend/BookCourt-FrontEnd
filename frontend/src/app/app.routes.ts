@@ -9,9 +9,11 @@ import { CreateFieldComponent } from './components/fields/create-field/create-fi
 import { FieldsPageComponent } from './components/fields/fields-page/fields-page.component';
 import { ModifyFieldComponent } from './components/fields/modify-field/modify-field.component';
 import { CreateInstructorComponent } from './components/instructors/create-instructor/create-instructor.component';
+import { InstructorCalendarComponent } from './components/instructors/instructor-calendar/instructor-calendar.component';
 import { InstructorsPageComponent } from './components/instructors/instructors-page/instructors-page.component';
 import { ModifyInstructorComponent } from './components/instructors/modify-instructor/modify-instructor.component';
 import { CreateSecretaryComponent } from './components/secretaries/create-secretary/create-secretary.component';
+import { FieldMaintenanceComponent } from './components/secretaries/field-maintenance/field-maintenance.component';
 import { ModifySecretaryComponent } from './components/secretaries/modify-secretary/modify-secretary.component';
 import { SecretariesPageComponent } from './components/secretaries/secretaries-page/secretaries-page.component';
 import { SidebarHeaderComponent } from './components/sidebar-header/sidebar-header.component';
@@ -21,9 +23,6 @@ import { AuthGuard } from './guard/auth.guard';
 import { GuestGuard } from './guard/guest.guard';
 import { RoleGuard } from './guard/role.guard';
 import { Role } from './enumeration/role.enum';
-import { BookingSportSelectionComponent } from './components/booking/sport-selection/booking-sport-selection.component';
-import {BookingFieldSelectionComponent} from './components/booking/field-selection/booking-field-selection.component';
-
 
 export const routes: Routes = [
   {
@@ -32,6 +31,10 @@ export const routes: Routes = [
   },
   {
     path: 'intro',
+    component: IntroComponent,
+  },
+  {
+    path: 'preview',
     component: IntroComponent,
   },
   {
@@ -109,16 +112,16 @@ export const routes: Routes = [
         component: ChangePasswordComponent,
       },
       {
-        path: 'prenotazioni',
-        component: BookingSportSelectionComponent,
+        path: 'maintenance',
+        component: FieldMaintenanceComponent,
         canActivate: [RoleGuard],
-        data: { roles: [Role.CLIENTE] },
+        data: { roles: [Role.SEGRETARIA] },
       },
       {
-        path: 'prenotazioni/campi',
-        component: BookingFieldSelectionComponent,
+        path: 'instructor-calendar',
+        component: InstructorCalendarComponent,
         canActivate: [RoleGuard],
-        data: { roles: [Role.CLIENTE] },
+        data: { roles: [Role.ISTRUTTORE] },
       },
       {
         path: 'chat',
@@ -171,6 +174,14 @@ export const routes: Routes = [
   {
     path: 'chat',
     redirectTo: 'dashboard/chat',
+  },
+  {
+    path: 'maintenance',
+    redirectTo: 'dashboard/maintenance',
+  },
+  {
+    path: 'instructor-calendar',
+    redirectTo: 'dashboard/instructor-calendar',
   },
   {
     path: 'prenotazioni',

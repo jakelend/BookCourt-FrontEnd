@@ -29,13 +29,13 @@ export class SidebarHeaderComponent implements OnInit {
   readonly menuByRole: Record<Role, SidebarItem[]> = {
     [Role.SEGRETARIA]: [
       { label: 'Chat', icon: 'chat', key: 'chat', route: '/dashboard/chat' },
-      { label: 'Manutenzione', icon: 'engineering', key: 'maintenance' },
+      { label: 'Manutenzione', icon: 'engineering', key: 'maintenance', route: '/dashboard/maintenance' },
       { label: 'Calendario Istruttori', icon: 'calendar_today', key: 'instructor-calendar' },
       { label: 'Orari centro', icon: 'schedule', key: 'center-hours' },
     ],
 
     [Role.ISTRUTTORE]: [
-      { label: 'Calendario Istruttore', icon: 'calendar_month', key: 'instructor-calendar' },
+      { label: 'Calendario Istruttore', icon: 'calendar_month', key: 'instructor-calendar', route: '/dashboard/instructor-calendar' },
     ],
 
     [Role.CLIENTE]: [
