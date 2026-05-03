@@ -14,6 +14,7 @@ import { InstructorsPageComponent } from './components/instructors/instructors-p
 import { ModifyInstructorComponent } from './components/instructors/modify-instructor/modify-instructor.component';
 import { CreateSecretaryComponent } from './components/secretaries/create-secretary/create-secretary.component';
 import { FieldMaintenanceComponent } from './components/secretaries/field-maintenance/field-maintenance.component';
+import { InstructorCalendarExceptionsComponent } from './components/secretaries/instructor-calendar-exceptions/instructor-calendar-exceptions.component';
 import { ModifySecretaryComponent } from './components/secretaries/modify-secretary/modify-secretary.component';
 import { SecretariesPageComponent } from './components/secretaries/secretaries-page/secretaries-page.component';
 import { SidebarHeaderComponent } from './components/sidebar-header/sidebar-header.component';
@@ -124,6 +125,12 @@ export const routes: Routes = [
         data: { roles: [Role.ISTRUTTORE] },
       },
       {
+        path: 'secretary-instructor-calendar',
+        component: InstructorCalendarExceptionsComponent,
+        canActivate: [RoleGuard],
+        data: { roles: [Role.SEGRETARIA] },
+      },
+      {
         path: 'chat',
         component: ChatPageComponent,
         canActivate: [RoleGuard],
@@ -182,6 +189,10 @@ export const routes: Routes = [
   {
     path: 'instructor-calendar',
     redirectTo: 'dashboard/instructor-calendar',
+  },
+  {
+    path: 'secretary-instructor-calendar',
+    redirectTo: 'dashboard/secretary-instructor-calendar',
   },
   {
     path: 'prenotazioni',

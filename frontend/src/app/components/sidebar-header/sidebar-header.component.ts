@@ -30,7 +30,7 @@ export class SidebarHeaderComponent implements OnInit {
     [Role.SEGRETARIA]: [
       { label: 'Chat', icon: 'chat', key: 'chat', route: '/dashboard/chat' },
       { label: 'Manutenzione', icon: 'engineering', key: 'maintenance', route: '/dashboard/maintenance' },
-      { label: 'Calendario Istruttori', icon: 'calendar_today', key: 'instructor-calendar' },
+      { label: 'Calendario Istruttori', icon: 'calendar_today', key: 'instructor-calendar', route: '/dashboard/secretary-instructor-calendar' },
       { label: 'Orari centro', icon: 'schedule', key: 'center-hours' },
     ],
 
