@@ -11,6 +11,34 @@
     </button>
   </header>
 
+  <section *ngIf="!loading && !errorMessage && fields.length" class="list-controls" aria-label="Filtro disponibilità campi">
+    <span>Disponibilità</span>
+
+    <div class="availability-filter" role="group" aria-label="Filtra campi per disponibilità">
+      <button
+        type="button"
+        [class.active]="availabilityFilter === 'all'"
+        (click)="setAvailabilityFilter('all')"
+      >
+        Tutti
+      </button>
+      <button
+        type="button"
+        [class.active]="availabilityFilter === 'active'"
+        (click)="setAvailabilityFilter('active')"
+      >
+        Attivi
+      </button>
+      <button
+        type="button"
+        [class.active]="availabilityFilter === 'inactive'"
+        (click)="setAvailabilityFilter('inactive')"
+      >
+        Inattivi
+      </button>
+    </div>
+  </section>
+
   <section *ngIf="loading" class="feedback-panel" aria-live="polite">
     <span class="material-symbols-outlined">progress_activity</span>
     <span>Caricamento campi...</span>
@@ -37,9 +65,14 @@
     <span>Nessun campo presente.</span>
   </section>
 
-  <section *ngIf="!loading && !errorMessage && fields.length" class="instructors-grid" aria-label="Lista campi">
+  <section *ngIf="!loading && !errorMessage && fields.length && !filteredFields.length" class="feedback-panel" aria-live="polite">
+    <span class="material-symbols-outlined">filter_alt_off</span>
+    <span>Nessun campo corrisponde al filtro selezionato.</span>
+  </section>
+
+  <section *ngIf="!loading && !errorMessage && filteredFields.length" class="instructors-grid" aria-label="Lista campi">
     <app-field-card
-      *ngFor="let field of fields; trackBy: trackByFieldId"
+      *ngFor="let field of filteredFields; trackBy: trackByFieldId"
       [field]="field"
       [togglePending]="isToggling(field.id)"
       (editField)="modifyField($event)"

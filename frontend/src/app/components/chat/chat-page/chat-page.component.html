@@ -40,8 +40,6 @@
         [class.active]="selectedConversation?.id === conversation.id"
         (click)="openConversation(conversation)"
       >
-        <span class="avatar">{{ conversation.clienteNomeCompleto.charAt(0).toUpperCase() || 'C' }}</span>
-
         <span class="conversation-text">
           <strong>{{ conversation.clienteNomeCompleto || 'Cliente' }}</strong>
           <small>{{ conversation.clienteEmail }}</small>
@@ -58,11 +56,15 @@
       <ng-container *ngIf="selectedConversation; else noConversationSelected">
         <header class="chat-panel-header">
           <div>
-            <h3>{{ selectedConversation.interlocutoreDisplay }}</h3>
+            <h3>
+              {{
+                isCentroReadRole
+                  ? selectedConversation.clienteNomeCompleto || 'Cliente'
+                  : selectedConversation.interlocutoreDisplay
+              }}
+            </h3>
             <p *ngIf="isCliente">Centro sportivo BookCourt</p>
-            <p *ngIf="isCentroReadRole">
-              {{ selectedConversation.clienteNomeCompleto }} · {{ selectedConversation.clienteEmail }}
-            </p>
+            <p *ngIf="isCentroReadRole">{{ selectedConversation.clienteEmail }}</p>
           </div>
 
           <span *ngIf="isManager" class="readonly-badge">Solo lettura</span>
@@ -78,7 +80,7 @@
           <article
             *ngFor="let message of messages; trackBy: trackByMessageId"
             class="message-row"
-            [class.mine]="isMyMessage(message)"
+            [class.mine]="isOutgoingMessage(message)"
             [class.center-message]="shouldShowAsCenterMessage(message)"
           >
             <div class="message-bubble">
@@ -140,7 +142,6 @@
             Riprova
           </button>
         </div>
-
         <ng-template #centerNoConversationSelected>
           <div class="empty-state big">
             <span class="material-symbols-outlined">forum</span>

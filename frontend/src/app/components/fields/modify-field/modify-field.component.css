@@ -20,27 +20,3 @@
   height: 18px;
   accent-color: #2170e4;
 }
-
-
-.form-message {
-  min-height: 48px;
-  border-radius: 10px;
-  padding: 12px 14px;
-  font-size: 14px;
-  font-weight: 700;
-}
-
-.info-message {
-  background: #edf4ff;
-  color: #0058be;
-}
-
-.error-message {
-  background: rgba(186, 26, 26, 0.08);
-  color: #8f1515;
-}
-
-.success-message {
-  background: rgba(40, 167, 69, 0.12);
-  color: #1f7a35;
-}

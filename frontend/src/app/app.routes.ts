@@ -18,6 +18,7 @@ import { SecretariesPageComponent } from './components/secretaries/secretaries-p
 import { SidebarHeaderComponent } from './components/sidebar-header/sidebar-header.component';
 import { IntroComponent } from './components/intro/intro.component';
 import { ChatPageComponent } from './components/chat/chat-page/chat-page.component';
+import { FieldMaintenanceComponent } from './components/secretaries/field-maintenance/field-maintenance.component';
 import { AuthGuard } from './guard/auth.guard';
 import { GuestGuard } from './guard/guest.guard';
 import { RoleGuard } from './guard/role.guard';
@@ -118,6 +119,12 @@ export const routes: Routes = [
         canActivate: [RoleGuard],
         data: { roles: [Role.CLIENTE, Role.SEGRETARIA, Role.MANAGER] },
       },
+      {
+        path: 'maintenance',
+        component: FieldMaintenanceComponent,
+        canActivate: [RoleGuard],
+        data: { roles: [Role.SEGRETARIA] },
+      },
     ],
   },
   {
@@ -167,6 +174,10 @@ export const routes: Routes = [
   {
     path: 'chat',
     redirectTo: 'dashboard/chat',
+  },
+  {
+    path: 'maintenance',
+    redirectTo: 'dashboard/maintenance',
   },
   {
     path: '**',

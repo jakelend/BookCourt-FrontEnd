@@ -1,10 +1,31 @@
 import { CommonModule } from '@angular/common';
-import { Component, ElementRef, OnDestroy, ViewChild } from '@angular/core';
+import { Component, ElementRef, OnDestroy, signal, ViewChild } from '@angular/core';
 import { Router } from '@angular/router';
-import { EMPTY, Observable, of } from 'rxjs';
-import { catchError, finalize, switchMap, take, timeout } from 'rxjs/operators';
+import { of } from 'rxjs';
+import { catchError, finalize, switchMap } from 'rxjs/operators';
+
 import { ManagerCreateSecretaryRequestDto } from '../../../dto/request/manager/manager-create-secretary-request.dto';
 import { ManagerService } from '../../../services/manager.service';
+import { extractBackendErrorMessage, extractBackendFieldErrors, FieldErrors } from '../../../util/error-message.util';
+
+type FieldErrorKey =
+  | 'profilePhoto'
+  | 'nome'
+  | 'cognome'
+  | 'email'
+  | 'telefono'
+  | 'password'
+  | 'fotoProfiloUrl';
+
+const KNOWN_BACKEND_FIELDS: readonly FieldErrorKey[] = [
+  'profilePhoto',
+  'nome',
+  'cognome',
+  'email',
+  'telefono',
+  'password',
+  'fotoProfiloUrl',
+];
 
 @Component({
   selector: 'app-create-secretary',
@@ -15,13 +36,15 @@ import { ManagerService } from '../../../services/manager.service';
 export class CreateSecretaryComponent implements OnDestroy {
   @ViewChild('profilePhotoInput') private readonly profilePhotoInput?: ElementRef<HTMLInputElement>;
 
-  profilePhotoFile: File | null = null;
-  profilePhotoPreviewUrl = '';
-  profilePhotoError = '';
-  submitError = '';
-  submitSuccess = '';
-  isLoading = false;
-  showPassword = false;
+  readonly profilePhotoFile = signal<File | null>(null);
+  readonly profilePhotoPreviewUrl = signal('');
+
+  readonly showPassword = signal(false);
+
+  readonly isLoading = signal(false);
+  readonly submitError = signal('');
+  readonly submitSuccess = signal('');
+  readonly fieldErrors = signal<FieldErrors<FieldErrorKey>>({});
 
   constructor(
     private readonly router: Router,
@@ -31,14 +54,18 @@ export class CreateSecretaryComponent implements OnDestroy {
   createSecretary(event: SubmitEvent): void {
     event.preventDefault();
 
-    this.submitError = '';
-    this.submitSuccess = '';
-    this.profilePhotoError = '';
+    if (this.isLoading()) {
+      return;
+    }
+
+    this.submitError.set('');
+    this.submitSuccess.set('');
+    this.fieldErrors.set({});
 
     const form = event.target as HTMLFormElement | null;
 
     if (!form) {
-      this.submitError = 'Errore nel form. Riprova.';
+      this.submitError.set('Errore nel form. Riprova.');
       return;
     }
 
@@ -46,34 +73,19 @@ export class CreateSecretaryComponent implements OnDestroy {
 
     const nome = String(formData.get('nome') ?? '').trim();
     const cognome = String(formData.get('cognome') ?? '').trim();
-    const email = String(formData.get('email') ?? '')
-      .trim()
-      .toLowerCase();
+    const email = String(formData.get('email') ?? '').trim().toLowerCase();
     const telefono = String(formData.get('telefono') ?? '').trim();
     const password = String(formData.get('password') ?? '');
 
-    if (!nome || !cognome || !email || !telefono || !password) {
-      this.submitError = 'Compila tutti i campi obbligatori.';
-      return;
-    }
+    const isValid = this.validateForm({
+      nome,
+      cognome,
+      email,
+      telefono,
+      password,
+    });
 
-    if (!this.isValidEmail(email)) {
-      this.submitError = 'Inserisci un indirizzo email valido.';
-      return;
-    }
-
-    if (!/^[0-9]{10}$/.test(telefono)) {
-      this.submitError = 'Il telefono deve contenere esattamente 10 cifre.';
-      return;
-    }
-
-    if (password.length < 6 || password.length > 72) {
-      this.submitError = 'La password deve contenere tra 6 e 72 caratteri.';
-      return;
-    }
-
-    if (this.profilePhotoError) {
-      this.submitError = this.profilePhotoError;
+    if (!isValid) {
       return;
     }
 
@@ -85,67 +97,60 @@ export class CreateSecretaryComponent implements OnDestroy {
       password,
     };
 
-    this.isLoading = true;
+    this.isLoading.set(true);
 
-    this.loadSegreterieForDuplicateCheck()
+    this.managerService
+      .creaSegreteria(payload, this.profilePhotoFile())
       .pipe(
-        take(1),
-
-        /*
-         * Se il controllo preventivo fallisce, non blocchiamo la creazione:
-         * sarà comunque il backend a bloccare email/telefono duplicati con 409.
-         */
-        catchError(() => of([])),
-
-        switchMap((segretarie) => {
-          const emailDuplicata = segretarie.some(
-            (segretaria) =>
-              String(segretaria.email ?? '')
-                .trim()
-                .toLowerCase() === email,
-          );
-
-          if (emailDuplicata) {
-            this.submitError = 'Email già registrata. Inserisci un altro indirizzo email.';
-            return EMPTY;
-          }
-
-          const telefonoDuplicato = segretarie.some(
-            (segretaria) => String(segretaria.telefono ?? '').trim() === telefono,
-          );
-
-          if (telefonoDuplicato) {
-            this.submitError = 'Numero di telefono già registrato. Inserisci un altro numero.';
-            return EMPTY;
-          }
-
-          return this.managerService
-            .creaSegreteria(payload, this.profilePhotoFile)
-            .pipe(timeout(10000));
-        }),
-
+        switchMap(() =>
+          this.managerService.refreshSegreterie().pipe(
+            catchError(() => of([])),
+          ),
+        ),
         finalize(() => {
-          this.isLoading = false;
+          this.isLoading.set(false);
         }),
       )
       .subscribe({
         next: () => {
-          this.submitSuccess = 'Segretaria creata con successo.';
+          this.submitSuccess.set('Segretaria creata con successo.');
           this.clearProfilePhoto();
           form.reset();
 
-          setTimeout(() => {
-            void this.router.navigate(['/dashboard/secretaries']);
-          }, 300);
+          void this.router.navigate(['/dashboard/secretaries']);
         },
         error: (error) => {
-          this.submitError = this.extractErrorMessage(error, 'Impossibile creare la segretaria.');
+          const message = this.extractErrorMessage(error, 'Impossibile creare la segretaria.');
+
+          if (!this.applyBackendFieldErrors(error, message)) {
+            this.submitError.set(message);
+          }
         },
       });
   }
 
+  fieldError(fieldName: FieldErrorKey): string {
+    return this.fieldErrors()[fieldName] ?? '';
+  }
+
+  clearFieldError(fieldName: FieldErrorKey): void {
+    const currentErrors = { ...this.fieldErrors() };
+
+    delete currentErrors[fieldName];
+
+    if (fieldName === 'profilePhoto') {
+      delete currentErrors.fotoProfiloUrl;
+    }
+
+    this.fieldErrors.set(currentErrors);
+
+    if (Object.keys(currentErrors).length === 0) {
+      this.submitError.set('');
+    }
+  }
+
   togglePasswordVisibility(): void {
-    this.showPassword = !this.showPassword;
+    this.showPassword.update((currentValue) => !currentValue);
   }
 
   openProfilePhotoPicker(): void {
@@ -156,8 +161,7 @@ export class CreateSecretaryComponent implements OnDestroy {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0] ?? null;
 
-    this.profilePhotoError = '';
-    this.submitError = '';
+    this.clearFieldError('profilePhoto');
 
     if (!file) {
       return;
@@ -166,25 +170,27 @@ export class CreateSecretaryComponent implements OnDestroy {
     if (!['image/jpeg', 'image/png'].includes(file.type)) {
       this.clearProfilePhoto();
       input.value = '';
-      this.profilePhotoError = 'Carica un file JPG o PNG.';
+      this.setFieldError('profilePhoto', 'Carica un file JPG o PNG.');
       return;
     }
 
     if (file.size > 5 * 1024 * 1024) {
       this.clearProfilePhoto();
       input.value = '';
-      this.profilePhotoError = 'La foto non può superare 5MB.';
+      this.setFieldError('profilePhoto', 'La foto non può superare 5MB.');
       return;
     }
 
     this.revokeProfilePhotoPreview();
-    this.profilePhotoFile = file;
-    this.profilePhotoPreviewUrl = URL.createObjectURL(file);
+
+    this.profilePhotoFile.set(file);
+    this.profilePhotoPreviewUrl.set(URL.createObjectURL(file));
   }
 
   clearProfilePhoto(): void {
-    this.profilePhotoFile = null;
+    this.profilePhotoFile.set(null);
     this.revokeProfilePhotoPreview();
+    this.clearFieldError('profilePhoto');
 
     if (this.profilePhotoInput) {
       this.profilePhotoInput.nativeElement.value = '';
@@ -200,78 +206,107 @@ export class CreateSecretaryComponent implements OnDestroy {
     this.revokeProfilePhotoPreview();
   }
 
-  private loadSegreterieForDuplicateCheck(): Observable<
-    Array<{ email?: string; telefono?: string }>
-  > {
-    const serviceWithRefresh = this.managerService as ManagerService & {
-      refreshSegreterie?: () => Observable<Array<{ email?: string; telefono?: string }>>;
-    };
+  private validateForm(data: {
+    nome: string;
+    cognome: string;
+    email: string;
+    telefono: string;
+    password: string;
+  }): boolean {
+    const errors: FieldErrors<FieldErrorKey> = {};
 
-    if (typeof serviceWithRefresh.refreshSegreterie === 'function') {
-      return serviceWithRefresh.refreshSegreterie();
+    if (!data.nome) {
+      errors.nome = 'Il nome è obbligatorio.';
+    } else if (data.nome.length > 50) {
+      errors.nome = 'Il nome non può superare 50 caratteri.';
     }
 
-    return this.managerService.getSegreterie() as Observable<
-      Array<{ email?: string; telefono?: string }>
-    >;
+    if (!data.cognome) {
+      errors.cognome = 'Il cognome è obbligatorio.';
+    } else if (data.cognome.length > 50) {
+      errors.cognome = 'Il cognome non può superare 50 caratteri.';
+    }
+
+    if (!data.email) {
+      errors.email = "L'email è obbligatoria.";
+    } else if (!this.isValidEmail(data.email)) {
+      errors.email = 'Inserisci un indirizzo email valido.';
+    } else if (data.email.length > 255) {
+      errors.email = "L'email non può superare 255 caratteri.";
+    }
+
+    if (!data.telefono) {
+      errors.telefono = 'Il telefono è obbligatorio.';
+    } else if (!/^[0-9]{10}$/.test(data.telefono)) {
+      errors.telefono = 'Il telefono deve contenere esattamente 10 cifre.';
+    }
+
+    if (!data.password) {
+      errors.password = 'La password è obbligatoria.';
+    } else if (data.password.length < 6 || data.password.length > 72) {
+      errors.password = 'La password deve contenere tra 6 e 72 caratteri.';
+    }
+
+    this.fieldErrors.set(errors);
+
+    return Object.keys(errors).length === 0;
+  }
+
+  private setFieldError(fieldName: FieldErrorKey, message: string): void {
+    this.fieldErrors.update((currentErrors) => ({
+      ...currentErrors,
+      [fieldName]: message,
+    }));
+  }
+
+  private applyBackendFieldErrors(error: unknown, fallbackMessage: string): boolean {
+    const mappedErrors = extractBackendFieldErrors(error, KNOWN_BACKEND_FIELDS);
+    let hasFieldErrors = false;
+
+    if (Object.keys(mappedErrors).length > 0) {
+      this.fieldErrors.update((currentErrors) => ({
+        ...currentErrors,
+        ...mappedErrors,
+      }));
+      hasFieldErrors = true;
+    }
+
+    const normalizedMessage = fallbackMessage.toLowerCase();
+
+    if (normalizedMessage.includes('telefono')) {
+      this.setFieldError('telefono', fallbackMessage);
+      hasFieldErrors = true;
+    }
+
+    if (normalizedMessage.includes('email')) {
+      this.setFieldError('email', fallbackMessage);
+      hasFieldErrors = true;
+    }
+
+    if (normalizedMessage.includes('foto') || normalizedMessage.includes('immagine')) {
+      this.setFieldError('profilePhoto', fallbackMessage);
+      hasFieldErrors = true;
+    }
+
+    return hasFieldErrors;
+  }
+
+  private revokeProfilePhotoPreview(): void {
+    const previewUrl = this.profilePhotoPreviewUrl();
+
+    if (!previewUrl) {
+      return;
+    }
+
+    URL.revokeObjectURL(previewUrl);
+    this.profilePhotoPreviewUrl.set('');
   }
 
   private isValidEmail(email: string): boolean {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   }
 
-  private revokeProfilePhotoPreview(): void {
-    if (!this.profilePhotoPreviewUrl) {
-      return;
-    }
-
-    URL.revokeObjectURL(this.profilePhotoPreviewUrl);
-    this.profilePhotoPreviewUrl = '';
-  }
-
   private extractErrorMessage(error: unknown, fallback: string): string {
-    const maybeError = error as {
-      error?: {
-        message?: string;
-        fields?: Record<string, string>;
-        error?: string;
-      };
-      status?: number;
-      name?: string;
-    };
-
-    if (maybeError?.name === 'TimeoutError') {
-      return 'Richiesta scaduta: il backend non ha risposto. Controlla il terminale Spring Boot.';
-    }
-
-    if (maybeError?.error?.message) {
-      return maybeError.error.message;
-    }
-
-    if (maybeError?.error?.fields) {
-      return Object.values(maybeError.error.fields)[0] ?? fallback;
-    }
-
-    if (maybeError?.status === 409) {
-      return 'Email o numero di telefono già registrati.';
-    }
-
-    if (maybeError?.status === 400) {
-      return 'Dati non validi. Controlla i campi inseriti.';
-    }
-
-    if (maybeError?.status === 401) {
-      return 'Sessione scaduta. Effettua nuovamente il login.';
-    }
-
-    if (maybeError?.status === 403) {
-      return 'Non hai i permessi per creare una segretaria.';
-    }
-
-    if (maybeError?.status === 0) {
-      return 'Backend non raggiungibile. Controlla che Spring Boot sia avviato sulla porta 8080.';
-    }
-
-    return fallback;
+    return extractBackendErrorMessage(error, fallback);
   }
 }

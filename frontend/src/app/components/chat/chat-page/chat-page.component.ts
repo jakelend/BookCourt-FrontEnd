@@ -244,13 +244,21 @@ export class ChatPageComponent implements OnInit, OnDestroy {
     return message.mittenteId === this.currentUserId;
   }
 
+  isOutgoingMessage(message: MessaggioChatResponseDto): boolean {
+    if (this.isCentroReadRole) {
+      return message.inviatoDalCentro;
+    }
+
+    return this.isMyMessage(message);
+  }
+
   shouldShowAsCenterMessage(message: MessaggioChatResponseDto): boolean {
     return this.isCliente && message.inviatoDalCentro;
   }
 
   getMessageAuthor(message: MessaggioChatResponseDto): string {
     if (this.shouldShowAsCenterMessage(message)) {
-      return 'Centro sportivo BookCourt';
+      return 'BookCourt';
     }
 
     if (this.isCentroReadRole && message.inviatoDalCentro) {
@@ -301,7 +309,7 @@ export class ChatPageComponent implements OnInit, OnDestroy {
     this.errorMessage = '';
 
     this.chatService
-      .getMessaggi(conversationId)
+      .refreshMessaggi(conversationId)
       .pipe(finalize(() => (this.loadingMessages = false)))
       .subscribe({
         next: (messages) => {
@@ -381,6 +389,7 @@ export class ChatPageComponent implements OnInit, OnDestroy {
 
   private handleRealtimeMessage(message: MessaggioChatResponseDto): void {
     this.websocketError = '';
+    this.chatService.addMessageToCache(message);
     this.updateConversationPreview(message);
 
     if (message.conversazioneId !== this.selectedConversation?.id) {

@@ -65,6 +65,50 @@
   font-size: 19px;
 }
 
+.list-controls {
+  margin: -12px 0 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.list-controls > span {
+  color: #45464d;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.availability-filter {
+  border: 1px solid #d9dde3;
+  border-radius: 8px;
+  padding: 3px;
+  background: #ffffff;
+  display: inline-flex;
+  gap: 3px;
+}
+
+.availability-filter button {
+  min-height: 34px;
+  border: 0;
+  border-radius: 6px;
+  padding: 0 12px;
+  background: transparent;
+  color: #5f6472;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.availability-filter button:hover {
+  background: #f2f4f6;
+  color: #191c1e;
+}
+
+.availability-filter button.active {
+  background: #2170e4;
+  color: #ffffff;
+}
+
 .instructors-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -89,6 +133,19 @@
 
   .add-instructor-button {
     justify-content: center;
+  }
+
+  .list-controls {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .availability-filter {
+    width: 100%;
+  }
+
+  .availability-filter button {
+    flex: 1;
   }
 
   .instructors-grid {

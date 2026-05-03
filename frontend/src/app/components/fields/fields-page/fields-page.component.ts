@@ -1,4 +1,5 @@
 import { CommonModule } from '@angular/common';
+import { extractBackendErrorMessage } from '../../../util/error-message.util';
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { Subscription } from 'rxjs';
@@ -6,6 +7,8 @@ import { finalize } from 'rxjs/operators';
 import { ManagerFieldResponseDto } from '../../../dto/response/manager/manager-field-response.dto';
 import { ManagerService } from '../../../services/manager.service';
 import { FieldCardComponent, FieldToggleEvent } from '../field-card/field-card.component';
+
+type AvailabilityFilter = 'all' | 'active' | 'inactive';
 
 @Component({
   selector: 'app-fields-page',
@@ -15,6 +18,7 @@ import { FieldCardComponent, FieldToggleEvent } from '../field-card/field-card.c
 })
 export class FieldsPageComponent implements OnInit, OnDestroy {
   fields: ManagerFieldResponseDto[] = [];
+  availabilityFilter: AvailabilityFilter = 'all';
   loading = true;
   errorMessage = '';
   toggleError = '';
@@ -40,6 +44,14 @@ export class FieldsPageComponent implements OnInit, OnDestroy {
 
   modifyField(field: ManagerFieldResponseDto): void {
     void this.router.navigate(['/dashboard/fields/modify', field.id]);
+  }
+
+  get filteredFields(): ManagerFieldResponseDto[] {
+    return this.fields.filter((field) => this.matchesAvailabilityFilter(field.attivo));
+  }
+
+  setAvailabilityFilter(filter: AvailabilityFilter): void {
+    this.availabilityFilter = filter;
   }
 
   onToggleField(event: FieldToggleEvent): void {
@@ -85,6 +97,18 @@ export class FieldsPageComponent implements OnInit, OnDestroy {
     this.loadFields();
   }
 
+  private matchesAvailabilityFilter(active: boolean): boolean {
+    if (this.availabilityFilter === 'active') {
+      return active;
+    }
+
+    if (this.availabilityFilter === 'inactive') {
+      return !active;
+    }
+
+    return true;
+  }
+
   private loadFields(): void {
     this.loading = true;
     this.errorMessage = '';
@@ -114,20 +138,6 @@ export class FieldsPageComponent implements OnInit, OnDestroy {
   }
 
   private extractErrorMessage(error: unknown, fallback: string): string {
-    const maybeError = error as { error?: { message?: string; fields?: Record<string, string> }; status?: number };
-
-    if (maybeError?.error?.message) {
-      return maybeError.error.message;
-    }
-
-    if (maybeError?.error?.fields) {
-      return Object.values(maybeError.error.fields)[0] ?? fallback;
-    }
-
-    if (maybeError?.status === 0) {
-      return 'Backend non raggiungibile. Controlla che Spring Boot sia avviato sulla porta 8080.';
-    }
-
-    return fallback;
+    return extractBackendErrorMessage(error, fallback);
   }
 }

@@ -6,20 +6,22 @@
       <p>Aggiorna dati sportivi, tariffa oraria, stato e immagini del campo.</p>
     </header>
 
-    <section *ngIf="loading" class="form-message info-message">Caricamento dati campo...</section>
+    <section *ngIf="loading()" class="form-message info-message">
+      Caricamento dati campo...
+    </section>
 
-    <form *ngIf="!loading" class="instructor-form" (submit)="modifyField($event)">
+    <form *ngIf="!loading()" class="instructor-form" novalidate (submit)="modifyField($event)">
       <section class="images-upload-section" aria-label="Immagini campo">
         <div class="images-header">
           <div>
             <h2>Immagini campo</h2>
-            <p>{{ imagePreviews.length }}/{{ maxImages }} immagini caricate</p>
+            <p>{{ imagePreviews().length }}/{{ maxImages }} immagini caricate</p>
           </div>
 
           <button
             type="button"
             class="secondary-action"
-            [disabled]="imagePreviews.length >= maxImages"
+            [disabled]="imagePreviews().length >= maxImages"
             (click)="openImagesPicker()"
           >
             Aggiungi immagini
@@ -35,12 +37,13 @@
           (change)="onImagesSelected($event)"
         />
 
-        <div class="images-grid" *ngIf="imagePreviews.length; else emptyImages">
+        <div class="images-grid" *ngIf="imagePreviews().length; else emptyImages">
           <figure
-            *ngFor="let preview of imagePreviews; let index = index; trackBy: trackByImageUrl"
+            *ngFor="let preview of imagePreviews(); let index = index; trackBy: trackByImageUrl"
             class="image-preview"
           >
             <img [src]="preview.url" [alt]="'Immagine campo ' + (index + 1)" />
+
             <button type="button" aria-label="Rimuovi immagine" (click)="removeImage(index)">
               <span class="material-symbols-outlined">close</span>
             </button>
@@ -48,43 +51,82 @@
         </div>
 
         <ng-template #emptyImages>
-          <button type="button" class="empty-images-button" (click)="openImagesPicker()">
+          <button
+            type="button"
+            class="empty-images-button"
+            [class.invalid]="fieldError('images')"
+            (click)="openImagesPicker()"
+          >
             <span class="material-symbols-outlined">add_photo_alternate</span>
             <span>Carica fino a 6 immagini</span>
           </button>
         </ng-template>
 
-        <p *ngIf="imagesError" class="upload-error">
-          {{ imagesError }}
+        <p *ngIf="fieldError('images')" class="upload-error">
+          {{ fieldError('images') }}
         </p>
       </section>
 
       <section class="form-grid" aria-label="Dati campo">
         <label class="form-field">
           <span>Nome campo</span>
-          <input type="text" name="name" [(ngModel)]="field.name" />
+
+          <input
+            type="text"
+            name="name"
+            maxlength="100"
+            required
+            [(ngModel)]="field.name"
+            [class.invalid]="fieldError('nome')"
+            [attr.aria-invalid]="fieldError('nome') ? 'true' : 'false'"
+            (input)="clearFieldError('nome')"
+          />
+
+          <small *ngIf="fieldError('nome')" class="field-error">
+            {{ fieldError('nome') }}
+          </small>
         </label>
 
         <label class="form-field">
           <span>Tipo sport</span>
-          <select name="sportType" [(ngModel)]="field.sportType">
+
+          <select
+            name="sportType"
+            required
+            [(ngModel)]="field.sportType"
+            [class.invalid]="fieldError('sport')"
+            [attr.aria-invalid]="fieldError('sport') ? 'true' : 'false'"
+            (change)="clearFieldError('sport')"
+          >
             <option *ngFor="let sportType of sportTypes" [value]="sportType">
               {{ sportType }}
             </option>
           </select>
+
+          <small *ngIf="fieldError('sport')" class="field-error">
+            {{ fieldError('sport') }}
+          </small>
         </label>
 
         <label class="form-field">
           <span>Tariffa oraria</span>
+
           <input
             type="number"
             name="hourlyRate"
             min="0"
+            required
             step="0.01"
             [(ngModel)]="field.hourlyRate"
+            [class.invalid]="fieldError('costoOrario')"
+            [attr.aria-invalid]="fieldError('costoOrario') ? 'true' : 'false'"
             (keydown)="preventNegativeValue($event)"
-            (input)="normalizeHourlyRate($event)"
+            (input)="normalizeHourlyRate($event); clearFieldError('costoOrario')"
           />
+
+          <small *ngIf="fieldError('costoOrario')" class="field-error">
+            {{ fieldError('costoOrario') }}
+          </small>
         </label>
 
         <label class="field-active-control">
@@ -93,13 +135,30 @@
         </label>
       </section>
 
-      <div *ngIf="submitError" class="form-message error-message">{{ submitError }}</div>
-      <div *ngIf="submitSuccess" class="form-message success-message">{{ submitSuccess }}</div>
+      <div *ngIf="submitError()" class="form-message error-message">
+        {{ submitError() }}
+      </div>
+
+      <div *ngIf="submitSuccess()" class="form-message success-message">
+        {{ submitSuccess() }}
+      </div>
 
       <div class="form-actions">
-        <button type="button" class="secondary-action" (click)="cancel()">Annulla</button>
-        <button type="submit" class="primary-action" [disabled]="isSaving">
-          {{ isSaving ? 'Salvataggio...' : 'Salva modifiche' }}
+        <button
+          type="button"
+          class="secondary-action"
+          [disabled]="isSaving()"
+          (click)="cancel()"
+        >
+          Annulla
+        </button>
+
+        <button
+          type="submit"
+          class="primary-action"
+          [disabled]="isSaving()"
+        >
+          {{ isSaving() ? 'Salvataggio...' : 'Salva modifiche' }}
         </button>
       </div>
     </form>

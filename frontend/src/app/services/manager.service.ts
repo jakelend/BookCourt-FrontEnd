@@ -144,10 +144,13 @@ export class ManagerService {
       .pipe(map((response) => response.immagini ?? []));
   }
 
-  creaIstruttore(data: ManagerCreateInstructorRequestDto, foto: File | null): Observable<string> {
+  creaIstruttore(
+    data: ManagerCreateInstructorRequestDto,
+    foto: File | null,
+  ): Observable<ManagerInstructorResponseDto> {
     const formData = this.buildSinglePhotoFormData(data, foto);
     return this.http
-      .post(`${this.managerApiUrl}/crea/istruttori`, formData, { responseType: 'text' })
+      .post<ManagerInstructorResponseDto>(`${this.managerApiUrl}/crea/istruttori`, formData)
       .pipe(tap(() => this.clearInstructorsCache()));
   }
 
@@ -181,10 +184,13 @@ export class ManagerService {
       );
   }
 
-  creaSegreteria(data: ManagerCreateSecretaryRequestDto, foto: File | null): Observable<string> {
+  creaSegreteria(
+    data: ManagerCreateSecretaryRequestDto,
+    foto: File | null,
+  ): Observable<ManagerSecretaryResponseDto> {
     const formData = this.buildSinglePhotoFormData(data, foto);
     return this.http
-      .post(`${this.managerApiUrl}/crea/segreterie`, formData, { responseType: 'text' })
+      .post<ManagerSecretaryResponseDto>(`${this.managerApiUrl}/crea/segreterie`, formData)
       .pipe(tap(() => this.clearSecretariesCache()));
   }
 
@@ -230,7 +236,7 @@ export class ManagerService {
       .pipe(tap(() => this.updateCachedUserActiveState(idUtente, true)));
   }
 
-  creaCampo(data: ManagerCreateFieldRequestDto, immagini: File[]): Observable<string> {
+  creaCampo(data: ManagerCreateFieldRequestDto, immagini: File[]): Observable<ManagerFieldResponseDto> {
     const formData = new FormData();
     formData.append('data', new Blob([JSON.stringify(data)], { type: 'application/json' }));
 
@@ -239,8 +245,11 @@ export class ManagerService {
     });
 
     return this.http
-      .post(`${this.managerApiUrl}/crea/campi`, formData, { responseType: 'text' })
-      .pipe(tap(() => this.clearFieldsCache()));
+      .post<WrappedFieldResponse>(`${this.managerApiUrl}/crea/campi`, formData)
+      .pipe(
+        map((response) => response.campo),
+        tap(() => this.clearFieldsCache()),
+      );
   }
 
   refreshCampi(): Observable<ManagerFieldResponseDto[]> {

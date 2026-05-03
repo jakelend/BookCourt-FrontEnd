@@ -1,4 +1,5 @@
 import { CommonModule } from '@angular/common';
+import { extractBackendErrorMessage } from '../../../util/error-message.util';
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { Subscription } from 'rxjs';
@@ -6,6 +7,8 @@ import { finalize } from 'rxjs/operators';
 import { ManagerSecretaryResponseDto } from '../../../dto/response/manager/manager-secretary-response.dto';
 import { ManagerService } from '../../../services/manager.service';
 import { SecretaryCardComponent, SecretaryToggleEvent } from '../secretary-card/secretary-card.component';
+
+type AvailabilityFilter = 'all' | 'active' | 'inactive';
 
 @Component({
   selector: 'app-secretaries-page',
@@ -15,6 +18,7 @@ import { SecretaryCardComponent, SecretaryToggleEvent } from '../secretary-card/
 })
 export class SecretariesPageComponent implements OnInit, OnDestroy {
   secretaries: ManagerSecretaryResponseDto[] = [];
+  availabilityFilter: AvailabilityFilter = 'all';
   loading = true;
   errorMessage = '';
   toggleError = '';
@@ -40,6 +44,14 @@ export class SecretariesPageComponent implements OnInit, OnDestroy {
 
   modifySecretary(secretary: ManagerSecretaryResponseDto): void {
     void this.router.navigate(['/dashboard/secretaries/modify', secretary.id]);
+  }
+
+  get filteredSecretaries(): ManagerSecretaryResponseDto[] {
+    return this.secretaries.filter((secretary) => this.matchesAvailabilityFilter(secretary.attivo));
+  }
+
+  setAvailabilityFilter(filter: AvailabilityFilter): void {
+    this.availabilityFilter = filter;
   }
 
   onToggleSecretary(event: SecretaryToggleEvent): void {
@@ -85,6 +97,18 @@ export class SecretariesPageComponent implements OnInit, OnDestroy {
     this.loadSecretaries();
   }
 
+  private matchesAvailabilityFilter(active: boolean): boolean {
+    if (this.availabilityFilter === 'active') {
+      return active;
+    }
+
+    if (this.availabilityFilter === 'inactive') {
+      return !active;
+    }
+
+    return true;
+  }
+
   private loadSecretaries(): void {
     this.loading = true;
     this.errorMessage = '';
@@ -114,20 +138,6 @@ export class SecretariesPageComponent implements OnInit, OnDestroy {
   }
 
   private extractErrorMessage(error: unknown, fallback: string): string {
-    const maybeError = error as { error?: { message?: string; fields?: Record<string, string> }; status?: number };
-
-    if (maybeError?.error?.message) {
-      return maybeError.error.message;
-    }
-
-    if (maybeError?.error?.fields) {
-      return Object.values(maybeError.error.fields)[0] ?? fallback;
-    }
-
-    if (maybeError?.status === 0) {
-      return 'Backend non raggiungibile. Controlla che Spring Boot sia avviato sulla porta 8080.';
-    }
-
-    return fallback;
+    return extractBackendErrorMessage(error, fallback);
   }
 }

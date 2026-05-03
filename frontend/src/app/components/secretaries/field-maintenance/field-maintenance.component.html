@@ -1,0 +1,258 @@
+<main class="maintenance-page">
+  <section class="wizard-card">
+    <div class="section-heading">
+      <span class="step-badge">1</span>
+      <div>
+        <h2>Scegli lo sport</h2>
+      </div>
+    </div>
+
+    <div class="sport-grid" role="group" aria-label="Selezione sport">
+      <button
+        *ngFor="let sport of sports; trackBy: trackBySport"
+        type="button"
+        class="sport-card"
+        [class.active]="isSportSelected(sport.value)"
+        (click)="selectSport(sport.value)"
+      >
+        <span class="material-symbols-outlined">{{ sport.icon }}</span>
+        <strong>{{ sport.label }}</strong>
+      </button>
+    </div>
+  </section>
+
+  <section class="wizard-card" [class.disabled-card]="!selectedSport()">
+    <div class="section-heading">
+      <span class="step-badge">2</span>
+      <div>
+        <h2>Scegli il campo</h2>
+        <p *ngIf="selectedSport()">Campi disponibili per {{ selectedSportLabel() }}.</p>
+        <p *ngIf="!selectedSport()">Seleziona prima uno sport.</p>
+      </div>
+    </div>
+
+    <div *ngIf="loadingFields()" class="inline-feedback">
+      <span class="material-symbols-outlined rotating">progress_activity</span>
+      <span>Caricamento campi...</span>
+    </div>
+
+    <div *ngIf="!loadingFields() && fieldsErrorMessage()" class="inline-feedback error-feedback">
+      <div>
+        <strong>Errore caricamento campi</strong>
+        <p>{{ fieldsErrorMessage() }}</p>
+      </div>
+      <button type="button" class="text-button" (click)="retryFields()">Riprova</button>
+    </div>
+
+    <div *ngIf="selectedSport() && !loadingFields() && !fieldsErrorMessage() && !fields().length" class="inline-feedback">
+      <span class="material-symbols-outlined">stadium</span>
+      <span>Nessun campo attivo trovato per questo sport.</span>
+    </div>
+
+    <div *ngIf="!loadingFields() && fields().length" class="field-grid" role="group" aria-label="Selezione campo">
+      <button
+        *ngFor="let field of fields(); trackBy: trackByField"
+        type="button"
+        class="field-card"
+        [class.active]="isFieldSelected(field)"
+        (click)="selectField(field)"
+      >
+        <span class="field-icon material-symbols-outlined">stadium</span>
+        <span class="field-content">
+          <strong>{{ field.nome }}</strong>
+          <small>{{ formatCurrency(field.costoOrario) }} / ora</small>
+        </span>
+        <span *ngIf="isFieldSelected(field)" class="selected-check material-symbols-outlined">check_circle</span>
+      </button>
+    </div>
+  </section>
+
+  <section class="maintenance-workspace" [class.disabled-card]="!selectedFieldId()">
+    <div class="calendar-column">
+      <section class="calendar-toolbar-card">
+        <div class="toolbar-title-block">
+          <span class="material-symbols-outlined toolbar-icon">calendar_month</span>
+          <div>
+            <h2>{{ selectedDateTitle() }}</h2>
+          </div>
+        </div>
+
+        <div class="toolbar-actions">
+          <button type="button" class="day-nav-button" aria-label="Giorno precedente" (click)="goToPreviousDay()">
+            <span class="material-symbols-outlined">chevron_left</span>
+          </button>
+
+          <button type="button" class="today-button" (click)="goToToday()">Oggi</button>
+
+          <button type="button" class="day-nav-button" aria-label="Giorno successivo" (click)="goToNextDay()">
+            <span class="material-symbols-outlined">chevron_right</span>
+          </button>
+
+          <mat-form-field appearance="outline" class="date-picker-field">
+            <mat-label>Scegli giorno</mat-label>
+            <input
+              matInput
+              [matDatepicker]="picker"
+              [ngModel]="selectedDateValue()"
+              (ngModelChange)="onDateSelected($event)"
+              readonly
+            />
+            <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
+            <mat-datepicker #picker></mat-datepicker>
+          </mat-form-field>
+        </div>
+      </section>
+
+      <section *ngIf="maintenancesErrorMessage()" class="inline-feedback error-feedback">
+        <div>
+          <strong>Errore caricamento manutenzioni</strong>
+          <p>{{ maintenancesErrorMessage() }}</p>
+        </div>
+        <button type="button" class="text-button" (click)="retryMaintenances()">Riprova</button>
+      </section>
+
+      <section class="calendar-shell" [class.loading-state]="loadingMaintenances()">
+        <div *ngIf="loadingMaintenances()" class="loading-overlay">
+          <span class="material-symbols-outlined rotating">progress_activity</span>
+          <p>Caricamento manutenzioni...</p>
+        </div>
+
+        <div class="calendar-scroll-area">
+          <div class="time-column">
+            <div
+              *ngFor="let slot of hourSlots(); trackBy: trackByHour"
+              class="time-label"
+              [style.top.%]="slot.topPct"
+            >
+              {{ slot.label }}
+            </div>
+          </div>
+
+          <div class="day-column">
+            <div
+              *ngFor="let slot of hourSlots(); trackBy: trackByHour"
+              class="hour-line"
+              [style.top.%]="slot.topPct"
+            ></div>
+
+            <article
+              *ngFor="let event of eventViews(); trackBy: trackByEvent"
+              class="calendar-event maintenance-event"
+              [style.top.%]="event.topPct"
+              [style.height.%]="event.heightPct"
+            >
+              <div class="event-main-row">
+                <span class="material-symbols-outlined event-icon">construction</span>
+                <div class="event-content">
+                  <h3>{{ event.title }}</h3>
+                  <p class="event-time">{{ event.timeLabel }}</p>
+                </div>
+              </div>
+            </article>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <aside class="side-panel">
+      <section class="form-card">
+        <div class="section-heading compact">
+          <span class="step-badge">3</span>
+          <div>
+            <h2>Inserisci manutenzione</h2>
+            <p>Puoi impostare una singola giornata oppure un periodo tra più giorni.</p>
+          </div>
+        </div>
+
+        <div *ngIf="formErrorMessage()" class="form-alert error-feedback">
+          {{ formErrorMessage() }}
+        </div>
+
+        <div *ngIf="feedbackMessage()" class="form-alert" [class.success-feedback]="feedbackType() === 'success'" [class.error-feedback]="feedbackType() === 'error'">
+          {{ feedbackMessage() }}
+        </div>
+
+        <form class="maintenance-form" (ngSubmit)="createMaintenance()">
+          <div class="form-grid two-columns">
+            <label>
+              <span>Data inizio</span>
+              <input type="date" name="startDate" [ngModel]="startDate()" (ngModelChange)="setStartDate($event)" [disabled]="!selectedFieldId() || saving()" />
+            </label>
+
+            <label>
+              <span>Ora inizio</span>
+              <input type="time" name="startTime" [ngModel]="startTime()" (ngModelChange)="setStartTime($event)" [disabled]="!selectedFieldId() || saving()" />
+            </label>
+
+            <label>
+              <span>Data fine</span>
+              <input type="date" name="endDate" [ngModel]="endDate()" (ngModelChange)="setEndDate($event)" [disabled]="!selectedFieldId() || saving()" />
+            </label>
+
+            <label>
+              <span>Ora fine</span>
+              <input type="time" name="endTime" [ngModel]="endTime()" (ngModelChange)="setEndTime($event)" [disabled]="!selectedFieldId() || saving()" />
+            </label>
+          </div>
+
+          <label>
+            <span>Motivo</span>
+            <textarea
+              name="reason"
+              rows="3"
+              maxlength="255"
+              placeholder="Esempio: sostituzione rete, sistemazione illuminazione..."
+              [ngModel]="reason()"
+              (ngModelChange)="setReason($event)"
+              [disabled]="!selectedFieldId() || saving()"
+            ></textarea>
+          </label>
+
+          <button type="submit" class="primary-button" [disabled]="!canCreateMaintenance()">
+            <span class="material-symbols-outlined">add</span>
+            <span>{{ saving() ? 'Inserimento...' : 'Inserisci manutenzione' }}</span>
+          </button>
+        </form>
+      </section>
+
+      <section class="form-card maintenance-list-card">
+        <div class="section-heading compact">
+          <span class="step-badge muted">4</span>
+          <div>
+            <h2>Elimina manutenzione</h2>
+            <p>Lista delle manutenzioni del giorno selezionato.</p>
+          </div>
+        </div>
+
+        <div *ngIf="!selectedFieldId()" class="inline-feedback compact-feedback">
+          <span class="material-symbols-outlined">touch_app</span>
+          <span>Seleziona prima un campo.</span>
+        </div>
+
+        <div *ngIf="selectedFieldId() && !loadingMaintenances() && !maintenances().length" class="inline-feedback compact-feedback">
+          <span class="material-symbols-outlined">event_busy</span>
+          <span>Nessuna manutenzione eliminabile per questo giorno.</span>
+        </div>
+
+        <div *ngIf="maintenances().length" class="maintenance-list">
+          <article *ngFor="let maintenance of maintenances(); trackBy: trackByMaintenance" class="maintenance-list-item">
+            <div>
+              <strong>{{ maintenance.motivo || 'Manutenzione campo' }}</strong>
+              <p>{{ formatMaintenanceRange(maintenance) }}</p>
+            </div>
+
+            <button
+              type="button"
+              class="delete-button"
+              [disabled]="isDeleting(maintenance.id)"
+              (click)="deleteMaintenance(maintenance)"
+            >
+              <span class="material-symbols-outlined">delete</span>
+              <span>{{ isDeleting(maintenance.id) ? 'Elimino...' : 'Elimina' }}</span>
+            </button>
+          </article>
+        </div>
+      </section>
+    </aside>
+  </section>
+</main>

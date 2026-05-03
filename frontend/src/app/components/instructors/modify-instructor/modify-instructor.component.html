@@ -6,9 +6,9 @@
       <p>Aggiorna dati profilo e tariffe professionali.</p>
     </header>
 
-    <section *ngIf="loading" class="form-message info-message">Caricamento dati istruttore...</section>
+    <section *ngIf="loading()" class="form-message info-message">Caricamento dati istruttore...</section>
 
-    <form *ngIf="!loading" class="instructor-form" (submit)="modifyInstructor($event)">
+    <form *ngIf="!loading()" class="instructor-form" novalidate (submit)="modifyInstructor($event)">
       <section class="profile-upload-section" aria-label="Foto profilo">
         <input
           #profilePhotoInput
@@ -22,11 +22,12 @@
           type="button"
           class="photo-upload-button"
           aria-label="Carica foto profilo"
+          [class.invalid]="fieldError('profilePhoto')"
           (click)="openProfilePhotoPicker()"
         >
           <img
-            *ngIf="profilePhotoPreviewUrl; else uploadIcon"
-            [src]="profilePhotoPreviewUrl"
+            *ngIf="profilePhotoPreviewUrl(); else uploadIcon"
+            [src]="profilePhotoPreviewUrl()"
             alt="Anteprima foto profilo"
           />
 
@@ -37,18 +38,22 @@
 
         <div>
           <h2>Foto profilo</h2>
+
           <button
-            *ngIf="profilePhotoFile"
+            *ngIf="profilePhotoFile()"
             type="button"
             class="text-action text-action-danger"
             (click)="clearProfilePhoto()"
-          >Ripristina foto
+          >
+            Ripristina foto
           </button>
-          <p *ngIf="profilePhotoFile" class="upload-file-name">
-            {{ profilePhotoFile.name }}
+
+          <p *ngIf="profilePhotoFile()" class="upload-file-name">
+            {{ profilePhotoFile()?.name }}
           </p>
-          <p *ngIf="profilePhotoError" class="upload-error">
-            {{ profilePhotoError }}
+
+          <p *ngIf="fieldError('profilePhoto')" class="upload-error">
+            {{ fieldError('profilePhoto') }}
           </p>
         </div>
       </section>
@@ -56,87 +61,170 @@
       <section class="form-grid" aria-label="Dati istruttore">
         <label class="form-field">
           <span>Nome</span>
-          <input type="text" name="nome" [(ngModel)]="instructor.nome" />
+
+          <input
+            type="text"
+            name="nome"
+            maxlength="50"
+            required
+            [(ngModel)]="instructor.nome"
+            [class.invalid]="fieldError('nome')"
+            [attr.aria-invalid]="fieldError('nome') ? 'true' : 'false'"
+            (input)="clearFieldError('nome')"
+          />
+
+          <small *ngIf="fieldError('nome')" class="field-error">
+            {{ fieldError('nome') }}
+          </small>
         </label>
 
         <label class="form-field">
           <span>Cognome</span>
-          <input type="text" name="cognome" [(ngModel)]="instructor.cognome" />
+
+          <input
+            type="text"
+            name="cognome"
+            maxlength="50"
+            required
+            [(ngModel)]="instructor.cognome"
+            [class.invalid]="fieldError('cognome')"
+            [attr.aria-invalid]="fieldError('cognome') ? 'true' : 'false'"
+            (input)="clearFieldError('cognome')"
+          />
+
+          <small *ngIf="fieldError('cognome')" class="field-error">
+            {{ fieldError('cognome') }}
+          </small>
         </label>
 
         <label class="form-field">
           <span>Email</span>
-          <input type="email" name="email" [(ngModel)]="instructor.email" />
+
+          <input
+            type="email"
+            name="email"
+            maxlength="255"
+            required
+            [(ngModel)]="instructor.email"
+            [class.invalid]="fieldError('email')"
+            [attr.aria-invalid]="fieldError('email') ? 'true' : 'false'"
+            (input)="clearFieldError('email')"
+          />
+
+          <small *ngIf="fieldError('email')" class="field-error">
+            {{ fieldError('email') }}
+          </small>
         </label>
 
         <label class="form-field">
           <span>Telefono</span>
-          <input type="tel" name="telefono" [(ngModel)]="instructor.telefono" />
-        </label>
 
+          <input
+            type="tel"
+            name="telefono"
+            inputmode="numeric"
+            minlength="10"
+            maxlength="10"
+            pattern="[0-9]{10}"
+            required
+            [(ngModel)]="instructor.telefono"
+            [class.invalid]="fieldError('telefono')"
+            [attr.aria-invalid]="fieldError('telefono') ? 'true' : 'false'"
+            (input)="clearFieldError('telefono')"
+          />
+
+          <small *ngIf="fieldError('telefono')" class="field-error">
+            {{ fieldError('telefono') }}
+          </small>
+        </label>
       </section>
 
       <section class="rates-section" aria-label="Tariffe servizio">
         <h2>Tariffe servizio</h2>
 
         <div class="rates-grid">
-          <article class="rate-card">
-            <div class="rate-info">
-              <span class="rate-icon material-symbols-outlined">sports_tennis</span>
-              <div>
-                <span class="rate-label">Tennis</span>
-                <strong>Tariffa oraria</strong>
-              </div>
-            </div>
+          <label class="rate-field">
+            <span>Tennis</span>
 
-            <label class="rate-input">
-              <span>EUR</span>
+            <div
+              class="rate-input"
+              [class.invalid]="fieldError('costoOrarioTennis') || fieldError('tariffe')"
+            >
               <input
                 type="number"
                 name="costoOrarioTennis"
                 min="0"
                 step="0.01"
+                placeholder="0.00"
                 [(ngModel)]="instructor.costoOrarioTennis"
+                [attr.aria-invalid]="fieldError('costoOrarioTennis') || fieldError('tariffe') ? 'true' : 'false'"
                 (keydown)="preventNegativeValue($event)"
-                (input)="normalizeTennisRate($event)"
+                (input)="normalizeTennisRate($event); clearFieldError('costoOrarioTennis')"
               />
-            </label>
-          </article>
-
-          <article class="rate-card">
-            <div class="rate-info">
-              <span class="rate-icon rate-icon-secondary material-symbols-outlined">
-                sports_handball
-              </span>
-              <div>
-                <span class="rate-label">Padel</span>
-                <strong>Tariffa oraria</strong>
-              </div>
+              <span>EUR/h</span>
             </div>
 
-            <label class="rate-input rate-input-secondary">
-              <span>EUR</span>
+            <small *ngIf="fieldError('costoOrarioTennis')" class="field-error">
+              {{ fieldError('costoOrarioTennis') }}
+            </small>
+          </label>
+
+          <label class="rate-field">
+            <span>Padel</span>
+
+            <div
+              class="rate-input"
+              [class.invalid]="fieldError('costoOrarioPadel') || fieldError('tariffe')"
+            >
               <input
                 type="number"
                 name="costoOrarioPadel"
                 min="0"
                 step="0.01"
+                placeholder="0.00"
                 [(ngModel)]="instructor.costoOrarioPadel"
+                [attr.aria-invalid]="fieldError('costoOrarioPadel') || fieldError('tariffe') ? 'true' : 'false'"
                 (keydown)="preventNegativeValue($event)"
-                (input)="normalizePadelRate($event)"
+                (input)="normalizePadelRate($event); clearFieldError('costoOrarioPadel')"
               />
-            </label>
-          </article>
+              <span>EUR/h</span>
+            </div>
+
+            <small *ngIf="fieldError('costoOrarioPadel')" class="field-error">
+              {{ fieldError('costoOrarioPadel') }}
+            </small>
+          </label>
         </div>
+
+        <small *ngIf="fieldError('tariffe')" class="field-error">
+          {{ fieldError('tariffe') }}
+        </small>
       </section>
 
-      <div *ngIf="submitError" class="form-message error-message">{{ submitError }}</div>
-      <div *ngIf="submitSuccess" class="form-message success-message">{{ submitSuccess }}</div>
+      <div *ngIf="submitError()" class="form-message error-message">
+        {{ submitError() }}
+      </div>
+
+      <div *ngIf="submitSuccess()" class="form-message success-message">
+        {{ submitSuccess() }}
+      </div>
 
       <div class="form-actions">
-        <button type="button" class="secondary-action" (click)="cancel()">Annulla</button>
-        <button type="submit" class="primary-action" [disabled]="isSaving">
-          {{ isSaving ? 'Salvataggio...' : 'Salva modifiche' }}
+        <button
+          type="button"
+          class="secondary-action"
+          [disabled]="isSaving()"
+          (click)="cancel()"
+        >
+          Annulla
+        </button>
+
+        <button
+          type="submit"
+          class="primary-action"
+          [disabled]="isSaving()"
+        >
+          {{ isSaving() ? 'Salvataggio...' : 'Salva modifiche' }}
         </button>
       </div>
     </form>

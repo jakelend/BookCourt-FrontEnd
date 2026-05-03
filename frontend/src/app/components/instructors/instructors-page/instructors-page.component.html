@@ -11,6 +11,34 @@
     </button>
   </header>
 
+  <section *ngIf="!loading && !errorMessage && instructors.length" class="list-controls" aria-label="Filtro disponibilità istruttori">
+    <span>Disponibilità</span>
+
+    <div class="availability-filter" role="group" aria-label="Filtra istruttori per disponibilità">
+      <button
+        type="button"
+        [class.active]="availabilityFilter === 'all'"
+        (click)="setAvailabilityFilter('all')"
+      >
+        Tutti
+      </button>
+      <button
+        type="button"
+        [class.active]="availabilityFilter === 'active'"
+        (click)="setAvailabilityFilter('active')"
+      >
+        Attivi
+      </button>
+      <button
+        type="button"
+        [class.active]="availabilityFilter === 'inactive'"
+        (click)="setAvailabilityFilter('inactive')"
+      >
+        Inattivi
+      </button>
+    </div>
+  </section>
+
   <section *ngIf="loading" class="feedback-panel" aria-live="polite">
     <span class="material-symbols-outlined">progress_activity</span>
     <span>Caricamento istruttori...</span>
@@ -37,13 +65,18 @@
     <span>Nessun istruttore presente.</span>
   </section>
 
+  <section *ngIf="!loading && !errorMessage && instructors.length && !filteredInstructors.length" class="feedback-panel" aria-live="polite">
+    <span class="material-symbols-outlined">filter_alt_off</span>
+    <span>Nessun istruttore corrisponde al filtro selezionato.</span>
+  </section>
+
   <section
-    *ngIf="!loading && !errorMessage && instructors.length"
+    *ngIf="!loading && !errorMessage && filteredInstructors.length"
     class="instructors-grid"
     aria-label="Lista istruttori"
   >
     <app-instructor-card
-      *ngFor="let instructor of instructors; trackBy: trackByInstructorId"
+      *ngFor="let instructor of filteredInstructors; trackBy: trackByInstructorId"
       [instructor]="instructor"
       [togglePending]="isToggling(instructor.id)"
       (editInstructor)="modifyInstructor($event)"

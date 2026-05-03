@@ -28,7 +28,7 @@
 
 .section-eyebrow,
 .form-field span,
-.rate-label {
+.rate-field > span {
   color: #76777d;
   font-size: 10px;
   font-weight: 900;
@@ -246,91 +246,62 @@
 }
 
 .rates-section h2 {
-  margin-bottom: 14px;
+  margin-bottom: 12px;
 }
 
 .rates-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 16px;
-}
-
-.rate-card {
-  min-height: 88px;
-  padding: 16px;
-  border: 1px solid #e0e3e5;
-  border-radius: 12px;
-  background: #f7f9fb;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
   gap: 14px;
 }
 
-.rate-info {
+.rate-field {
   display: flex;
-  align-items: center;
-  gap: 14px;
-}
-
-.rate-icon {
-  width: 42px;
-  height: 42px;
-  border-radius: 999px;
-  background: rgba(33, 112, 228, 0.12);
-  color: #0058be;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.rate-icon-secondary {
-  background: rgba(82, 102, 0, 0.12);
-  color: #526600;
-}
-
-.rate-info strong {
-  display: block;
-  margin-top: 4px;
-  color: #191c1e;
-  font-size: 14px;
-  font-weight: 900;
+  flex-direction: column;
+  gap: 7px;
 }
 
 .rate-input {
-  min-width: 104px;
+  width: 100%;
   min-height: 42px;
   border: 1px solid #d7dce5;
-  border-radius: 12px;
+  border-radius: 10px;
   padding: 0 12px;
-  background: #ffffff;
-  color: #0058be;
+  background: #f2f4f6;
+  color: #191c1e;
   display: flex;
   align-items: center;
   gap: 8px;
-}
-
-.rate-input-secondary {
-  color: #526600;
+  transition:
+    border-color 160ms ease,
+    background-color 160ms ease,
+    box-shadow 160ms ease;
 }
 
 .rate-input span {
-  font-family: Lexend, Inter, Roboto, Arial, sans-serif;
+  color: #76777d;
   font-size: 12px;
-  font-weight: 900;
+  font-weight: 800;
+  white-space: nowrap;
 }
 
 .rate-input input {
-  width: 54px;
+  flex: 1;
+  min-width: 0;
   border: 0;
   padding: 0;
   background: transparent;
-  color: inherit;
-  font-family: Lexend, Inter, Roboto, Arial, sans-serif;
-  font-size: 21px;
-  font-weight: 900;
+  color: #191c1e;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
   outline: none;
-  text-align: right;
+}
+
+.rate-input:focus-within {
+  border-color: #2170e4;
+  background: #ffffff;
+  box-shadow: 0 0 0 4px rgba(33, 112, 228, 0.11);
 }
 
 .form-actions {
@@ -423,4 +394,19 @@
 .success-message {
   background: rgba(40, 167, 69, 0.12);
   color: #1f7a35;
+}
+
+.field-error {
+  display: block;
+  margin-top: 0.4rem;
+  color: #dc2626;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+input.invalid,
+.photo-upload-button.invalid,
+.rate-input.invalid {
+  border-color: #dc2626;
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.12);
 }

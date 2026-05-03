@@ -1,11 +1,13 @@
 import { CommonModule } from '@angular/common';
-import { Component, ElementRef, OnDestroy, OnInit, ViewChild } from '@angular/core';
+import { Component, ElementRef, OnDestroy, OnInit, signal, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { finalize } from 'rxjs/operators';
+
 import { ManagerUpdateSecretaryRequestDto } from '../../../dto/request/manager/manager-create-secretary-request.dto';
 import { ManagerSecretaryResponseDto } from '../../../dto/response/manager/manager-secretary-response.dto';
 import { ManagerService } from '../../../services/manager.service';
+import { extractBackendErrorMessage, extractBackendFieldErrors, FieldErrors } from '../../../util/error-message.util';
 
 interface EditableSecretary {
   id: number;
@@ -16,6 +18,23 @@ interface EditableSecretary {
   fotoProfiloUrl: string | null;
 }
 
+type FieldErrorKey =
+  | 'profilePhoto'
+  | 'nome'
+  | 'cognome'
+  | 'email'
+  | 'telefono'
+  | 'fotoProfiloUrl';
+
+const KNOWN_BACKEND_FIELDS: readonly FieldErrorKey[] = [
+  'profilePhoto',
+  'nome',
+  'cognome',
+  'email',
+  'telefono',
+  'fotoProfiloUrl',
+];
+
 @Component({
   selector: 'app-modify-secretary',
   imports: [CommonModule, FormsModule],
@@ -25,13 +44,14 @@ interface EditableSecretary {
 export class ModifySecretaryComponent implements OnInit, OnDestroy {
   @ViewChild('profilePhotoInput') private readonly profilePhotoInput?: ElementRef<HTMLInputElement>;
 
-  profilePhotoFile: File | null = null;
-  profilePhotoPreviewUrl = '';
-  profilePhotoError = '';
-  loading = true;
-  submitError = '';
-  submitSuccess = '';
-  isSaving = false;
+  readonly profilePhotoFile = signal<File | null>(null);
+  readonly profilePhotoPreviewUrl = signal('');
+
+  readonly loading = signal(true);
+  readonly isSaving = signal(false);
+  readonly submitError = signal('');
+  readonly submitSuccess = signal('');
+  readonly fieldErrors = signal<FieldErrors<FieldErrorKey>>({});
 
   secretary: EditableSecretary = {
     id: 0,
@@ -53,7 +73,11 @@ export class ModifySecretaryComponent implements OnInit, OnDestroy {
 
     this.managerService
       .getSegreterie()
-      .pipe(finalize(() => (this.loading = false)))
+      .pipe(
+        finalize(() => {
+          this.loading.set(false);
+        }),
+      )
       .subscribe({
         next: (secretaries) => {
           const selectedSecretary = secretaries.find((secretary) => secretary.id === secretaryId);
@@ -65,55 +89,91 @@ export class ModifySecretaryComponent implements OnInit, OnDestroy {
 
           this.hydrateSecretary(selectedSecretary);
         },
-        error: () => {
-          this.submitError = 'Impossibile caricare i dati della segretaria.';
+        error: (error) => {
+          this.submitError.set(this.extractErrorMessage(error, 'Impossibile caricare i dati della segretaria.'));
         },
       });
   }
 
   modifySecretary(event: SubmitEvent): void {
     event.preventDefault();
-    this.submitError = '';
-    this.submitSuccess = '';
 
-    if (!this.secretary.nome || !this.secretary.cognome || !this.secretary.email || !this.secretary.telefono) {
-      this.submitError = 'Compila tutti i campi obbligatori.';
+    if (this.isSaving()) {
       return;
     }
 
-    if (!this.isValidEmail(this.secretary.email.trim())) {
-      this.submitError = 'Inserisci un indirizzo email valido.';
-      return;
-    }
+    this.submitError.set('');
+    this.submitSuccess.set('');
+    this.fieldErrors.set({});
 
-    if (!/^[0-9]{10}$/.test(this.secretary.telefono.trim())) {
-      this.submitError = 'Il telefono deve contenere esattamente 10 cifre.';
+    const nome = this.secretary.nome.trim();
+    const cognome = this.secretary.cognome.trim();
+    const email = this.secretary.email.trim().toLowerCase();
+    const telefono = this.secretary.telefono.trim();
+
+    const isValid = this.validateForm({
+      nome,
+      cognome,
+      email,
+      telefono,
+    });
+
+    if (!isValid) {
       return;
     }
 
     const payload: ManagerUpdateSecretaryRequestDto = {
-      nome: this.secretary.nome.trim(),
-      cognome: this.secretary.cognome.trim(),
-      email: this.secretary.email.trim(),
-      telefono: this.secretary.telefono.trim(),
+      nome,
+      cognome,
+      email,
+      telefono,
     };
 
-    this.isSaving = true;
+    this.isSaving.set(true);
 
     this.managerService
-      .aggiornaSegreteria(this.secretary.id, payload, this.profilePhotoFile)
-      .pipe(finalize(() => (this.isSaving = false)))
+      .aggiornaSegreteria(this.secretary.id, payload, this.profilePhotoFile())
+      .pipe(
+        finalize(() => {
+          this.isSaving.set(false);
+        }),
+      )
       .subscribe({
         next: (updatedSecretary) => {
-          this.submitSuccess = 'Segretaria aggiornata con successo.';
-          this.profilePhotoFile = null;
+          this.submitSuccess.set('Segretaria aggiornata con successo.');
+          this.profilePhotoFile.set(null);
           this.hydrateSecretary(updatedSecretary);
+
           void this.router.navigate(['/dashboard/secretaries']);
         },
         error: (error) => {
-          this.submitError = this.extractErrorMessage(error, 'Impossibile aggiornare la segretaria.');
+          const message = this.extractErrorMessage(error, 'Impossibile aggiornare la segretaria.');
+
+          if (!this.applyBackendFieldErrors(error, message)) {
+            this.submitError.set(message);
+          }
         },
       });
+  }
+
+  fieldError(fieldName: FieldErrorKey): string {
+    return this.fieldErrors()[fieldName] ?? '';
+  }
+
+  clearFieldError(fieldName: FieldErrorKey): void {
+    const currentErrors = { ...this.fieldErrors() };
+
+    delete currentErrors[fieldName];
+
+    if (fieldName === 'profilePhoto') {
+      delete currentErrors.fotoProfiloUrl;
+    }
+
+    this.fieldErrors.set(currentErrors);
+
+    if (Object.keys(currentErrors).length === 0) {
+      this.submitError.set('');
+    }
   }
 
   openProfilePhotoPicker(): void {
@@ -124,7 +184,7 @@ export class ModifySecretaryComponent implements OnInit, OnDestroy {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0] ?? null;
 
-    this.profilePhotoError = '';
+    this.clearFieldError('profilePhoto');
 
     if (!file) {
       return;
@@ -133,26 +193,28 @@ export class ModifySecretaryComponent implements OnInit, OnDestroy {
     if (!['image/jpeg', 'image/png'].includes(file.type)) {
       this.clearProfilePhoto();
       input.value = '';
-      this.profilePhotoError = 'Carica un file JPG o PNG.';
+      this.setFieldError('profilePhoto', 'Carica un file JPG o PNG.');
       return;
     }
 
     if (file.size > 5 * 1024 * 1024) {
       this.clearProfilePhoto();
       input.value = '';
-      this.profilePhotoError = 'La foto non può superare 5MB.';
+      this.setFieldError('profilePhoto', 'La foto non può superare 5MB.');
       return;
     }
 
     this.revokeUploadedProfilePhotoPreview();
-    this.profilePhotoFile = file;
-    this.profilePhotoPreviewUrl = URL.createObjectURL(file);
+
+    this.profilePhotoFile.set(file);
+    this.profilePhotoPreviewUrl.set(URL.createObjectURL(file));
   }
 
   clearProfilePhoto(): void {
-    this.profilePhotoFile = null;
+    this.profilePhotoFile.set(null);
     this.revokeUploadedProfilePhotoPreview();
-    this.profilePhotoPreviewUrl = this.buildImageUrl(this.secretary.fotoProfiloUrl);
+    this.profilePhotoPreviewUrl.set(this.buildImageUrl(this.secretary.fotoProfiloUrl));
+    this.clearFieldError('profilePhoto');
 
     if (this.profilePhotoInput) {
       this.profilePhotoInput.nativeElement.value = '';
@@ -168,6 +230,84 @@ export class ModifySecretaryComponent implements OnInit, OnDestroy {
     this.revokeUploadedProfilePhotoPreview();
   }
 
+  private validateForm(data: {
+    nome: string;
+    cognome: string;
+    email: string;
+    telefono: string;
+  }): boolean {
+    const errors: FieldErrors<FieldErrorKey> = {};
+
+    if (!data.nome) {
+      errors.nome = 'Il nome è obbligatorio.';
+    } else if (data.nome.length > 50) {
+      errors.nome = 'Il nome non può superare 50 caratteri.';
+    }
+
+    if (!data.cognome) {
+      errors.cognome = 'Il cognome è obbligatorio.';
+    } else if (data.cognome.length > 50) {
+      errors.cognome = 'Il cognome non può superare 50 caratteri.';
+    }
+
+    if (!data.email) {
+      errors.email = "L'email è obbligatoria.";
+    } else if (!this.isValidEmail(data.email)) {
+      errors.email = 'Inserisci un indirizzo email valido.';
+    } else if (data.email.length > 255) {
+      errors.email = "L'email non può superare 255 caratteri.";
+    }
+
+    if (!data.telefono) {
+      errors.telefono = 'Il telefono è obbligatorio.';
+    } else if (!/^[0-9]{10}$/.test(data.telefono)) {
+      errors.telefono = 'Il telefono deve contenere esattamente 10 cifre.';
+    }
+
+    this.fieldErrors.set(errors);
+
+    return Object.keys(errors).length === 0;
+  }
+
+  private setFieldError(fieldName: FieldErrorKey, message: string): void {
+    this.fieldErrors.update((currentErrors) => ({
+      ...currentErrors,
+      [fieldName]: message,
+    }));
+  }
+
+  private applyBackendFieldErrors(error: unknown, fallbackMessage: string): boolean {
+    const mappedErrors = extractBackendFieldErrors(error, KNOWN_BACKEND_FIELDS);
+    let hasFieldErrors = false;
+
+    if (Object.keys(mappedErrors).length > 0) {
+      this.fieldErrors.update((currentErrors) => ({
+        ...currentErrors,
+        ...mappedErrors,
+      }));
+      hasFieldErrors = true;
+    }
+
+    const normalizedMessage = fallbackMessage.toLowerCase();
+
+    if (normalizedMessage.includes('telefono')) {
+      this.setFieldError('telefono', fallbackMessage);
+      hasFieldErrors = true;
+    }
+
+    if (normalizedMessage.includes('email')) {
+      this.setFieldError('email', fallbackMessage);
+      hasFieldErrors = true;
+    }
+
+    if (normalizedMessage.includes('foto') || normalizedMessage.includes('immagine')) {
+      this.setFieldError('profilePhoto', fallbackMessage);
+      hasFieldErrors = true;
+    }
+
+    return hasFieldErrors;
+  }
+
   private isValidEmail(email: string): boolean {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   }
@@ -179,11 +319,11 @@ export class ModifySecretaryComponent implements OnInit, OnDestroy {
       cognome: secretary.cognome,
       email: secretary.email,
       telefono: secretary.telefono,
-        fotoProfiloUrl: secretary.fotoProfiloUrl,
+      fotoProfiloUrl: secretary.fotoProfiloUrl,
     };
 
-    if (!this.profilePhotoFile) {
-      this.profilePhotoPreviewUrl = this.buildImageUrl(secretary.fotoProfiloUrl);
+    if (!this.profilePhotoFile()) {
+      this.profilePhotoPreviewUrl.set(this.buildImageUrl(secretary.fotoProfiloUrl));
     }
   }
 
@@ -200,29 +340,17 @@ export class ModifySecretaryComponent implements OnInit, OnDestroy {
   }
 
   private revokeUploadedProfilePhotoPreview(): void {
-    if (!this.profilePhotoPreviewUrl.startsWith('blob:')) {
+    const previewUrl = this.profilePhotoPreviewUrl();
+
+    if (!previewUrl.startsWith('blob:')) {
       return;
     }
 
-    URL.revokeObjectURL(this.profilePhotoPreviewUrl);
-    this.profilePhotoPreviewUrl = '';
+    URL.revokeObjectURL(previewUrl);
+    this.profilePhotoPreviewUrl.set('');
   }
 
   private extractErrorMessage(error: unknown, fallback: string): string {
-    const maybeError = error as { error?: { message?: string; fields?: Record<string, string> }; status?: number };
-
-    if (maybeError?.error?.message) {
-      return maybeError.error.message;
-    }
-
-    if (maybeError?.error?.fields) {
-      return Object.values(maybeError.error.fields)[0] ?? fallback;
-    }
-
-    if (maybeError?.status === 0) {
-      return 'Backend non raggiungibile. Controlla che Spring Boot sia avviato sulla porta 8080.';
-    }
-
-    return fallback;
+    return extractBackendErrorMessage(error, fallback);
   }
 }

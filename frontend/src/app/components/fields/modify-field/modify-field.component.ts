@@ -1,19 +1,22 @@
 import { CommonModule } from '@angular/common';
-import { Component, ElementRef, OnDestroy, OnInit, ViewChild } from '@angular/core';
+import { Component, ElementRef, OnDestroy, OnInit, signal, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { forkJoin, Observable, of } from 'rxjs';
 import { finalize, switchMap } from 'rxjs/operators';
+
+import { ManagerUpdateFieldRequestDto } from '../../../dto/request/manager/manager-create-field-request.dto';
 import { ManagerFieldImageResponseDto } from '../../../dto/response/manager/manager-field-image-response.dto';
-import { ManagerFieldResponseDto } from '../../../dto/response/manager/manager-field-response.dto';
+import { ManagerFieldResponseDto, ManagerFieldSport } from '../../../dto/response/manager/manager-field-response.dto';
 import { ManagerService } from '../../../services/manager.service';
+import { extractBackendErrorMessage, extractBackendFieldErrors, FieldErrors } from '../../../util/error-message.util';
 import { FieldSportType } from '../field-card/field-card.component';
 
 interface EditableField {
   id: number;
   name: string;
   sportType: FieldSportType;
-  hourlyRate: number;
+  hourlyRate: number | null;
   active: boolean;
 }
 
@@ -23,6 +26,17 @@ interface FieldImagePreview {
   uploaded: boolean;
   existingImageId: number | null;
 }
+
+type FieldErrorKey = 'images' | 'nome' | 'sport' | 'costoOrario' | 'attivo' | 'idImmagini';
+
+const KNOWN_BACKEND_FIELDS: readonly FieldErrorKey[] = [
+  'images',
+  'nome',
+  'sport',
+  'costoOrario',
+  'attivo',
+  'idImmagini',
+];
 
 @Component({
   selector: 'app-modify-field',
@@ -36,12 +50,12 @@ export class ModifyFieldComponent implements OnInit, OnDestroy {
   readonly sportTypes: FieldSportType[] = ['CALCETTO', 'TENNIS', 'PADEL'];
   readonly maxImages = 6;
 
-  imagePreviews: FieldImagePreview[] = [];
-  imagesError = '';
-  loading = true;
-  submitError = '';
-  submitSuccess = '';
-  isSaving = false;
+  readonly imagePreviews = signal<FieldImagePreview[]>([]);
+  readonly loading = signal(true);
+  readonly isSaving = signal(false);
+  readonly submitError = signal('');
+  readonly submitSuccess = signal('');
+  readonly fieldErrors = signal<FieldErrors<FieldErrorKey>>({});
 
   field: EditableField = {
     id: 0,
@@ -51,7 +65,7 @@ export class ModifyFieldComponent implements OnInit, OnDestroy {
     active: true,
   };
 
-  private deletedExistingImageIds = new Set<number>();
+  private readonly deletedExistingImageIds = new Set<number>();
 
   constructor(
     private readonly route: ActivatedRoute,
@@ -66,7 +80,11 @@ export class ModifyFieldComponent implements OnInit, OnDestroy {
       fields: this.managerService.getCampi(),
       images: this.managerService.getImmaginiCampo(fieldId),
     })
-      .pipe(finalize(() => (this.loading = false)))
+      .pipe(
+        finalize(() => {
+          this.loading.set(false);
+        }),
+      )
       .subscribe({
         next: ({ fields, images }) => {
           const selectedField = fields.find((field) => field.id === fieldId);
@@ -78,39 +96,49 @@ export class ModifyFieldComponent implements OnInit, OnDestroy {
 
           this.hydrateField(selectedField, images);
         },
-        error: () => {
-          this.submitError = 'Impossibile caricare i dati del campo.';
+        error: (error) => {
+          this.submitError.set(this.extractErrorMessage(error, 'Impossibile caricare i dati del campo.'));
         },
       });
   }
 
   modifyField(event: SubmitEvent): void {
     event.preventDefault();
-    this.submitError = '';
-    this.submitSuccess = '';
 
-    if (!this.field.name || !this.field.sportType) {
-      this.submitError = 'Compila tutti i campi obbligatori.';
+    if (this.isSaving()) {
       return;
     }
 
-    if (!Number.isFinite(this.field.hourlyRate) || this.field.hourlyRate < 0) {
-      this.submitError = 'Inserisci una tariffa oraria valida.';
+    this.submitError.set('');
+    this.submitSuccess.set('');
+    this.fieldErrors.set({});
+
+    const nome = this.field.name.trim();
+    const sport = this.field.sportType;
+    const costoOrario = this.toHourlyRate(this.field.hourlyRate);
+
+    const isValid = this.validateForm({
+      nome,
+      sport,
+      costoOrario,
+    });
+
+    if (!isValid) {
       return;
     }
 
-    const payload = {
-      nome: this.field.name.trim(),
-      sport: this.field.sportType,
-      costoOrario: this.field.hourlyRate,
+    const payload: ManagerUpdateFieldRequestDto = {
+      nome,
+      sport,
+      costoOrario: costoOrario!,
       attivo: this.field.active,
     };
 
-    const uploadedImages = this.imagePreviews
+    const uploadedImages = this.imagePreviews()
       .filter((preview) => preview.uploaded && preview.file)
       .map((preview) => preview.file as File);
 
-    this.isSaving = true;
+    this.isSaving.set(true);
 
     const deleteRequest$: Observable<null> = this.deletedExistingImageIds.size
       ? this.managerService
@@ -121,17 +149,44 @@ export class ModifyFieldComponent implements OnInit, OnDestroy {
     deleteRequest$
       .pipe(
         switchMap(() => this.managerService.aggiornaCampo(this.field.id, payload, uploadedImages)),
-        finalize(() => (this.isSaving = false)),
+        finalize(() => {
+          this.isSaving.set(false);
+        }),
       )
       .subscribe({
         next: () => {
-          this.submitSuccess = 'Campo aggiornato con successo.';
+          this.submitSuccess.set('Campo aggiornato con successo.');
+
           void this.router.navigate(['/dashboard/fields']);
         },
         error: (error) => {
-          this.submitError = this.extractErrorMessage(error, 'Impossibile aggiornare il campo.');
+          const message = this.extractErrorMessage(error, 'Impossibile aggiornare il campo.');
+
+          if (!this.applyBackendFieldErrors(error, message)) {
+            this.submitError.set(message);
+          }
         },
       });
+  }
+
+  fieldError(fieldName: FieldErrorKey): string {
+    return this.fieldErrors()[fieldName] ?? '';
+  }
+
+  clearFieldError(fieldName: FieldErrorKey): void {
+    const currentErrors = { ...this.fieldErrors() };
+
+    delete currentErrors[fieldName];
+
+    if (fieldName === 'images') {
+      delete currentErrors.idImmagini;
+    }
+
+    this.fieldErrors.set(currentErrors);
+
+    if (Object.keys(currentErrors).length === 0) {
+      this.submitError.set('');
+    }
   }
 
   preventNegativeValue(event: KeyboardEvent): void {
@@ -158,46 +213,47 @@ export class ModifyFieldComponent implements OnInit, OnDestroy {
     const input = event.target as HTMLInputElement;
     const files = Array.from(input.files ?? []);
 
-    this.imagesError = '';
+    this.clearFieldError('images');
 
     if (!files.length) {
       return;
     }
 
-    if (this.imagePreviews.length + files.length > this.maxImages) {
+    if (this.imagePreviews().length + files.length > this.maxImages) {
       input.value = '';
-      this.imagesError = `Puoi caricare al massimo ${this.maxImages} immagini.`;
+      this.setFieldError('images', `Puoi caricare al massimo ${this.maxImages} immagini.`);
       return;
     }
 
     for (const file of files) {
       if (!['image/jpeg', 'image/png'].includes(file.type)) {
         input.value = '';
-        this.imagesError = 'Carica solo file JPG o PNG.';
+        this.setFieldError('images', 'Carica solo file JPG o PNG.');
         return;
       }
 
       if (file.size > 5 * 1024 * 1024) {
         input.value = '';
-        this.imagesError = 'Ogni immagine non può superare 5MB.';
+        this.setFieldError('images', 'Ogni immagine non può superare 5MB.');
         return;
       }
     }
 
-    this.imagePreviews = [
-      ...this.imagePreviews,
+    this.imagePreviews.update((currentPreviews) => [
+      ...currentPreviews,
       ...files.map((file) => ({
         file,
         url: URL.createObjectURL(file),
         uploaded: true,
         existingImageId: null,
       })),
-    ];
+    ]);
+
     input.value = '';
   }
 
   removeImage(index: number): void {
-    const preview = this.imagePreviews[index];
+    const preview = this.imagePreviews()[index];
 
     if (!preview) {
       return;
@@ -211,7 +267,11 @@ export class ModifyFieldComponent implements OnInit, OnDestroy {
       this.deletedExistingImageIds.add(preview.existingImageId);
     }
 
-    this.imagePreviews = this.imagePreviews.filter((_, currentIndex) => currentIndex !== index);
+    this.imagePreviews.update((currentPreviews) =>
+      currentPreviews.filter((_, currentIndex) => currentIndex !== index),
+    );
+
+    this.clearFieldError('images');
   }
 
   cancel(): void {
@@ -227,6 +287,84 @@ export class ModifyFieldComponent implements OnInit, OnDestroy {
     return preview.url;
   }
 
+  private validateForm(data: {
+    nome: string;
+    sport: string;
+    costoOrario: number | null;
+  }): boolean {
+    const errors: FieldErrors<FieldErrorKey> = {};
+
+    if (!data.nome) {
+      errors.nome = 'Il nome del campo è obbligatorio.';
+    } else if (data.nome.length > 100) {
+      errors.nome = 'Il nome del campo non può superare 100 caratteri.';
+    }
+
+    if (!data.sport) {
+      errors.sport = 'Lo sport è obbligatorio.';
+    } else if (!this.isValidSport(data.sport)) {
+      errors.sport = 'Seleziona uno sport valido.';
+    }
+
+    if (data.costoOrario == null) {
+      errors.costoOrario = 'La tariffa oraria è obbligatoria.';
+    } else if (!Number.isFinite(data.costoOrario)) {
+      errors.costoOrario = 'Inserisci una tariffa oraria valida.';
+    } else if (data.costoOrario < 0) {
+      errors.costoOrario = 'Il costo orario non può essere negativo.';
+    } else if (!/^\d{1,8}(\.\d{1,2})?$/.test(String(data.costoOrario))) {
+      errors.costoOrario = 'Il costo orario deve avere massimo 8 cifre intere e 2 decimali.';
+    }
+
+    this.fieldErrors.set(errors);
+
+    return Object.keys(errors).length === 0;
+  }
+
+  private setFieldError(fieldName: FieldErrorKey, message: string): void {
+    this.fieldErrors.update((currentErrors) => ({
+      ...currentErrors,
+      [fieldName]: message,
+    }));
+  }
+
+  private applyBackendFieldErrors(error: unknown, fallbackMessage: string): boolean {
+    const mappedErrors = extractBackendFieldErrors(error, KNOWN_BACKEND_FIELDS);
+    let hasFieldErrors = false;
+
+    if (Object.keys(mappedErrors).length > 0) {
+      this.fieldErrors.update((currentErrors) => ({
+        ...currentErrors,
+        ...mappedErrors,
+      }));
+      hasFieldErrors = true;
+    }
+
+    const normalizedMessage = fallbackMessage.toLowerCase();
+
+    if (normalizedMessage.includes('nome')) {
+      this.setFieldError('nome', fallbackMessage);
+      hasFieldErrors = true;
+    }
+
+    if (normalizedMessage.includes('sport')) {
+      this.setFieldError('sport', fallbackMessage);
+      hasFieldErrors = true;
+    }
+
+    if (normalizedMessage.includes('costo') || normalizedMessage.includes('tariffa')) {
+      this.setFieldError('costoOrario', fallbackMessage);
+      hasFieldErrors = true;
+    }
+
+    if (normalizedMessage.includes('immagin') || normalizedMessage.includes('foto')) {
+      this.setFieldError('images', fallbackMessage);
+      hasFieldErrors = true;
+    }
+
+    return hasFieldErrors;
+  }
+
   private hydrateField(field: ManagerFieldResponseDto, images: ManagerFieldImageResponseDto[]): void {
     this.field = {
       id: field.id,
@@ -237,12 +375,14 @@ export class ModifyFieldComponent implements OnInit, OnDestroy {
     };
 
     this.deletedExistingImageIds.clear();
-    this.imagePreviews = images.map((image) => ({
-      file: null,
-      url: this.buildImageUrl(image.urlImmagine),
-      uploaded: false,
-      existingImageId: image.id,
-    }));
+    this.imagePreviews.set(
+      images.map((image) => ({
+        file: null,
+        url: this.buildImageUrl(image.urlImmagine),
+        uploaded: false,
+        existingImageId: image.id,
+      })),
+    );
   }
 
   private buildImageUrl(path: string): string {
@@ -258,7 +398,7 @@ export class ModifyFieldComponent implements OnInit, OnDestroy {
   }
 
   private clearUploadedImages(): void {
-    for (const preview of this.imagePreviews) {
+    for (const preview of this.imagePreviews()) {
       if (preview.uploaded) {
         URL.revokeObjectURL(preview.url);
       }
@@ -269,21 +409,21 @@ export class ModifyFieldComponent implements OnInit, OnDestroy {
     }
   }
 
+  private toHourlyRate(value: number | string | null): number | null {
+    if (value == null || value === '') {
+      return null;
+    }
+
+    const numericValue = Number(value);
+
+    return Number.isFinite(numericValue) ? numericValue : null;
+  }
+
+  private isValidSport(value: string): value is ManagerFieldSport {
+    return this.sportTypes.includes(value as FieldSportType);
+  }
+
   private extractErrorMessage(error: unknown, fallback: string): string {
-    const maybeError = error as { error?: { message?: string; fields?: Record<string, string> }; status?: number };
-
-    if (maybeError?.error?.message) {
-      return maybeError.error.message;
-    }
-
-    if (maybeError?.error?.fields) {
-      return Object.values(maybeError.error.fields)[0] ?? fallback;
-    }
-
-    if (maybeError?.status === 0) {
-      return 'Backend non raggiungibile. Controlla che Spring Boot sia avviato sulla porta 8080.';
-    }
-
-    return fallback;
+    return extractBackendErrorMessage(error, fallback);
   }
 }
