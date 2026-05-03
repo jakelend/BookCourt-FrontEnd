@@ -1,9 +1,19 @@
-<article class="instructor-card">
+<article
+  class="instructor-card"
+  [class.selection-card]="isSelectionMode"
+  [class.selection-disabled]="isSelectionMode && !field.attivo"
+  [attr.role]="isSelectionMode ? 'button' : null"
+  [attr.tabindex]="isSelectionMode && field.attivo ? 0 : null"
+  (click)="select()"
+  (keydown)="onCardKeydown($event)"
+>
   <div class="card-media">
     <img *ngIf="coverImageUrl" [src]="coverImageUrl" [alt]="field.nome" />
+
     <div *ngIf="!coverImageUrl" class="field-image-placeholder">
       <span class="material-symbols-outlined">stadium</span>
     </div>
+
     <div class="media-overlay"></div>
 
     <div class="media-title">
@@ -39,12 +49,24 @@
       </div>
     </div>
 
-    <div class="active-row">
+    <button
+      *ngIf="isSelectionMode"
+      type="button"
+      class="selection-button"
+      [disabled]="!field.attivo"
+      (click)="select()"
+    >
+      Seleziona campo
+    </button>
+
+    <div *ngIf="!isSelectionMode" class="active-row">
       <span>{{ field.attivo ? 'Attivo' : 'Inattivo' }}</span>
+
       <label class="switch">
         <input
           type="checkbox"
           [checked]="field.attivo"
+          [disabled]="togglePending"
           (change)="toggleActive($event)"
         />
         <span></span>
@@ -52,7 +74,13 @@
     </div>
   </div>
 
-  <button type="button" class="edit-button" aria-label="Modifica campo" (click)="edit()">
+  <button
+    *ngIf="!isSelectionMode"
+    type="button"
+    class="edit-button"
+    aria-label="Modifica campo"
+    (click)="edit($event)"
+  >
     <span class="material-symbols-outlined">edit</span>
   </button>
 </article>

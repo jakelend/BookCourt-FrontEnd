@@ -1,0 +1,63 @@
+<main class="booking-page">
+  <section class="booking-container">
+    <section class="booking-stepper" aria-label="Avanzamento prenotazione">
+      <div class="stepper-header">
+        <span class="stepper-current">
+          Step {{ currentStep }} di {{ totalSteps }}
+        </span>
+
+        <span class="stepper-title">
+          Selezione sport
+        </span>
+      </div>
+
+      <div class="progress-track" aria-hidden="true">
+        <div
+          class="progress-fill"
+          [style.width.%]="progressPercentage"
+        ></div>
+      </div>
+
+      <div class="step-labels">
+        <span
+          *ngFor="let step of steps; let i = index; trackBy: trackByStepLabel"
+          [class.active]="i + 1 <= currentStep"
+        >
+          {{ step.label }}
+        </span>
+      </div>
+    </section>
+
+    <header class="booking-hero">
+      <h1>Cosa vuoi giocare oggi?</h1>
+      <p>Scegli il tuo sport per vedere i campi e gli orari disponibili.</p>
+    </header>
+
+    <section class="sports-grid" aria-label="Scelta dello sport">
+      <button
+        *ngFor="let sport of sports; trackBy: trackBySportCode"
+        type="button"
+        class="sport-card"
+        [class.selected]="isSelected(sport)"
+        (click)="selectSport(sport)"
+      >
+        <div class="sport-image-wrapper">
+          <img
+            class="sport-image"
+            [src]="sport.imageUrl"
+            [alt]="sport.alt"
+          />
+        </div>
+
+        <div class="sport-card-body">
+          <h2>{{ sport.name }}</h2>
+        </div>
+      </button>
+    </section>
+
+    <p *ngIf="selectedSport" class="selected-message">
+      Sport selezionato:
+      <strong>{{ selectedSport }}</strong>
+    </p>
+  </section>
+</main>

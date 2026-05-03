@@ -252,7 +252,11 @@ export class SidebarHeaderComponent implements OnInit {
   }
 
   private isInvalidImagePath(url: string): boolean {
-    return url === 'string' || url === 'null' || url === 'undefined';
+    return (
+      url === 'string' ||
+      url === 'null' ||
+      url === 'undefined'
+    );
   }
 
   private getDefaultProfileImageUrl(): string {

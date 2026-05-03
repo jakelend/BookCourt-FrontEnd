@@ -3,6 +3,7 @@ import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { ManagerFieldResponseDto } from '../../../dto/response/manager/manager-field-response.dto';
 
 export type FieldSportType = 'CALCETTO' | 'TENNIS' | 'PADEL';
+export type FieldCardMode = 'management' | 'selection';
 
 export interface FieldToggleEvent {
   field: ManagerFieldResponseDto;
@@ -18,10 +19,17 @@ export interface FieldToggleEvent {
 export class FieldCardComponent {
   @Input({ required: true }) field!: ManagerFieldResponseDto;
   @Input() togglePending = false;
+  @Input() mode: FieldCardMode = 'management';
+
   @Output() editField = new EventEmitter<ManagerFieldResponseDto>();
   @Output() toggleField = new EventEmitter<FieldToggleEvent>();
+  @Output() selectField = new EventEmitter<ManagerFieldResponseDto>();
 
   private readonly backendBaseUrl = 'http://localhost:8080';
+
+  get isSelectionMode(): boolean {
+    return this.mode === 'selection';
+  }
 
   get coverImageUrl(): string {
     const path = this.field.urlImmaginePrincipale;
@@ -45,11 +53,33 @@ export class FieldCardComponent {
     return `EUR ${this.field.costoOrario}/h`;
   }
 
-  edit(): void {
+  edit(event: MouseEvent): void {
+    event.stopPropagation();
     this.editField.emit(this.field);
   }
 
+  select(): void {
+    if (!this.isSelectionMode || !this.field.attivo) {
+      return;
+    }
+
+    this.selectField.emit(this.field);
+  }
+
+  onCardKeydown(event: KeyboardEvent): void {
+    if (!this.isSelectionMode) {
+      return;
+    }
+
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      this.select();
+    }
+  }
+
   toggleActive(event: Event): void {
+    event.stopPropagation();
+
     const input = event.target as HTMLInputElement;
 
     this.toggleField.emit({

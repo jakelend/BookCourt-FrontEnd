@@ -22,7 +22,8 @@ import { GuestGuard } from './guard/guest.guard';
 import { RoleGuard } from './guard/role.guard';
 import { Role } from './enumeration/role.enum';
 import { BookingSportSelectionComponent } from './components/booking/sport-selection/booking-sport-selection.component';
-import { BookingFieldSelectionComponent } from './components/booking/field-selection/booking-field-selection.component';
+import {BookingFieldSelectionComponent} from './components/booking/field-selection/booking-field-selection.component';
+
 
 export const routes: Routes = [
   {
