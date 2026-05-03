@@ -29,23 +29,13 @@ export class SidebarHeaderComponent implements OnInit {
   readonly menuByRole: Record<Role, SidebarItem[]> = {
     [Role.SEGRETARIA]: [
       { label: 'Chat', icon: 'chat', key: 'chat', route: '/dashboard/chat' },
-      {
-        label: 'Manutenzione',
-        icon: 'engineering',
-        key: 'maintenance',
-        route: '/dashboard/maintenance',
-      },
+      { label: 'Manutenzione', icon: 'engineering', key: 'maintenance' },
       { label: 'Calendario Istruttori', icon: 'calendar_today', key: 'instructor-calendar' },
       { label: 'Orari centro', icon: 'schedule', key: 'center-hours' },
     ],
 
     [Role.ISTRUTTORE]: [
-      {
-        label: 'Calendario Istruttore',
-        icon: 'calendar_month',
-        key: 'instructor-calendar',
-        route: '/dashboard/instructor-calendar',
-      },
+      { label: 'Calendario Istruttore', icon: 'calendar_month', key: 'instructor-calendar' },
     ],
 
     [Role.CLIENTE]: [
@@ -242,19 +232,30 @@ export class SidebarHeaderComponent implements OnInit {
     this.profileImageUrl = this.buildProfileImageUrl(user?.fotoProfiloUrl ?? null);
   }
 
-  private buildProfileImageUrl(path: string | null): string {
-    if (!path || !path.trim()) {
-      return `${this.backendBaseUrl}/images/default/default-image-profile.png`;
+  private buildProfileImageUrl(path: string | null | undefined): string {
+    const url = path?.trim();
+
+    if (!url || this.isInvalidImagePath(url)) {
+      return this.getDefaultProfileImageUrl();
     }
 
-    if (path.startsWith('http://') || path.startsWith('https://')) {
-      return path;
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+      return url;
     }
 
-    if (path.startsWith('/')) {
-      return `${this.backendBaseUrl}${path}`;
+    if (url.startsWith('/images/')) {
+      return `${this.backendBaseUrl}${url}`;
     }
 
-    return `${this.backendBaseUrl}/${path}`;
+    console.warn('URL foto profilo non valida ricevuta:', url);
+    return this.getDefaultProfileImageUrl();
+  }
+
+  private isInvalidImagePath(url: string): boolean {
+    return url === 'string' || url === 'null' || url === 'undefined';
+  }
+
+  private getDefaultProfileImageUrl(): string {
+    return `${this.backendBaseUrl}/images/default/default-image-profile.png`;
   }
 }
