@@ -259,6 +259,11 @@ export class ModifyFieldComponent implements OnInit, OnDestroy {
       return;
     }
 
+    if (this.imagePreviews().length <= 1) {
+      this.setFieldError('images', 'Il campo deve avere almeno una immagine.');
+      return;
+    }
+
     if (preview.uploaded) {
       URL.revokeObjectURL(preview.url);
     }
@@ -314,6 +319,9 @@ export class ModifyFieldComponent implements OnInit, OnDestroy {
       errors.costoOrario = 'Il costo orario non può essere negativo.';
     } else if (!/^\d{1,8}(\.\d{1,2})?$/.test(String(data.costoOrario))) {
       errors.costoOrario = 'Il costo orario deve avere massimo 8 cifre intere e 2 decimali.';
+    }
+    if (this.imagePreviews().length < 1) {
+      errors.images = 'Il campo deve avere almeno una immagine.';
     }
 
     this.fieldErrors.set(errors);

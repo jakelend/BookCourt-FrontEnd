@@ -259,6 +259,10 @@ export class CreateFieldComponent implements OnDestroy {
       errors.costoOrario = 'Il costo orario deve avere massimo 8 cifre intere e 2 decimali.';
     }
 
+    if (this.imagePreviews().length < 1) {
+      errors.images = 'Carica almeno una immagine del campo.';
+    }
+
     this.fieldErrors.set(errors);
 
     return Object.keys(errors).length === 0;
