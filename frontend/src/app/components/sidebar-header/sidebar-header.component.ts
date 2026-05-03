@@ -29,17 +29,32 @@ export class SidebarHeaderComponent implements OnInit {
   readonly menuByRole: Record<Role, SidebarItem[]> = {
     [Role.SEGRETARIA]: [
       { label: 'Chat', icon: 'chat', key: 'chat', route: '/dashboard/chat' },
-      { label: 'Manutenzione', icon: 'engineering', key: 'maintenance', route: '/dashboard/maintenance' },
+      {
+        label: 'Manutenzione',
+        icon: 'engineering',
+        key: 'maintenance',
+        route: '/dashboard/maintenance',
+      },
       { label: 'Calendario Istruttori', icon: 'calendar_today', key: 'instructor-calendar' },
       { label: 'Orari centro', icon: 'schedule', key: 'center-hours' },
     ],
 
     [Role.ISTRUTTORE]: [
-      { label: 'Calendario Istruttore', icon: 'calendar_month', key: 'instructor-calendar', route: '/dashboard/instructor-calendar' },
+      {
+        label: 'Calendario Istruttore',
+        icon: 'calendar_month',
+        key: 'instructor-calendar',
+        route: '/dashboard/instructor-calendar',
+      },
     ],
 
     [Role.CLIENTE]: [
-      { label: 'Prenotazioni', icon: 'event_note', key: 'bookings' },
+      {
+        label: 'Prenotazioni',
+        icon: 'calendar_month',
+        key: 'bookings',
+        route: '/dashboard/prenotazioni',
+      },
       { label: 'Chat', icon: 'chat', key: 'chat', route: '/dashboard/chat' },
       { label: 'Gestione Credenziali', icon: 'key', key: 'credentials' },
       { label: 'Gestione account', icon: 'manage_accounts', key: 'account-management' },
