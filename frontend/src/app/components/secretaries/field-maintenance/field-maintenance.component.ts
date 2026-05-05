@@ -218,7 +218,7 @@ export class FieldMaintenanceComponent implements OnInit {
       .subscribe({
         next: () => {
           this.feedbackType.set('success');
-          this.feedbackMessage.set('Manutenzione inserita correttamente. Le prenotazioni impattate vengono gestite dal backend.');
+          this.feedbackMessage.set('Manutenzione inserita correttamente.');
           this.reason.set('');
           this.loadMaintenances();
         },
@@ -230,14 +230,6 @@ export class FieldMaintenanceComponent implements OnInit {
   }
 
   deleteMaintenance(maintenance: MaintenanceResponseDto): void {
-    const confirmed = window.confirm(
-      `Vuoi eliminare la manutenzione del campo ${maintenance.nomeCampo} del ${this.formatDateTime(maintenance.inizio)}?`,
-    );
-
-    if (!confirmed) {
-      return;
-    }
-
     this.clearFeedback();
     this.deletingId.set(maintenance.id);
 
