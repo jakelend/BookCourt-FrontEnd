@@ -1,0 +1,110 @@
+<main class="booking-confirmation-page">
+  <section class="confirmation-shell">
+    <div class="success-icon" aria-hidden="true">
+      <span class="material-symbols-outlined">check_circle</span>
+    </div>
+
+    <header class="confirmation-header">
+      <span class="confirmation-kicker">Prenotazione completata</span>
+
+      <h1>Prenotazione confermata!</h1>
+
+      <p>
+        La tua prenotazione per
+        <strong>{{ selectedFieldName() || 'il campo selezionato' }}</strong>
+        è stata registrata correttamente.
+      </p>
+    </header>
+
+    <section class="confirmation-card" *ngIf="prenotazione() as booking">
+      <div class="main-summary-grid">
+        <article class="summary-block">
+          <span>Data e ora</span>
+          <strong>{{ selectedDateTitle() }}</strong>
+          <small>{{ selectedTimeLabel() }} · {{ selectedDurationLabel() }}</small>
+        </article>
+
+        <article class="summary-block">
+          <span>Campo</span>
+          <strong>{{ selectedFieldName() || '-' }}</strong>
+          <small>{{ selectedSportLabel() }}</small>
+        </article>
+
+        <article class="summary-block highlight-total">
+          <span>Totale</span>
+          <strong>{{ formatCurrency(totalPaid()) }}</strong>
+        </article>
+      </div>
+
+      <div class="details-divider"></div>
+
+      <section class="details-section">
+        <h2>Dettagli</h2>
+
+        <div class="details-list">
+          <div class="details-row">
+            <span>Stato</span>
+            <strong>{{ booking.stato }}</strong>
+          </div>
+
+          <div class="details-row" *ngIf="isExtraSport()">
+            <span>Istruttore</span>
+            <strong>
+              <ng-container *ngIf="hasInstructor(); else noInstructor">
+                {{ selectedInstructorName() }}
+              </ng-container>
+
+              <ng-template #noInstructor>Nessun istruttore</ng-template>
+            </strong>
+          </div>
+
+          <div class="details-row" *ngIf="isExtraSport()">
+            <span>Numero racchette</span>
+            <strong>{{ selectedRacketsLabel() }}</strong>
+          </div>
+
+          <div class="details-row" *ngIf="isExtraSport() && booking.numeroPartecipanti">
+            <span>Partecipanti</span>
+            <strong>{{ booking.numeroPartecipanti }}</strong>
+          </div>
+        </div>
+      </section>
+
+      <section class="costs-section">
+        <h2>Costi</h2>
+
+        <div class="cost-row">
+          <span>Costo campo</span>
+          <strong>{{ formatCurrency(previewCostoCampo()) }}</strong>
+        </div>
+
+        <div class="cost-row" *ngIf="isExtraSport()">
+          <span>Costo istruttore</span>
+          <strong>{{ formatCurrency(previewCostoIstruttore()) }}</strong>
+        </div>
+
+        <div class="cost-row" *ngIf="isExtraSport()">
+          <span>Costo racchette</span>
+          <strong>{{ formatCurrency(previewCostoRacchette()) }}</strong>
+        </div>
+
+        <div class="cost-row total">
+          <span>Totale pagato</span>
+          <strong>{{ formatCurrency(totalPaid()) }}</strong>
+        </div>
+      </section>
+    </section>
+
+    <section class="confirmation-actions">
+      <button type="button" class="secondary-button" (click)="startNewBooking()">
+        <span class="material-symbols-outlined">add_circle</span>
+        <span>Nuova prenotazione</span>
+      </button>
+
+      <button type="button" class="primary-button" (click)="goToDashboard()">
+        <span>Vai alla dashboard</span>
+        <span class="material-symbols-outlined">arrow_forward</span>
+      </button>
+    </section>
+  </section>
+</main>

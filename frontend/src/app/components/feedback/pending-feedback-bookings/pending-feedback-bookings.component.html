@@ -1,0 +1,138 @@
+<main class="feedback-page">
+  <section class="feedback-container">
+    <header class="page-header">
+      <span class="page-kicker">Feedback</span>
+      <h1>Prenotazioni da recensire</h1>
+      <p>
+        Qui trovi le prenotazioni passate per cui puoi lasciare una recensione sulla tua esperienza.
+      </p>
+    </header>
+
+    <section *ngIf="feedbackMessage()" class="form-alert success-feedback">
+      <span class="material-symbols-outlined">check_circle</span>
+      <span>{{ feedbackMessage() }}</span>
+    </section>
+
+    <section *ngIf="errorMessage()" class="form-alert error-feedback">
+      <span class="material-symbols-outlined">error</span>
+      <span>{{ errorMessage() }}</span>
+    </section>
+
+    <section *ngIf="isLoading()" class="loading-panel">
+      <div class="loading-spinner" aria-hidden="true"></div>
+      <span>Caricamento prenotazioni...</span>
+    </section>
+
+    <section *ngIf="!isLoading() && prenotazioni().length === 0" class="empty-panel">
+      <span class="material-symbols-outlined">verified</span>
+      <div>
+        <strong>Nessuna prenotazione da recensire</strong>
+        <p>Quando una prenotazione sarà conclusa e senza feedback, comparirà qui.</p>
+      </div>
+    </section>
+
+    <section *ngIf="!isLoading() && prenotazioni().length > 0" class="booking-grid">
+      <article
+        *ngFor="let prenotazione of prenotazioni(); trackBy: trackByPrenotazioneId"
+        class="booking-card"
+        [class.open]="isFormOpen(prenotazione.prenotazioneId)"
+      >
+        <div class="booking-card-header">
+          <div class="booking-icon" [class.disabled]="!prenotazione.recensibile">
+            <span class="material-symbols-outlined">
+              {{ getBookingStatusIcon(prenotazione) }}
+            </span>
+          </div>
+
+          <div>
+            <h2>Prenotazione #{{ prenotazione.prenotazioneId }}</h2>
+            <p>Campo #{{ prenotazione.campoId }}</p>
+          </div>
+        </div>
+
+        <div class="booking-info-list">
+          <div class="booking-info-row">
+            <span>Data</span>
+            <strong>{{ formatDate(prenotazione.inizio) }}</strong>
+          </div>
+
+          <div class="booking-info-row">
+            <span>Ora</span>
+            <strong>{{ formatTimeRange(prenotazione.inizio, prenotazione.fine) }}</strong>
+          </div>
+
+          <div class="booking-info-row">
+            <span>Stato</span>
+            <strong>{{ getBookingStatusLabel(prenotazione) }}</strong>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          class="primary-button"
+          [disabled]="!prenotazione.recensibile || prenotazione.feedbackGiaInserito || isSubmitting(prenotazione.prenotazioneId)"
+          (click)="openFeedbackForm(prenotazione)"
+        >
+          <span class="material-symbols-outlined">rate_review</span>
+          <span>Lascia feedback</span>
+        </button>
+
+        <form *ngIf="isFormOpen(prenotazione.prenotazioneId)" class="feedback-form">
+          <div class="form-heading">
+            <h3>Scrivi recensione</h3>
+            <p>Valuta l’esperienza vissuta durante la prenotazione.</p>
+          </div>
+
+          <div class="rating-row" role="group" aria-label="Valutazione feedback">
+            <button
+              *ngFor="let rating of ratingOptions"
+              type="button"
+              class="star-button"
+              [class.active]="rating <= valutazione()"
+              (click)="setRating(rating)"
+            >
+              <span class="material-symbols-outlined">star</span>
+            </button>
+          </div>
+
+          <label class="comment-field">
+            <span>Commento</span>
+            <textarea
+              name="commentoFeedback"
+              rows="5"
+              maxlength="500"
+              placeholder="Racconta com’è andata la tua esperienza..."
+              [ngModel]="commento()"
+              (ngModelChange)="setComment($event)"
+            ></textarea>
+          </label>
+
+          <p class="comment-counter">
+            {{ commento().length }}/{{ maxCommentLength }} caratteri
+          </p>
+
+          <div class="form-actions">
+            <button
+              type="button"
+              class="secondary-button"
+              [disabled]="isSubmitting(prenotazione.prenotazioneId)"
+              (click)="closeFeedbackForm()"
+            >
+              Annulla
+            </button>
+
+            <button
+              type="button"
+              class="primary-button"
+              [disabled]="!canSubmitFeedback()"
+              (click)="submitFeedback()"
+            >
+              <span *ngIf="!isSubmitting(prenotazione.prenotazioneId)">Invia feedback</span>
+              <span *ngIf="isSubmitting(prenotazione.prenotazioneId)">Invio...</span>
+            </button>
+          </div>
+        </form>
+      </article>
+    </section>
+  </section>
+</main>

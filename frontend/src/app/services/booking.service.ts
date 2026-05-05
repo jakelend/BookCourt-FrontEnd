@@ -1,4 +1,4 @@
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { map, Observable, take, timeout } from 'rxjs';
 import {
@@ -7,12 +7,104 @@ import {
   CampiPerSportApiResponseDto,
 } from '../dto/response/booking/booking-field-response.dto';
 
+export type BookingCalendarEventType =
+  | 'PRENOTAZIONE'
+  | 'MANUTENZIONE'
+  | 'LOCK'
+  | 'FESTIVITA'
+  | 'ECCEZIONE_ORARIO_CENTRO'
+  | 'ECCEZIONE_ORARI_CENTRO'
+  | string;
+
+export interface BookingCalendarEventResponseDto {
+  tipo: BookingCalendarEventType;
+  titolo: string;
+  inizio: string;
+  fine: string;
+  selezionabile: boolean;
+  prenotazioneId: number | null;
+  lockId: number | null;
+  istruttoreId: number | null;
+}
+
+export interface BookingFieldCalendarResponseDto {
+  apertura: string;
+  campoId: number;
+  chiuso: boolean;
+  chiusura: string;
+  data: string;
+  eventi: BookingCalendarEventResponseDto[];
+  nomeCampo: string;
+  sport: BookingSport;
+}
+
+export interface BookingAvailableInstructorResponseDto {
+  istruttoreId: number;
+  nome: string;
+  cognome: string;
+  costoOrario: number | null;
+  fotoProfiloUrl?: string | null;
+}
+
+export interface CreateBookingLockRequestDto {
+  campoId: number;
+  inizio: string;
+  durataMinuti: number;
+  conIstruttore: boolean;
+  istruttoreId?: number | null;
+}
+
+export interface BookingLockResponseDto {
+  lockId: number;
+  campoId: number;
+  istruttoreId: number | null;
+  inizio: string;
+  fine: string;
+  stato: string;
+  scadeIl: string;
+}
+
+export interface BookingPreviewRequestDto {
+  lockId: number;
+  numeroPartecipanti: number;
+  numeroRacchette: number;
+}
+
+export interface BookingPreviewResponseDto {
+  costoCampo: number;
+  costoIstruttore: number;
+  costoRacchette: number;
+  totale: number;
+}
+
+export interface ConfermaPrenotazioneRequestDto {
+  lockId: number;
+  numeroPartecipanti: number;
+  numeroRacchette: number;
+}
+
+export interface PrenotazioneConfermataResponseDto {
+  id: number;
+  campoId: number;
+  clienteId: number;
+  istruttoreId: number | null;
+  inizio: string;
+  fine: string;
+  numeroPartecipanti: number | null;
+  numeroRacchette: number;
+  costoTotale: number;
+  stato: string;
+  feedbackInserito: boolean;
+  recensibile: boolean;
+}
+
 @Injectable({
   providedIn: 'root',
 })
 export class BookingService {
   private readonly backendBaseUrl = 'http://localhost:8080';
   private readonly campiApiUrl = `${this.backendBaseUrl}/api/campi`;
+  private readonly prenotazioniApiUrl = `${this.backendBaseUrl}/api/prenotazioni`;
 
   constructor(private readonly http: HttpClient) {}
 
@@ -36,6 +128,103 @@ export class BookingService {
             urlImmaginePrincipale: this.buildImageUrl(campo.urlImmagine),
           })),
         ),
+      );
+  }
+
+  getCalendarioCampo(
+    campoId: number,
+    data: string,
+  ): Observable<BookingFieldCalendarResponseDto> {
+    const params = new HttpParams().set('data', data);
+
+    return this.http
+      .get<BookingFieldCalendarResponseDto>(
+        `${this.campiApiUrl}/${campoId}/calendario`,
+        { params },
+      )
+      .pipe(
+        timeout(10000),
+        take(1),
+        map((response) => ({
+          ...response,
+          eventi: response.eventi ?? [],
+        })),
+      );
+  }
+
+  getIstruttoriDisponibili(
+    campoId: number,
+    inizio: string,
+    fine: string,
+  ): Observable<BookingAvailableInstructorResponseDto[]> {
+    const params = new HttpParams()
+      .set('campoId', String(campoId))
+      .set('inizio', inizio)
+      .set('fine', fine);
+
+    return this.http
+      .get<BookingAvailableInstructorResponseDto[]>(
+        `${this.prenotazioniApiUrl}/istruttori-disponibili`,
+        { params },
+      )
+      .pipe(
+        timeout(10000),
+        take(1),
+        map((response) => response ?? []),
+      );
+  }
+
+  creaLockPrenotazione(request: CreateBookingLockRequestDto): Observable<BookingLockResponseDto> {
+    return this.http
+      .post<BookingLockResponseDto>(
+        `${this.prenotazioniApiUrl}/creazione-lock`,
+        request,
+      )
+      .pipe(timeout(10000), take(1));
+  }
+
+  getPreviewPrenotazione(request: BookingPreviewRequestDto): Observable<BookingPreviewResponseDto> {
+    return this.http
+      .post<BookingPreviewResponseDto>(
+        `${this.prenotazioniApiUrl}/preview`,
+        request,
+      )
+      .pipe(
+        timeout(10000),
+        take(1),
+        map((response) => ({
+          costoCampo: Number(response.costoCampo ?? 0),
+          costoIstruttore: Number(response.costoIstruttore ?? 0),
+          costoRacchette: Number(response.costoRacchette ?? 0),
+          totale: Number(response.totale ?? 0),
+        })),
+      );
+  }
+
+  confermaPrenotazione(
+    request: ConfermaPrenotazioneRequestDto,
+  ): Observable<PrenotazioneConfermataResponseDto> {
+    return this.http
+      .post<PrenotazioneConfermataResponseDto>(
+        `${this.prenotazioniApiUrl}/creazione`,
+        request,
+      )
+      .pipe(
+        timeout(10000),
+        take(1),
+        map((response) => ({
+          ...response,
+          costoTotale: Number(response.costoTotale ?? 0),
+        })),
+      );
+  }
+
+  eliminaLockPrenotazione(lockId: number): Observable<void> {
+    return this.http
+      .delete<void>(`${this.prenotazioniApiUrl}/eliminazione-lock/${lockId}`)
+      .pipe(
+        timeout(10000),
+        take(1),
       );
   }
 

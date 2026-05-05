@@ -1,0 +1,154 @@
+@import '../../instructors/create-instructor/create-instructor.component.css';
+
+:host {
+  display: block;
+  flex: 1;
+}
+
+.edit-account-page {
+  min-height: calc(100vh - 64px);
+  padding: 24px;
+  color: #191c1e;
+  font-family: Inter, Roboto, Arial, sans-serif;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+}
+
+.edit-account-panel {
+  width: min(760px, 100%);
+  padding: 28px;
+  border: 1px solid #e0e3e5;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+}
+
+.edit-account-form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.form-grid {
+  display: grid;
+  gap: 18px;
+}
+
+.form-grid.two-columns {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.form-field small {
+  color: #ba1a1a;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.form-message {
+  border-radius: 10px;
+  padding: 12px 14px;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.error-message {
+  background: #ffdad6;
+  color: #410002;
+}
+
+.success-message {
+  background: #d7f8d4;
+  color: #0b3d0b;
+}
+
+.loading-panel {
+  min-height: 58px;
+  margin-bottom: 18px;
+  border: 1px solid #e0e3e5;
+  border-radius: 14px;
+  padding: 14px 16px;
+  background: #ffffff;
+  color: #45464d;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.loading-spinner {
+  width: 26px;
+  height: 26px;
+  border: 3px solid #e0e3e5;
+  border-top-color: #2170e4;
+  border-radius: 999px;
+  animation: account-spin 800ms linear infinite;
+}
+
+.form-actions {
+  margin-top: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.secondary-action {
+  min-height: 44px;
+  border: 1px solid #c6c6cd;
+  border-radius: 9px;
+  padding: 0 18px;
+  background: #ffffff;
+  color: #45464d;
+  font-size: 14px;
+  font-weight: 900;
+  cursor: pointer;
+  transition:
+    border-color 160ms ease,
+    color 160ms ease,
+    background-color 160ms ease;
+}
+
+.secondary-action:hover {
+  border-color: #2170e4;
+  color: #2170e4;
+  background: #f7f9fb;
+}
+
+.primary-action:disabled,
+.secondary-action:disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+@keyframes account-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 720px) {
+  .edit-account-page {
+    padding: 20px 16px 40px;
+  }
+
+  .edit-account-panel {
+    padding: 22px;
+  }
+
+  .form-grid.two-columns {
+    grid-template-columns: 1fr;
+  }
+
+  .form-actions {
+    flex-direction: column-reverse;
+    align-items: stretch;
+  }
+
+  .primary-action,
+  .secondary-action {
+    width: 100%;
+  }
+}

@@ -72,6 +72,18 @@ export interface ProfileResponseDto {
   costoOrarioPadel?: number | null;
 }
 
+export interface UpdatePersonalDataRequestDto {
+  nome: string;
+  cognome: string;
+  email: string;
+  telefono: string;
+}
+
+export interface UpdatePersonalDataResponseDto {
+  message: string;
+  cliente: ProfileResponseDto;
+}
+
 @Injectable({
   providedIn: 'root',
 })
@@ -120,6 +132,12 @@ export class AuthService {
 
   getCurrentProfile(): Observable<ProfileResponseDto> {
     return this.http.get<ProfileResponseDto>(`${this.profileUrl}/me`);
+  }
+
+  updatePersonalData(payload: UpdatePersonalDataRequestDto): Observable<UpdatePersonalDataResponseDto> {
+    return this.http
+      .put<UpdatePersonalDataResponseDto>(`${this.profileUrl}/me/dati-personali`, payload)
+      .pipe(tap((response) => this.updateCurrentUserFromProfile(response.cliente)));
   }
 
   logout(): void {

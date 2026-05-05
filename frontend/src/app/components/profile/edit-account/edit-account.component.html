@@ -1,0 +1,125 @@
+<main class="edit-account-page">
+  <section class="edit-account-panel">
+    <header class="form-panel-header">
+      <span class="section-eyebrow">Gestione account</span>
+      <h1>Modifica dati personali</h1>
+      <p>
+        Aggiorna nome, cognome, email e numero di telefono del tuo account.
+      </p>
+    </header>
+
+    <div *ngIf="isLoadingProfile()" class="loading-panel">
+      <div class="loading-spinner" aria-hidden="true"></div>
+      <span>Caricamento dati account...</span>
+    </div>
+
+    <form
+      class="edit-account-form"
+      [formGroup]="accountForm"
+      (ngSubmit)="onSubmit()"
+      novalidate
+    >
+      <div class="form-grid two-columns">
+        <label class="form-field">
+          <span>Nome</span>
+          <input
+            type="text"
+            formControlName="nome"
+            autocomplete="given-name"
+            placeholder="Inserisci il nome"
+          />
+
+          <small *ngIf="(submitted || nome?.touched) && nome?.errors?.['required']">
+            Il nome è obbligatorio.
+          </small>
+
+          <small *ngIf="(submitted || nome?.touched) && nome?.errors?.['maxlength']">
+            Il nome non può superare 80 caratteri.
+          </small>
+        </label>
+
+        <label class="form-field">
+          <span>Cognome</span>
+          <input
+            type="text"
+            formControlName="cognome"
+            autocomplete="family-name"
+            placeholder="Inserisci il cognome"
+          />
+
+          <small *ngIf="(submitted || cognome?.touched) && cognome?.errors?.['required']">
+            Il cognome è obbligatorio.
+          </small>
+
+          <small *ngIf="(submitted || cognome?.touched) && cognome?.errors?.['maxlength']">
+            Il cognome non può superare 80 caratteri.
+          </small>
+        </label>
+      </div>
+
+      <label class="form-field">
+        <span>Email</span>
+        <input
+          type="email"
+          formControlName="email"
+          autocomplete="email"
+          placeholder="nome@email.it"
+        />
+
+        <small *ngIf="(submitted || email?.touched) && email?.errors?.['required']">
+          L'email è obbligatoria.
+        </small>
+
+        <small *ngIf="(submitted || email?.touched) && email?.errors?.['email']">
+          Inserisci un'email valida.
+        </small>
+
+        <small *ngIf="(submitted || email?.touched) && email?.errors?.['maxlength']">
+          L'email non può superare 255 caratteri.
+        </small>
+      </label>
+
+      <label class="form-field">
+        <span>Numero telefono</span>
+        <input
+          type="tel"
+          formControlName="telefono"
+          autocomplete="tel"
+          inputmode="numeric"
+          maxlength="10"
+          placeholder="3331234567"
+        />
+
+        <small *ngIf="(submitted || telefono?.touched) && telefono?.errors?.['required']">
+          Il numero di telefono è obbligatorio.
+        </small>
+
+        <small *ngIf="(submitted || telefono?.touched) && telefono?.errors?.['pattern']">
+          Il telefono deve contenere esattamente 10 cifre.
+        </small>
+      </label>
+
+      <div *ngIf="errorMessage()" class="form-message error-message">
+        {{ errorMessage() }}
+      </div>
+
+      <div *ngIf="successMessage()" class="form-message success-message">
+        {{ successMessage() }}
+      </div>
+
+      <div class="form-actions">
+        <button type="button" class="secondary-action" (click)="goBackToDashboard()">
+          Indietro
+        </button>
+
+        <button
+          type="submit"
+          class="primary-action"
+          [disabled]="accountForm.invalid || isSaving() || isLoadingProfile()"
+        >
+          {{ isSaving() ? 'Salvataggio...' : 'Modifica' }}
+        </button>
+      </div>
+    </form>
+  </section>
+</main>

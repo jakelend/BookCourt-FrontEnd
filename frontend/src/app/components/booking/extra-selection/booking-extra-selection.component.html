@@ -1,0 +1,220 @@
+<main class="booking-extra-page">
+  <section class="booking-extra-container">
+    <section class="booking-stepper" aria-label="Avanzamento prenotazione">
+      <div class="stepper-header">
+        <span class="stepper-current">Step {{ currentStep }} di {{ totalSteps }}</span>
+        <span class="stepper-title">Extra prenotazione</span>
+      </div>
+
+      <div class="stepper-segments" aria-hidden="true">
+        <span
+          *ngFor="let step of steps; let i = index; trackBy: trackByStepLabel"
+          [class.active]="isStepCompleted(i)"
+        ></span>
+      </div>
+
+      <div class="step-labels">
+        <span
+          *ngFor="let step of steps; let i = index; trackBy: trackByStepLabel"
+          [class.active]="isStepCompleted(i)"
+        >
+          {{ step.label }}
+        </span>
+      </div>
+    </section>
+
+    <header class="page-header">
+      <h1>Scegli gli extra</h1>
+      <p>
+        Campo selezionato:
+        <strong>{{ selectedFieldName() || 'Campo non disponibile' }}</strong>
+        <span *ngIf="selectedSportLabel()"> · {{ selectedSportLabel() }}</span>
+        <span> · {{ selectedDate() }} · {{ selectedStartTime() }} - {{ selectedEndTime() }}</span>
+      </p>
+    </header>
+
+    <section *ngIf="errorMessage()" class="form-alert error-feedback">
+      {{ errorMessage() }}
+    </section>
+
+    <section *ngIf="feedbackMessage()" class="form-alert success-feedback">
+      {{ feedbackMessage() }}
+    </section>
+
+    <section class="extra-workspace">
+      <section class="main-column">
+        <section class="section-card" *ngIf="isInstructorSport(); else noInstructorSport">
+          <div class="section-heading">
+            <span class="step-badge">1</span>
+
+            <div>
+              <h2>Istruttori disponibili</h2>
+              <p>
+                Puoi selezionare un istruttore disponibile per il giorno e l'orario scelti,
+                oppure continuare senza istruttore.
+              </p>
+            </div>
+          </div>
+
+          <div *ngIf="instructorDurationMessage()" class="instructor-duration-alert">
+            <span class="material-symbols-outlined">info</span>
+            <div>
+              <strong>Istruttore non selezionabile</strong>
+              <p>{{ instructorDurationMessage() }}</p>
+            </div>
+          </div>
+
+          <div *ngIf="isLoadingInstructors() && canUseInstructorWithSelectedDuration()" class="loading-panel">
+            <div class="loading-spinner" aria-hidden="true"></div>
+            <span>Caricamento istruttori disponibili...</span>
+          </div>
+
+          <div
+            *ngIf="!isLoadingInstructors() && canUseInstructorWithSelectedDuration()"
+            class="no-instructor-card"
+            [class.selected]="selectedInstructorId() === null"
+          >
+            <div>
+              <h3>Nessun istruttore</h3>
+              <p>Procedi con la sola prenotazione del campo.</p>
+            </div>
+
+            <button type="button" class="select-button secondary" (click)="clearInstructorSelection()">
+              {{ selectedInstructorId() === null ? 'Selezionato' : 'Continua senza istruttore' }}
+            </button>
+          </div>
+
+          <div *ngIf="!isLoadingInstructors() && canUseInstructorWithSelectedDuration() && instructors().length > 0" class="instructors-grid">
+            <article
+              *ngFor="let instructor of instructors(); trackBy: trackByInstructorId"
+              class="instructor-card"
+              [class.selected]="isInstructorSelected(instructor)"
+            >
+              <div class="card-media">
+                <img
+                  *ngIf="getInstructorImageUrl(instructor) as imageUrl; else instructorPlaceholder"
+                  [src]="imageUrl"
+                  [alt]="getInstructorFullName(instructor)"
+                />
+
+                <ng-template #instructorPlaceholder>
+                  <div class="instructor-placeholder">
+                    <span class="material-symbols-outlined">person</span>
+                  </div>
+                </ng-template>
+
+                <div class="media-overlay"></div>
+
+                <div class="media-title">
+                  <h3>{{ getInstructorFullName(instructor) }}</h3>
+                </div>
+              </div>
+
+              <div class="card-body">
+                <div class="status-row">
+                  <span class="status-pill">Disponibile</span>
+                </div>
+
+                <div class="rates-panel">
+                  <div class="rate-row">
+                    <div class="rate-name">
+                      <span class="material-symbols-outlined">school</span>
+                      <span>Lezione {{ selectedSportLabel() }}</span>
+                    </div>
+                    <strong>{{ getInstructorRateLabel(instructor) }}</strong>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  class="select-button"
+                  [class.selected-button]="isInstructorSelected(instructor)"
+                  (click)="selectInstructor(instructor)"
+                >
+                  {{ isInstructorSelected(instructor) ? 'Istruttore selezionato' : 'Seleziona istruttore' }}
+                </button>
+              </div>
+            </article>
+          </div>
+
+          <div *ngIf="!isLoadingInstructors() && canUseInstructorWithSelectedDuration() && instructors().length === 0" class="empty-panel">
+            <span class="material-symbols-outlined">person_off</span>
+            <div>
+              <strong>Nessun istruttore disponibile</strong>
+              <p>Puoi comunque continuare senza istruttore.</p>
+            </div>
+          </div>
+        </section>
+
+        <ng-template #noInstructorSport>
+          <section class="section-card">
+            <div class="section-heading">
+              <span class="step-badge">1</span>
+
+              <div>
+                <h2>Istruttore non previsto</h2>
+                <p>Per il calcetto non è prevista la selezione dell'istruttore in questo flusso.</p>
+              </div>
+            </div>
+          </section>
+        </ng-template>
+
+        <section class="section-card">
+          <div class="section-heading">
+            <span class="step-badge">2</span>
+
+            <div>
+              <h2>Noleggio racchette</h2>
+              <p>Puoi noleggiare fino a 4 racchette. Ogni racchetta costa €{{ racketUnitPrice }}.</p>
+            </div>
+          </div>
+
+          <div class="racket-options" role="group" aria-label="Numero racchette da noleggiare">
+            <button
+              *ngFor="let option of racketOptions; trackBy: trackByRacketOption"
+              type="button"
+              class="racket-button"
+              [class.active]="selectedRackets() === option"
+              (click)="selectRackets(option)"
+            >
+              <span class="material-symbols-outlined">sports_tennis</span>
+              <strong>{{ option }}</strong>
+              <small>{{ option === 1 ? 'racchetta' : 'racchette' }}</small>
+            </button>
+          </div>
+        </section>
+      </section>
+
+      <aside class="summary-card">
+        <h2>Riepilogo extra</h2>
+
+        <div class="summary-row">
+          <span>Istruttore</span>
+          <strong>{{ selectedInstructorName() }}</strong>
+        </div>
+
+        <div class="summary-row">
+          <span>Racchette</span>
+          <strong>{{ selectedRackets() }}</strong>
+        </div>
+
+        <div class="summary-row">
+          <span>Costo racchette</span>
+          <strong>€{{ racketsCost().toFixed(2) }}</strong>
+        </div>
+
+        <div class="booking-actions">
+          <button type="button" class="back-button" [disabled]="isReleasingLock()" (click)="goBack()">
+            <span class="material-symbols-outlined">arrow_back</span>
+            <span>Indietro</span>
+          </button>
+
+          <button type="button" class="primary-button" [disabled]="!canContinue()" (click)="goNext()">
+            <span>Continua</span>
+            <span class="material-symbols-outlined">arrow_forward</span>
+          </button>
+        </div>
+      </aside>
+    </section>
+  </section>
+</main>

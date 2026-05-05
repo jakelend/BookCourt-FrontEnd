@@ -24,6 +24,12 @@ import { AuthGuard } from './guard/auth.guard';
 import { GuestGuard } from './guard/guest.guard';
 import { RoleGuard } from './guard/role.guard';
 import { Role } from './enumeration/role.enum';
+import { BookingSportSelectionComponent } from './components/booking/sport-selection/booking-sport-selection.component';
+import { BookingFieldSelectionComponent } from './components/booking/field-selection/booking-field-selection.component';
+import { BookingDateTimeSelectionComponent } from './components/booking/date-time-selection/booking-date-time-selection.component';
+import { EditAccountComponent } from './components/profile/edit-account/edit-account.component';
+import { PendingFeedbackBookingsComponent } from './components/feedback/pending-feedback-bookings/pending-feedback-bookings.component';
+import { CompletedFeedbackBookingsComponent } from './components/feedback/completed-feedback-bookings/completed-feedback-bookings.component';
 
 export const routes: Routes = [
   {
@@ -136,6 +142,42 @@ export const routes: Routes = [
         canActivate: [RoleGuard],
         data: { roles: [Role.CLIENTE, Role.SEGRETARIA, Role.MANAGER] },
       },
+      {
+        path: 'prenotazioni',
+        component: BookingSportSelectionComponent,
+        canActivate: [RoleGuard],
+        data: { roles: [Role.CLIENTE] },
+      },
+      {
+        path: 'prenotazioni/campi',
+        component: BookingFieldSelectionComponent,
+        canActivate: [RoleGuard],
+        data: { roles: [Role.CLIENTE] },
+      },
+      {
+        path: 'prenotazioni/orario',
+        component: BookingDateTimeSelectionComponent,
+        canActivate: [RoleGuard],
+        data: { roles: [Role.CLIENTE] },
+      },
+      {
+        path: 'feedback/da-recensire',
+        component: PendingFeedbackBookingsComponent,
+        canActivate: [RoleGuard],
+        data: { roles: [Role.CLIENTE] },
+      },
+      {
+        path: 'feedback/concluse',
+        component: CompletedFeedbackBookingsComponent,
+        canActivate: [RoleGuard],
+        data: { roles: [Role.CLIENTE] },
+      },
+      {
+        path: 'account-management',
+        component: EditAccountComponent,
+        canActivate: [RoleGuard],
+        data: { roles: [Role.CLIENTE] },
+      },
     ],
   },
   {
@@ -201,6 +243,22 @@ export const routes: Routes = [
   {
     path: 'prenotazioni/campi',
     redirectTo: 'dashboard/prenotazioni/campi',
+  },
+  {
+    path: 'prenotazioni/orario',
+    redirectTo: 'dashboard/prenotazioni/orario',
+  },
+  {
+    path: 'feedback/da-recensire',
+    redirectTo: 'dashboard/feedback/da-recensire',
+  },
+  {
+    path: 'feedback/concluse',
+    redirectTo: 'dashboard/feedback/concluse',
+  },
+  {
+    path: 'account-management',
+    redirectTo: 'dashboard/account-management',
   },
   {
     path: '**',

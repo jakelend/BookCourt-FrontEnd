@@ -1,0 +1,343 @@
+<main class="booking-time-page">
+  <section class="booking-time-container">
+    <section class="booking-stepper" aria-label="Avanzamento prenotazione">
+      <div class="stepper-header">
+        <span class="stepper-current">
+          Step {{ currentStep }} di {{ totalSteps }}
+        </span>
+
+        <span class="stepper-title">
+          Scelta data e ora
+        </span>
+      </div>
+
+      <div class="stepper-segments" aria-hidden="true">
+        <span
+          *ngFor="let step of steps; let i = index; trackBy: trackByStepLabel"
+          [class.active]="isStepCompleted(i)"
+        ></span>
+      </div>
+
+      <div class="step-labels">
+        <span
+          *ngFor="let step of steps; let i = index; trackBy: trackByStepLabel"
+          [class.active]="isStepCompleted(i)"
+        >
+          {{ step.label }}
+        </span>
+      </div>
+    </section>
+
+    <header class="page-header">
+      <h1>Scegli data e ora</h1>
+      <p>
+        Campo selezionato:
+        <strong>{{ selectedFieldName() || 'Campo non disponibile' }}</strong>
+        <span *ngIf="selectedSportLabel()"> · {{ selectedSportLabel() }}</span>
+      </p>
+    </header>
+
+    <section class="booking-workspace">
+      <div class="calendar-column">
+        <section class="calendar-toolbar-card">
+          <div class="toolbar-title-block">
+            <span class="material-symbols-outlined toolbar-icon">calendar_month</span>
+
+            <div>
+              <h2>{{ selectedDateTitle() }}</h2>
+              <p>{{ calendarStatusLabel() }}</p>
+            </div>
+          </div>
+
+          <div class="toolbar-actions">
+            <button
+              type="button"
+              class="day-nav-button"
+              aria-label="Giorno precedente"
+              (click)="goToPreviousDay()"
+            >
+              <span class="material-symbols-outlined">chevron_left</span>
+            </button>
+
+            <button type="button" class="today-button" (click)="goToToday()">
+              Oggi
+            </button>
+
+            <button
+              type="button"
+              class="day-nav-button"
+              aria-label="Giorno successivo"
+              (click)="goToNextDay()"
+            >
+              <span class="material-symbols-outlined">chevron_right</span>
+            </button>
+
+            <mat-form-field appearance="outline" class="date-picker-field">
+              <mat-label>Scegli giorno</mat-label>
+              <input
+                matInput
+                [matDatepicker]="picker"
+                [ngModel]="selectedDateValue()"
+                (ngModelChange)="onDateSelected($event)"
+                readonly
+              />
+              <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
+              <mat-datepicker #picker></mat-datepicker>
+            </mat-form-field>
+          </div>
+        </section>
+
+        <section class="calendar-legend-card">
+          <span class="legend-item">
+            <span class="legend-dot booking-dot"></span>
+            Prenotazioni
+          </span>
+
+          <span class="legend-item">
+            <span class="legend-dot maintenance-dot"></span>
+            Manutenzioni
+          </span>
+
+          <span class="legend-item">
+            <span class="legend-dot exception-dot"></span>
+            Eccezioni orario centro
+          </span>
+
+          <span class="legend-item">
+            <span class="legend-dot lock-dot"></span>
+            Lock temporanei
+          </span>
+
+          <span class="legend-item">
+            <span class="legend-dot selection-dot"></span>
+            Tua selezione
+          </span>
+        </section>
+
+        <section class="calendar-shell">
+          <div class="calendar-scroll-area">
+            <div class="time-column">
+              <div
+                *ngFor="let slot of hourSlots(); trackBy: trackByHour"
+                class="time-label"
+                [style.top.%]="slot.topPct"
+              >
+                {{ slot.label }}
+              </div>
+            </div>
+
+            <div class="day-column">
+              <div
+                *ngFor="let slot of hourSlots(); trackBy: trackByHour"
+                class="hour-line"
+                [style.top.%]="slot.topPct"
+              ></div>
+
+              <article
+                *ngFor="let event of calendarEventViews(); trackBy: trackByCalendarEvent"
+                class="calendar-event field-event"
+                [ngClass]="event.cssClass"
+                [style.top.%]="event.topPct"
+                [style.height.%]="event.heightPct"
+              >
+                <div class="event-main-row">
+                  <span class="material-symbols-outlined event-icon">
+                    {{ event.icon }}
+                  </span>
+
+                  <div class="event-content">
+                    <h3>{{ event.titolo }}</h3>
+                    <p class="event-time">{{ event.timeLabel }}</p>
+                  </div>
+                </div>
+              </article>
+
+              <article
+                *ngIf="selectedBookingEvent() as event"
+                class="calendar-event selected-event"
+                [style.top.%]="event.topPct"
+                [style.height.%]="event.heightPct"
+              >
+                <div class="event-main-row">
+                  <span class="material-symbols-outlined event-icon">event_available</span>
+
+                  <div class="event-content">
+                    <h3>{{ event.title }}</h3>
+                    <p class="event-time">{{ event.timeLabel }}</p>
+                  </div>
+                </div>
+              </article>
+
+              <div
+                *ngIf="!selectedBookingEvent() && calendarEventViews().length === 0"
+                class="empty-day-card"
+              >
+                <span class="material-symbols-outlined">touch_app</span>
+                <strong>Nessun evento in calendario</strong>
+                <p>
+                  Seleziona un intervallo disponibile dalla sezione a destra.
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <aside class="side-panel">
+        <section class="form-card">
+          <div class="section-heading compact">
+            <span class="step-badge">3</span>
+
+            <div>
+              <h2>Scegli orario</h2>
+              <p>
+                Gli orari vengono calcolati dal calendario del campo e non si sovrappongono agli eventi occupati.
+              </p>
+            </div>
+          </div>
+
+          <div *ngIf="formErrorMessage()" class="form-alert error-feedback">
+            {{ formErrorMessage() }}
+          </div>
+
+          <div *ngIf="calendarErrorMessage()" class="form-alert error-feedback">
+            {{ calendarErrorMessage() }}
+          </div>
+
+          <div *ngIf="feedbackMessage()" class="form-alert success-feedback">
+            {{ feedbackMessage() }}
+          </div>
+
+          <div *ngIf="isCalendarLoading()" class="form-alert loading-feedback">
+            Caricamento calendario del campo...
+          </div>
+
+          <form class="booking-time-form">
+            <div class="form-grid two-columns">
+              <label>
+                <span>Ora inizio</span>
+                <select
+                  name="bookingStartTime"
+                  [disabled]="isCalendarLoading() || isClosedDay() || startTimeOptions().length === 0"
+                  [ngModel]="selectedStartTime()"
+                  (ngModelChange)="setStartTime($event)"
+                >
+                  <option
+                    *ngFor="let time of startTimeOptions(); trackBy: trackByTime"
+                    [ngValue]="time"
+                  >
+                    {{ time }}
+                  </option>
+                </select>
+              </label>
+
+              <label>
+                <span>Ora fine</span>
+                <select
+                  name="bookingEndTime"
+                  [disabled]="isCalendarLoading() || isClosedDay() || endTimeOptions().length === 0"
+                  [ngModel]="selectedEndTime()"
+                  (ngModelChange)="setEndTime($event)"
+                >
+                  <option
+                    *ngFor="let time of endTimeOptions(); trackBy: trackByTime"
+                    [ngValue]="time"
+                  >
+                    {{ time }}
+                  </option>
+                </select>
+              </label>
+            </div>
+
+            <div class="duration-preview" [class.invalid]="!hasValidTimeRange()">
+              <span class="material-symbols-outlined">
+                {{ hasValidTimeRange() ? 'schedule' : 'error' }}
+              </span>
+
+              <div>
+                <strong>Durata prenotazione</strong>
+
+                <p *ngIf="hasValidTimeRange(); else invalidDuration">
+                  {{ selectedDurationLabel() }}
+                </p>
+
+                <ng-template #invalidDuration>
+                  <p>
+                    Seleziona un intervallo libero di almeno 1 ora. Gli orari avanzano di 30 minuti.
+                  </p>
+                </ng-template>
+              </div>
+            </div>
+
+            <div *ngIf="instructorDurationWarning()" class="instructor-duration-note">
+              <span class="material-symbols-outlined">info</span>
+              <p>{{ instructorDurationWarning() }}</p>
+            </div>
+          </form>
+        </section>
+
+        <section class="summary-card">
+          <h2>Riepilogo scelta</h2>
+
+          <div class="summary-row">
+            <span>Sport</span>
+            <strong>{{ selectedSportLabel() || '-' }}</strong>
+          </div>
+
+          <div class="summary-row">
+            <span>Campo</span>
+            <strong>{{ selectedFieldName() || '-' }}</strong>
+          </div>
+
+          <div class="summary-row">
+            <span>Data</span>
+            <strong>{{ selectedDateTitle() }}</strong>
+          </div>
+
+          <div class="summary-row">
+            <span>Prenotabile</span>
+            <strong>{{ bookingStartTime() }} - {{ bookingEndTime() }}</strong>
+          </div>
+
+          <div class="summary-row">
+            <span>Calendario</span>
+            <strong>{{ dayStartTime() }} - {{ dayEndTime() }}</strong>
+          </div>
+
+          <div class="summary-row">
+            <span>Ora</span>
+            <strong>
+              <ng-container *ngIf="hasValidTimeRange(); else noTimeSelected">
+                {{ selectedStartTime() }} - {{ selectedEndTime() }}
+              </ng-container>
+
+              <ng-template #noTimeSelected>-</ng-template>
+            </strong>
+          </div>
+
+          <div class="summary-row">
+            <span>Durata</span>
+            <strong>{{ selectedDurationLabel() }}</strong>
+          </div>
+
+          <div class="booking-actions">
+            <button type="button" class="back-button" (click)="goBack()">
+              <span class="material-symbols-outlined">arrow_back</span>
+              <span>Indietro</span>
+            </button>
+
+            <button
+              type="button"
+              class="primary-button"
+              [disabled]="!canContinue()"
+              (click)="goNext()"
+            >
+              <span>Continua</span>
+              <span class="material-symbols-outlined">arrow_forward</span>
+            </button>
+          </div>
+        </section>
+      </aside>
+    </section>
+  </section>
+</main>

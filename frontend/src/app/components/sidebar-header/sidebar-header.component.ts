@@ -46,8 +46,20 @@ export class SidebarHeaderComponent implements OnInit {
         route: '/dashboard/prenotazioni',
       },
       { label: 'Chat', icon: 'chat', key: 'chat', route: '/dashboard/chat' },
+      {
+        label: 'Prenotazioni effettuate',
+        icon: 'rate_review',
+        key: 'feedback-pending',
+        route: '/dashboard/feedback/da-recensire',
+      },
+      {
+        label: 'Prenotazioni concluse',
+        icon: 'task_alt',
+        key: 'feedback-completed',
+        route: '/dashboard/feedback/concluse',
+      },
       { label: 'Gestione Credenziali', icon: 'key', key: 'credentials' },
-      { label: 'Gestione account', icon: 'manage_accounts', key: 'account-management' },
+      { label: 'Gestione account', icon: 'manage_accounts', key: 'account-management', route: '/dashboard/account-management' },
     ],
 
     [Role.MANAGER]: [

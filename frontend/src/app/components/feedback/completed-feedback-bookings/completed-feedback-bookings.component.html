@@ -1,0 +1,63 @@
+<main class="feedback-page">
+  <section class="feedback-container">
+    <header class="page-header">
+      <span class="page-kicker">Feedback</span>
+      <h1>Prenotazioni concluse</h1>
+      <p>
+        Qui trovi le prenotazioni passate per cui hai già completato il feedback.
+      </p>
+    </header>
+
+    <section *ngIf="errorMessage()" class="form-alert error-feedback">
+      <span class="material-symbols-outlined">error</span>
+      <span>{{ errorMessage() }}</span>
+    </section>
+
+    <section *ngIf="isLoading()" class="loading-panel">
+      <div class="loading-spinner" aria-hidden="true"></div>
+      <span>Caricamento prenotazioni concluse...</span>
+    </section>
+
+    <section *ngIf="!isLoading() && feedbacks().length === 0" class="empty-panel">
+      <span class="material-symbols-outlined">reviews</span>
+      <div>
+        <strong>Nessuna prenotazione conclusa con feedback</strong>
+        <p>Dopo aver lasciato un feedback, la prenotazione verrà mostrata qui.</p>
+      </div>
+    </section>
+
+    <section *ngIf="!isLoading() && feedbacks().length > 0" class="feedback-grid">
+      <article
+        *ngFor="let feedback of feedbacks(); trackBy: trackByFeedbackId"
+        class="feedback-card"
+      >
+        <div class="feedback-card-header">
+          <div class="feedback-icon">
+            <span class="material-symbols-outlined">reviews</span>
+          </div>
+
+          <div>
+            <h2>Prenotazione #{{ feedback.prenotazioneId }}</h2>
+            <p>Feedback inviato il {{ formatCreatedAt(feedback.creatoIl) }}</p>
+          </div>
+        </div>
+
+        <div class="rating-row" aria-label="Valutazione lasciata">
+          <span
+            *ngFor="let star of starIndexes"
+            class="material-symbols-outlined star-icon"
+            [class.active]="isStarActive(feedback, star)"
+          >
+            star
+          </span>
+
+          <strong>{{ feedback.valutazione }}/5</strong>
+        </div>
+
+        <blockquote class="comment-box">
+          {{ getComment(feedback) }}
+        </blockquote>
+      </article>
+    </section>
+  </section>
+</main>

@@ -153,10 +153,7 @@ export class BookingFieldSelectionComponent implements OnInit {
     sessionStorage.setItem('booking.selectedFieldId', String(field.id));
     sessionStorage.setItem('booking.selectedFieldName', field.nome);
 
-    /*
-      Prossimo step:
-      void this.router.navigate(['/dashboard/prenotazioni/orario']);
-    */
+    void this.router.navigate(['/dashboard/prenotazioni/orario']);
   }
 
   selectFieldFromButton(field: BookingFieldResponseDto, event: MouseEvent): void {
