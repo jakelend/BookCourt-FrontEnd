@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component } from '@angular/core';
+import { Component, signal } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { of } from 'rxjs';
@@ -13,9 +13,9 @@ import { AuthService, LoginRequestDto } from '../../../services/auth.service';
   styleUrl: './login.component.css',
 })
 export class LoginComponent {
-  submitted = false;
-  isLoading = false;
-  loginError = '';
+  readonly submitted = signal(false);
+  readonly isLoading = signal(false);
+  readonly loginError = signal('');
   showPassword = false;
 
   loginForm: FormGroup;
@@ -43,8 +43,8 @@ export class LoginComponent {
   }
 
   onSubmit(): void {
-    this.submitted = true;
-    this.loginError = '';
+    this.submitted.set(true);
+    this.loginError.set('');
 
     // Se il form non è valido, evidenzio tutti gli errori e non chiamo il backend.
     if (this.loginForm.invalid) {
@@ -57,7 +57,7 @@ export class LoginComponent {
       password: this.password?.value ?? '',
     };
 
-    this.isLoading = true;
+    this.isLoading.set(true);
 
     this.authService
       .login(payload)
@@ -68,7 +68,7 @@ export class LoginComponent {
           ),
         ),
       )
-      .pipe(finalize(() => (this.isLoading = false)))
+      .pipe(finalize(() => this.isLoading.set(false)))
       .subscribe({
         next: (profile) => {
           if (profile) {
@@ -88,7 +88,7 @@ export class LoginComponent {
           void this.router.navigateByUrl(this.authService.getRedirectUrlForRole(role));
         },
         error: (error) => {
-          this.loginError = this.extractLoginErrorMessage(error);
+          this.loginError.set(this.extractLoginErrorMessage(error));
         },
       });
   }

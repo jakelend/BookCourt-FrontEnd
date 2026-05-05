@@ -30,7 +30,7 @@ export class SecretaryMaintenanceService {
       .set('inizio', inizio)
       .set('fine', fine);
 
-    return this.http.get<MaintenanceResponseDto[]>(`${this.segreteriaApiUrl}/manutenzioni`, { params });
+    return this.http.get<MaintenanceResponseDto[]>(`${this.segreteriaApiUrl}/visualizzazione-manutenzioni`, { params });
   }
 
   creaManutenzione(request: CreateMaintenanceRequestDto): Observable<MaintenanceResponseDto> {

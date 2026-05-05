@@ -20,11 +20,11 @@
           <span class="material-symbols-outlined input-icon">mail</span>
         </div>
 
-        <p *ngIf="(submitted || email?.touched) && email?.errors?.['required']" class="field-error">
+        <p *ngIf="(submitted() || email?.touched) && email?.errors?.['required']" class="field-error">
           Inserisci l'email.
         </p>
 
-        <p *ngIf="(submitted || email?.touched) && email?.errors?.['email']" class="field-error">
+        <p *ngIf="(submitted() || email?.touched) && email?.errors?.['email']" class="field-error">
           Inserisci un'email valida.
         </p>
       </div>
@@ -58,27 +58,27 @@
         </div>
 
         <p
-          *ngIf="(submitted || password?.touched) && password?.errors?.['required']"
+          *ngIf="(submitted() || password?.touched) && password?.errors?.['required']"
           class="field-error"
         >
           Inserisci la password.
         </p>
 
         <p
-          *ngIf="(submitted || password?.touched) && password?.errors?.['minlength']"
+          *ngIf="(submitted() || password?.touched) && password?.errors?.['minlength']"
           class="field-error"
         >
           La password deve avere almeno 6 caratteri.
         </p>
       </div>
 
-      <div *ngIf="loginError" class="form-message error-message">
-        {{ loginError }}
+      <div *ngIf="loginError()" class="form-message error-message">
+        {{ loginError() }}
       </div>
 
-      <button type="submit" class="primary-button" [disabled]="loginForm.invalid || isLoading">
-        <span *ngIf="!isLoading">Login</span>
-        <span *ngIf="isLoading">Accesso in corso...</span>
+      <button type="submit" class="primary-button" [disabled]="loginForm.invalid || isLoading()">
+        <span *ngIf="!isLoading()">Login</span>
+        <span *ngIf="isLoading()">Accesso in corso...</span>
       </button>
     </form>
 
