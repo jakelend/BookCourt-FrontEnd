@@ -87,7 +87,6 @@ export class RegisterComponent {
       email: String(this.email?.value ?? '').trim(),
       telefono: String(this.telefono?.value ?? '').trim(),
       password: this.password?.value ?? '',
-      fotoProfiloUrl: null,
     };
 
     this.isLoading = true;

@@ -5,6 +5,7 @@ import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatSelectModule } from '@angular/material/select';
 import { finalize } from 'rxjs/operators';
 import { SecretaryInstructorUnavailabilityRequestDto } from '../../../dto/request/secretary/secretary-instructor-unavailability-request.dto';
 import { SecretaryInstructorCalendarDayResponseDto } from '../../../dto/response/secretary/secretary-instructor-calendar-day-response.dto';
@@ -56,6 +57,7 @@ interface CreateUnavailabilityForm {
     MatFormFieldModule,
     MatInputModule,
     MatProgressSpinnerModule,
+    MatSelectModule,
   ],
   templateUrl: './instructor-calendar-exceptions.component.html',
   styleUrl: './instructor-calendar-exceptions.component.css',

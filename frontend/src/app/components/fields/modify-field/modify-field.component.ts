@@ -140,15 +140,18 @@ export class ModifyFieldComponent implements OnInit, OnDestroy {
 
     this.isSaving.set(true);
 
-    const deleteRequest$: Observable<null> = this.deletedExistingImageIds.size
-      ? this.managerService
-          .eliminaImmaginiCampo(this.field.id, Array.from(this.deletedExistingImageIds))
-          .pipe(switchMap(() => of(null)))
-      : of(null);
-
-    deleteRequest$
+    this.managerService
+      .aggiornaCampo(this.field.id, payload, uploadedImages)
       .pipe(
-        switchMap(() => this.managerService.aggiornaCampo(this.field.id, payload, uploadedImages)),
+        switchMap(() => {
+          if (this.deletedExistingImageIds.size) {
+            return this.managerService.eliminaImmaginiCampo(
+              this.field.id,
+              Array.from(this.deletedExistingImageIds),
+            );
+          }
+          return of(null);
+        }),
         finalize(() => {
           this.isSaving.set(false);
         }),

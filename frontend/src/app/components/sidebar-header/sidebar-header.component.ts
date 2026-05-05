@@ -226,7 +226,7 @@ export class SidebarHeaderComponent implements OnInit {
     this.authService.getCurrentProfile().subscribe({
       next: (profile) => {
         this.profile = profile;
-        this.profileImageUrl = this.buildProfileImageUrl(profile.fotoProfiloUrl);
+        this.profileImageUrl = this.buildProfileImageUrl(profile.fotoProfiloUrl, profile.ruolo);
         this.authService.updateCurrentUserFromProfile(profile);
         this.preloadRoleData();
       },
@@ -241,14 +241,18 @@ export class SidebarHeaderComponent implements OnInit {
 
   private initializeProfileImageFromSession(): void {
     const user = this.authService.getCurrentUser();
-    this.profileImageUrl = this.buildProfileImageUrl(user?.fotoProfiloUrl ?? null);
+    this.profileImageUrl = this.buildProfileImageUrl(user?.fotoProfiloUrl ?? null, user?.ruolo ?? null);
   }
 
-  private buildProfileImageUrl(path: string | null | undefined): string {
+  private buildProfileImageUrl(path: string | null | undefined, role: Role | null): string {
+    if (role === Role.MANAGER || role === Role.CLIENTE) {
+      return '';
+    }
+
     const url = path?.trim();
 
     if (!url || this.isInvalidImagePath(url)) {
-      return this.getDefaultProfileImageUrl();
+      return '';
     }
 
     if (url.startsWith('http://') || url.startsWith('https://')) {
@@ -259,19 +263,25 @@ export class SidebarHeaderComponent implements OnInit {
       return `${this.backendBaseUrl}${url}`;
     }
 
-    console.warn('URL foto profilo non valida ricevuta:', url);
-    return this.getDefaultProfileImageUrl();
+    if (!url.startsWith('images/')) {
+       return `${this.backendBaseUrl}/images/${url.replace(/^\/+/, '')}`;
+    }
+
+    return `${this.backendBaseUrl}/${url.replace(/^\/+/, '')}`;
   }
 
-  private isInvalidImagePath(url: string): boolean {
+  private readonly defaultProfileImagePath = 'images/default/default-image-profile.png';
+
+  private isInvalidImagePath(path: string): boolean {
+    const normalizedPath = path.trim().toLowerCase();
+
     return (
-      url === 'string' ||
-      url === 'null' ||
-      url === 'undefined'
+      normalizedPath === 'string' ||
+      normalizedPath === 'null' ||
+      normalizedPath === 'undefined' ||
+      normalizedPath === this.defaultProfileImagePath ||
+      normalizedPath === `/${this.defaultProfileImagePath}` ||
+      normalizedPath.endsWith(`/${this.defaultProfileImagePath}`)
     );
-  }
-
-  private getDefaultProfileImageUrl(): string {
-    return `${this.backendBaseUrl}/images/default/default-image-profile.png`;
   }
 }

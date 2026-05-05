@@ -10,22 +10,22 @@
     </div>
 
     <div class="toolbar-actions">
-      <label class="instructor-select-wrapper">
-        <span>Istruttore</span>
-        <select
+      <mat-form-field appearance="outline" class="instructor-select-field">
+        <mat-label>Istruttore</mat-label>
+        <mat-select
           [ngModel]="selectedInstructorId"
           (ngModelChange)="onInstructorSelected($event)"
           [disabled]="loadingInstructors || !instructors.length"
         >
-          <option [ngValue]="null">Seleziona istruttore</option>
-          <option
+          <mat-option [value]="null">Seleziona istruttore</mat-option>
+          <mat-option
             *ngFor="let instructor of instructors; trackBy: trackByInstructor"
-            [ngValue]="instructor.id"
+            [value]="instructor.id"
           >
             {{ instructor.cognome }} {{ instructor.nome }}
-          </option>
-        </select>
-      </label>
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
 
       <button type="button" class="day-nav-button" aria-label="Giorno precedente" (click)="goToPreviousDay()">
         <span class="material-symbols-outlined">chevron_left</span>

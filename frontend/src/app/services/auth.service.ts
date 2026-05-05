@@ -15,7 +15,6 @@ export interface RegisterClienteRequestDto {
   nome: string;
   cognome: string;
   telefono: string;
-  fotoProfiloUrl?: string | null;
 }
 
 export interface ChangePasswordRequestDto {
