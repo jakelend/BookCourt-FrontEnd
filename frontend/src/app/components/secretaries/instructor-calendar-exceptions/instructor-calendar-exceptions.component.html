@@ -76,19 +76,19 @@
     </div>
   </section>
 
-  <section *ngIf="errorMessage" class="feedback-panel feedback-panel-error">
+  <section *ngIf="errorMessage()" class="feedback-panel feedback-panel-error">
     <div>
       <strong>Operazione non riuscita</strong>
-      <p>{{ errorMessage }}</p>
+      <p>{{ errorMessage() }}</p>
     </div>
 
     <button type="button" class="retry-button" (click)="retry()">Riprova</button>
   </section>
 
-  <section *ngIf="successMessage" class="feedback-panel feedback-panel-success">
+  <section *ngIf="successMessage()" class="feedback-panel feedback-panel-success">
     <div>
       <strong>Operazione completata</strong>
-      <p>{{ successMessage }}</p>
+      <p>{{ successMessage() }}</p>
     </div>
   </section>
 
@@ -144,13 +144,13 @@
         />
       </label>
 
-      <p *ngIf="formErrorMessage" class="form-error">{{ formErrorMessage }}</p>
+      <p *ngIf="formErrorMessage()" class="form-error">{{ formErrorMessage() }}</p>
 
       <div class="editor-footer">
         <button type="button" class="ghost-action" (click)="closeCreatePanel()">Annulla</button>
-        <button type="submit" class="primary-action" [disabled]="saving">
-          <mat-spinner *ngIf="saving" diameter="18"></mat-spinner>
-          <span *ngIf="!saving" class="material-symbols-outlined">save</span>
+        <button type="submit" class="primary-action" [disabled]="isSaving()">
+          <mat-spinner *ngIf="isSaving()" diameter="18"></mat-spinner>
+          <span *ngIf="!isSaving()" class="material-symbols-outlined">save</span>
           Salva indisponibilità
         </button>
       </div>
@@ -200,11 +200,11 @@
         *ngIf="isDeletableInstructorException(selectedEvent)"
         type="button"
         class="danger-action"
-        [disabled]="deleting"
+        [disabled]="deleting()"
         (click)="deleteSelectedEvent()"
       >
-        <mat-spinner *ngIf="deleting" diameter="18"></mat-spinner>
-        <span *ngIf="!deleting" class="material-symbols-outlined">delete</span>
+        <mat-spinner *ngIf="deleting()" diameter="18"></mat-spinner>
+        <span *ngIf="!deleting()" class="material-symbols-outlined">delete</span>
         Elimina indisponibilità
       </button>
     </div>

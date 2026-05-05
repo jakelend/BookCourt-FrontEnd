@@ -70,12 +70,12 @@ export class InstructorCalendarExceptionsComponent implements OnInit {
 
   loadingInstructors = false;
   loadingAgenda = false;
-  saving = false;
-  deleting = false;
 
-  errorMessage = '';
-  successMessage = '';
-  formErrorMessage = '';
+  readonly isSaving = signal(false);
+  readonly deleting = signal(false);
+  readonly errorMessage = signal('');
+  readonly successMessage = signal('');
+  readonly formErrorMessage = signal('');
 
   showCreatePanel = false;
   createForm: CreateUnavailabilityForm = this.buildCreateForm('DAY');
@@ -181,26 +181,26 @@ export class InstructorCalendarExceptionsComponent implements OnInit {
 
   openCreatePanel(mode: CreateMode): void {
     if (!this.selectedInstructorId) {
-      this.errorMessage = 'Seleziona prima un istruttore.';
+      this.errorMessage.set('Seleziona prima un istruttore.');
       return;
     }
 
     this.selectedEvent = null;
-    this.errorMessage = '';
-    this.successMessage = '';
-    this.formErrorMessage = '';
+    this.errorMessage.set('');
+    this.successMessage.set('');
+    this.formErrorMessage.set('');
     this.createForm = this.buildCreateForm(mode);
     this.showCreatePanel = true;
   }
 
   closeCreatePanel(): void {
     this.showCreatePanel = false;
-    this.formErrorMessage = '';
+    this.formErrorMessage.set('');
   }
 
   submitCreate(): void {
     if (!this.selectedInstructorId) {
-      this.formErrorMessage = 'Seleziona un istruttore prima di inserire l’indisponibilità.';
+      this.formErrorMessage.set('Seleziona un istruttore prima di inserire l’indisponibilità.');
       return;
     }
 
@@ -210,24 +210,25 @@ export class InstructorCalendarExceptionsComponent implements OnInit {
       return;
     }
 
-    this.saving = true;
-    this.errorMessage = '';
-    this.successMessage = '';
+    this.isSaving.set(true);
+    this.errorMessage.set('');
+    this.successMessage.set('');
 
     this.calendarService
       .createInstructorUnavailability(request)
-      .pipe(finalize(() => (this.saving = false)))
+      .pipe(finalize(() => this.isSaving.set(false)))
       .subscribe({
         next: () => {
-          this.successMessage = 'Indisponibilità istruttore inserita correttamente.';
+          this.successMessage.set('Indisponibilità istruttore inserita correttamente.');
           this.closeCreatePanel();
           this.loadAgenda();
         },
         error: (error) => {
-          this.formErrorMessage = extractBackendErrorMessage(
+          const message = extractBackendErrorMessage(
             error,
             'Impossibile inserire l’indisponibilità istruttore.',
           );
+          this.formErrorMessage.set(message);
         },
       });
   }
@@ -236,8 +237,8 @@ export class InstructorCalendarExceptionsComponent implements OnInit {
     domEvent?.stopPropagation();
     this.closeCreatePanel();
     this.selectedEvent = event;
-    this.errorMessage = '';
-    this.successMessage = '';
+    this.errorMessage.set('');
+    this.successMessage.set('');
   }
 
   closeEventDetails(): void {
@@ -251,24 +252,24 @@ export class InstructorCalendarExceptionsComponent implements OnInit {
       return;
     }
 
-    this.deleting = true;
-    this.errorMessage = '';
-    this.successMessage = '';
+    this.deleting.set(true);
+    this.errorMessage.set('');
+    this.successMessage.set('');
 
     this.calendarService
       .deleteInstructorUnavailability(exceptionId)
-      .pipe(finalize(() => (this.deleting = false)))
+      .pipe(finalize(() => this.deleting.set(false)))
       .subscribe({
         next: () => {
-          this.successMessage = 'Indisponibilità istruttore eliminata correttamente.';
+          this.successMessage.set('Indisponibilità istruttore eliminata correttamente.');
           this.closeEventDetails();
           this.loadAgenda();
         },
         error: (error) => {
-          this.errorMessage = extractBackendErrorMessage(
+          this.errorMessage.set(extractBackendErrorMessage(
             error,
             'Impossibile eliminare l’indisponibilità istruttore.',
-          );
+          ));
         },
       });
   }
@@ -291,7 +292,7 @@ export class InstructorCalendarExceptionsComponent implements OnInit {
 
   private loadInstructors(): void {
     this.loadingInstructors = true;
-    this.errorMessage = '';
+    this.errorMessage.set('');
 
     this.calendarService
       .getInstructors()
@@ -305,16 +306,16 @@ export class InstructorCalendarExceptionsComponent implements OnInit {
             this.loadAgenda();
           } else {
             this.clearAgenda();
-            this.errorMessage = 'Non sono presenti istruttori attivi da gestire.';
+            this.errorMessage.set('Non sono presenti istruttori attivi da gestire.');
           }
         },
         error: (error) => {
           this.instructorsSignal.set([]);
           this.clearAgenda();
-          this.errorMessage = extractBackendErrorMessage(
+          this.errorMessage.set(extractBackendErrorMessage(
             error,
             'Impossibile caricare la lista degli istruttori.',
-          );
+          ));
         },
       });
   }
@@ -326,7 +327,7 @@ export class InstructorCalendarExceptionsComponent implements OnInit {
     }
 
     this.loadingAgenda = true;
-    this.errorMessage = '';
+    this.errorMessage.set('');
 
     this.calendarService
       .getInstructorDailyAgenda(this.selectedInstructorId, this.selectedDate)
@@ -338,10 +339,10 @@ export class InstructorCalendarExceptionsComponent implements OnInit {
         },
         error: (error) => {
           this.clearAgenda();
-          this.errorMessage = extractBackendErrorMessage(
+          this.errorMessage.set(extractBackendErrorMessage(
             error,
             'Impossibile caricare il calendario dell’istruttore selezionato.',
-          );
+          ));
         },
       });
   }
@@ -494,7 +495,7 @@ export class InstructorCalendarExceptionsComponent implements OnInit {
 
     if (this.createForm.mode === 'DAY') {
       if (!this.createForm.dayDate) {
-        this.formErrorMessage = 'Seleziona il giorno dell’indisponibilità.';
+        this.formErrorMessage.set('Seleziona il giorno dell’indisponibilità.');
         return null;
       }
 
@@ -510,7 +511,7 @@ export class InstructorCalendarExceptionsComponent implements OnInit {
         !this.createForm.endDate ||
         !this.createForm.endTime
       ) {
-        this.formErrorMessage = 'Compila data e ora di inizio/fine del periodo.';
+        this.formErrorMessage.set('Compila data e ora di inizio/fine del periodo.');
         return null;
       }
 
@@ -518,12 +519,12 @@ export class InstructorCalendarExceptionsComponent implements OnInit {
       fine = this.combineDateAndTime(this.createForm.endDate, this.createForm.endTime);
 
       if (this.parseDateTime(fine) <= this.parseDateTime(inizio)) {
-        this.formErrorMessage = 'La fine deve essere successiva all’inizio.';
+        this.formErrorMessage.set('L’orario di fine deve essere successivo all’orario di inizio.');
         return null;
       }
     }
 
-    this.formErrorMessage = '';
+    this.formErrorMessage.set('');
 
     return {
       istruttoreId: instructorId,

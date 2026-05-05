@@ -1,5 +1,6 @@
 export interface BackendErrorResponse {
   error?: string;
+  errore?: string;
   message?: string;
   fields?: Record<string, string>;
 }
@@ -30,6 +31,14 @@ export function extractBackendErrorMessage(error: unknown, fallback: string): st
     return backendBody.message;
   }
 
+  if (backendBody?.errore) {
+    return backendBody.errore;
+  }
+
+  if (backendBody?.error) {
+    return backendBody.error;
+  }
+
   if (typeof httpError?.error === 'string' && httpError.error.trim()) {
     return httpError.error;
   }
@@ -46,7 +55,7 @@ export function extractBackendErrorMessage(error: unknown, fallback: string): st
     case 404:
       return 'Elemento non trovato.';
     case 409:
-      return 'Operazione non consentita: esiste già un dato uguale registrato nel sistema.';
+      return 'Esiste già una eccezione calendario per questo istruttore nell\'intervallo selezionato.';
     case 413:
       return 'File troppo grande. Controlla la dimensione delle immagini.';
     case 500:
