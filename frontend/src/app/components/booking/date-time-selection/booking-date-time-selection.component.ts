@@ -86,6 +86,12 @@ export class BookingDateTimeSelectionComponent implements OnInit, OnDestroy {
   readonly selectedStartTime = signal('08:00');
   readonly selectedEndTime = signal('09:00');
 
+  /**
+   * Ora corrente usata per impedire prenotazioni nello stesso giorno
+   * su orari già passati o sull'ora corrente.
+   */
+  readonly currentDateTime = signal(new Date());
+
   readonly calendarData = signal<BookingFieldCalendarResponseDto | null>(null);
   readonly hourSlots = computed(() => this.buildHourSlots());
   readonly startTimeOptions = computed(() => this.buildStartTimeOptions());
@@ -108,6 +114,7 @@ export class BookingDateTimeSelectionComponent implements OnInit, OnDestroy {
   private readonly realtimeRefreshMs = 3000;
 
   private calendarRealtimeSubscription?: Subscription;
+  private currentTimeSubscription?: Subscription;
   private realtimeRefreshInProgress = false;
 
   readonly selectedDateValue = computed(() => this.toDateOnly(this.selectedDate()));
@@ -257,8 +264,6 @@ export class BookingDateTimeSelectionComponent implements OnInit, OnDestroy {
     const centerExceptionEvents = this.buildCenterExceptionEventViews();
 
     const backendEvents = calendar.eventi
-      .filter((event) => event.inizio && event.fine)
-    return calendar.eventi
       .filter((event) => event.inizio && event.fine && event.tipo !== 'ECCEZIONE_ISTRUTTORE')
       .map((event, index) => this.toCalendarEventView(event, index))
       .filter((event): event is CalendarEventView => event !== null);
@@ -326,11 +331,13 @@ export class BookingDateTimeSelectionComponent implements OnInit, OnDestroy {
     this.restoreSavedDateTime();
     this.ensureSelectedDateIsNotPast();
     this.releaseStoredLockOnPageEntryThenLoadCalendar();
+    this.startCurrentTimeRefresh();
     this.startCalendarRealtimeRefresh();
   }
 
   ngOnDestroy(): void {
     this.calendarRealtimeSubscription?.unsubscribe();
+    this.currentTimeSubscription?.unsubscribe();
   }
 
   get totalSteps(): number {
@@ -429,6 +436,17 @@ export class BookingDateTimeSelectionComponent implements OnInit, OnDestroy {
 
   isStepCompleted(index: number): boolean {
     return index + 1 <= this.currentStep;
+  }
+
+  private startCurrentTimeRefresh(): void {
+    this.currentTimeSubscription?.unsubscribe();
+
+    this.currentTimeSubscription = interval(30000).subscribe(() => {
+      this.currentDateTime.set(new Date());
+      this.ensureValidStartTime();
+      this.ensureValidEndTimeForStart();
+      this.updateAvailabilityMessage(this.calendarData());
+    });
   }
 
   private startCalendarRealtimeRefresh(): void {
@@ -745,14 +763,25 @@ export class BookingDateTimeSelectionComponent implements OnInit, OnDestroy {
   }
 
 
-  private updateAvailabilityMessage(calendar: BookingFieldCalendarResponseDto): void {
+  private updateAvailabilityMessage(calendar: BookingFieldCalendarResponseDto | null): void {
+    if (!calendar) {
+      return;
+    }
+
     if (calendar.chiuso) {
       this.formErrorMessage.set('Il centro è chiuso in questa data.');
       return;
     }
 
     if (this.startTimeOptions().length === 0) {
-      this.formErrorMessage.set('Non ci sono intervalli disponibili per questa data.');
+      if (this.isSelectedDateToday()) {
+        this.formErrorMessage.set(
+          "Per oggi non ci sono più orari prenotabili. Puoi prenotare solo dall'ora successiva a quella corrente.",
+        );
+      } else {
+        this.formErrorMessage.set('Non ci sono intervalli disponibili per questa data.');
+      }
+
       return;
     }
 
@@ -819,6 +848,10 @@ export class BookingDateTimeSelectionComponent implements OnInit, OnDestroy {
       return 'Puoi prenotare solo da oggi in poi.';
     }
 
+    if (this.isSelectedStartBeforeMinimumAllowedTime()) {
+      return "Per oggi puoi prenotare solo dall'ora successiva a quella corrente.";
+    }
+
     if (!this.selectedStartTime()) {
       return "Seleziona l'ora di inizio.";
     }
@@ -864,6 +897,10 @@ export class BookingDateTimeSelectionComponent implements OnInit, OnDestroy {
     );
 
     if (this.isSelectedDateBeforeToday()) {
+      return false;
+    }
+
+    if (start < this.getMinimumSelectableStartDateTime()) {
       return false;
     }
 
@@ -916,7 +953,10 @@ export class BookingDateTimeSelectionComponent implements OnInit, OnDestroy {
       latestValidStart.getMinutes() - this.minimumDurationMinutes,
     );
 
-    const cursor = new Date(dayStart);
+    const minimumSelectableStart = this.getMinimumSelectableStartDateTime();
+    const cursor = dayStart < minimumSelectableStart
+      ? new Date(minimumSelectableStart)
+      : new Date(dayStart);
 
     while (cursor <= latestValidStart) {
       if (this.buildEndTimeOptionsForStart(cursor).length > 0) {
@@ -1196,6 +1236,35 @@ export class BookingDateTimeSelectionComponent implements OnInit, OnDestroy {
     }
   }
 
+  private getMinimumSelectableStartDateTime(): Date {
+    const selectedDay = this.toDateOnly(this.selectedDate());
+    const today = this.toDateOnly(this.formatLocalDate(this.currentDateTime()));
+
+    if (selectedDay.getTime() !== today.getTime()) {
+      return new Date(this.buildHtmlDateTime(this.selectedDate(), this.bookingStartTime()));
+    }
+
+    const nextBookableHour = new Date(this.currentDateTime());
+    nextBookableHour.setMinutes(0, 0, 0);
+    nextBookableHour.setHours(nextBookableHour.getHours() + 1);
+
+    const bookingStart = new Date(this.buildHtmlDateTime(this.selectedDate(), this.bookingStartTime()));
+
+    return nextBookableHour > bookingStart ? nextBookableHour : bookingStart;
+  }
+
+  private isSelectedStartBeforeMinimumAllowedTime(): boolean {
+    if (!this.selectedDate() || !this.selectedStartTime()) {
+      return false;
+    }
+
+    const selectedStart = new Date(
+      this.buildHtmlDateTime(this.selectedDate(), this.selectedStartTime()),
+    );
+
+    return selectedStart < this.getMinimumSelectableStartDateTime();
+  }
+
   private isHalfHourAligned(time: string): boolean {
     const normalizedTime = this.normalizeTime(time);
     const minute = Number(normalizedTime.slice(3, 5));
@@ -1297,6 +1366,13 @@ export class BookingDateTimeSelectionComponent implements OnInit, OnDestroy {
 
   private isSelectedDateBeforeToday(): boolean {
     return this.isDateBeforeToday(this.toDateOnly(this.selectedDate()));
+  }
+
+  private isSelectedDateToday(): boolean {
+    const selectedDay = this.toDateOnly(this.selectedDate());
+    const today = this.toDateOnly(this.formatLocalDate(this.currentDateTime()));
+
+    return selectedDay.getTime() === today.getTime();
   }
 
   private isDateBeforeToday(date: Date): boolean {

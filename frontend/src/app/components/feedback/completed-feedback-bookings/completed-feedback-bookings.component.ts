@@ -56,6 +56,56 @@ export class CompletedFeedbackBookingsComponent implements OnInit {
     return commento ? commento : 'Nessun commento inserito.';
   }
 
+  getFieldName(feedback: FeedbackPrenotazioneResponseDto): string {
+    const nomeCampo = feedback.nomeCampo?.trim();
+
+    if (nomeCampo) {
+      return nomeCampo;
+    }
+
+    if (feedback.campoId) {
+      return `Campo #${feedback.campoId}`;
+    }
+
+    return 'Campo non disponibile';
+  }
+
+  hasInstructor(feedback: FeedbackPrenotazioneResponseDto): boolean {
+    return !!this.getInstructorName(feedback);
+  }
+
+  getInstructorName(feedback: FeedbackPrenotazioneResponseDto): string {
+    const nome = feedback.nomeIstruttore?.trim() ?? '';
+    const cognome = feedback.cognomeIstruttore?.trim() ?? '';
+
+    return `${nome} ${cognome}`.trim();
+  }
+
+  hasBookingDate(feedback: FeedbackPrenotazioneResponseDto): boolean {
+    return !!feedback.inizio && !!feedback.fine;
+  }
+
+  formatBookingDate(value: string | null | undefined): string {
+    if (!value) {
+      return '-';
+    }
+
+    return new Date(value).toLocaleDateString('it-IT', {
+      weekday: 'long',
+      day: '2-digit',
+      month: 'long',
+      year: 'numeric',
+    });
+  }
+
+  formatTimeRange(inizio: string | null | undefined, fine: string | null | undefined): string {
+    if (!inizio || !fine) {
+      return '-';
+    }
+
+    return `${this.formatTime(inizio)} - ${this.formatTime(fine)}`;
+  }
+
   formatCreatedAt(value: string): string {
     return new Date(value).toLocaleDateString('it-IT', {
       weekday: 'long',
@@ -69,5 +119,12 @@ export class CompletedFeedbackBookingsComponent implements OnInit {
 
   trackByFeedbackId(_: number, feedback: FeedbackPrenotazioneResponseDto): number {
     return feedback.id;
+  }
+
+  private formatTime(value: string): string {
+    return new Date(value).toLocaleTimeString('it-IT', {
+      hour: '2-digit',
+      minute: '2-digit',
+    });
   }
 }

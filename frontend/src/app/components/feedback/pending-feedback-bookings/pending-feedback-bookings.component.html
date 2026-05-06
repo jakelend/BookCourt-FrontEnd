@@ -45,12 +45,17 @@
           </div>
 
           <div>
-            <h2>Prenotazione #{{ prenotazione.prenotazioneId }}</h2>
-            <p>Campo #{{ prenotazione.campoId }}</p>
+            <h2>Prenotazione</h2>
+            <p>{{ getFieldName(prenotazione) }}</p>
           </div>
         </div>
 
         <div class="booking-info-list">
+          <div class="booking-info-row">
+            <span>Campo</span>
+            <strong>{{ getFieldName(prenotazione) }}</strong>
+          </div>
+
           <div class="booking-info-row">
             <span>Data</span>
             <strong>{{ formatDate(prenotazione.inizio) }}</strong>
@@ -59,6 +64,11 @@
           <div class="booking-info-row">
             <span>Ora</span>
             <strong>{{ formatTimeRange(prenotazione.inizio, prenotazione.fine) }}</strong>
+          </div>
+
+          <div class="booking-info-row" *ngIf="hasInstructor(prenotazione)">
+            <span>Istruttore</span>
+            <strong>{{ getInstructorName(prenotazione) }}</strong>
           </div>
 
           <div class="booking-info-row">

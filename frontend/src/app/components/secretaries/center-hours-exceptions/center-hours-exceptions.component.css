@@ -220,6 +220,131 @@ textarea:disabled {
   margin-bottom: 8px;
 }
 
+.closed-toggle-panel,
+.custom-hours-panel {
+  border: 1px solid #edf0f3;
+  border-radius: 18px;
+  padding: 14px;
+  background: #f8fafd;
+}
+
+.closed-toggle-panel {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  transition:
+    border-color 160ms ease,
+    background-color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.closed-toggle-panel.active {
+  border-color: rgba(186, 26, 26, 0.22);
+  background: #fff5f5;
+  box-shadow: 0 0 0 4px rgba(186, 26, 26, 0.06);
+}
+
+.toggle-copy,
+.custom-hours-heading {
+  min-width: 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.toggle-copy .material-symbols-outlined,
+.custom-hours-heading .material-symbols-outlined {
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  background: #e8f0fe;
+  color: #1a73e8;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 21px;
+  flex: 0 0 auto;
+}
+
+.closed-toggle-panel.active .toggle-copy .material-symbols-outlined {
+  background: #ffe1e1;
+  color: #ba1a1a;
+}
+
+.toggle-copy strong,
+.custom-hours-heading strong {
+  display: block;
+  color: #202124;
+  font-size: 14px;
+  font-weight: 900;
+  line-height: 1.2;
+}
+
+.toggle-copy p,
+.custom-hours-heading p {
+  margin: 4px 0 0;
+  color: #5f6472;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.switch-control {
+  position: relative;
+  width: 54px;
+  height: 30px;
+  flex: 0 0 auto;
+  display: inline-flex;
+}
+
+.switch-control input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.switch-slider {
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  background: #c6c6cd;
+  cursor: pointer;
+  transition: background-color 160ms ease;
+}
+
+.switch-slider::before {
+  content: '';
+  position: absolute;
+  width: 24px;
+  height: 24px;
+  left: 3px;
+  top: 3px;
+  border-radius: 999px;
+  background: #ffffff;
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.2);
+  transition: transform 160ms ease;
+}
+
+.switch-control input:checked + .switch-slider {
+  background: #ba1a1a;
+}
+
+.switch-control input:checked + .switch-slider::before {
+  transform: translateX(24px);
+}
+
+.switch-control input:disabled + .switch-slider {
+  cursor: not-allowed;
+  opacity: 0.58;
+}
+
+.custom-hours-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
 .toggle-label {
   display: flex;
   align-items: center;

@@ -13,6 +13,7 @@ import { BookingSport } from '../../../dto/response/booking/booking-field-respon
 import {
   BookingAvailableInstructorResponseDto,
   BookingService,
+  CreateBookingLockRequestDto,
 } from '../../../services/booking.service';
 
 interface BookingStep {
@@ -133,7 +134,7 @@ export class BookingExtraSelectionComponent implements OnInit {
     }
 
     if (this.isInstructorSport() && this.canUseInstructorWithSelectedDuration()) {
-      this.loadAvailableInstructors();
+      this.reloadInstructorsWithoutBlockingOwnLock();
       return;
     }
 
@@ -240,7 +241,53 @@ export class BookingExtraSelectionComponent implements OnInit {
     return path.startsWith('/') ? `${this.backendBaseUrl}${path}` : `${this.backendBaseUrl}/${path}`;
   }
 
-  private loadAvailableInstructors(): void {
+  private reloadInstructorsWithoutBlockingOwnLock(): void {
+    /*
+      Nella pagina Data e ora creiamo già un lock base sul campo.
+      Quel lock serve agli altri utenti per vedere lo slot occupato.
+
+      Però, quando entriamo nella pagina Extra, la chiamata degli istruttori disponibili
+      controlla anche se il campo è libero. Se lasciamo il nostro lock base attivo,
+      il backend pensa che il campo sia occupato e può restituire zero istruttori.
+
+      Quindi facciamo così:
+      1. eliminiamo il lock base creato nella pagina precedente;
+      2. carichiamo subito gli istruttori disponibili;
+      3. ricreiamo un nuovo lock base sul campo, così gli altri utenti continuano
+         a vedere lo slot occupato mentre scegliamo istruttore e racchette.
+    */
+    const lockId = this.getStoredLockId();
+
+    if (!lockId) {
+      this.loadAvailableInstructors(true);
+      return;
+    }
+
+    this.isReleasingLock.set(true);
+    this.errorMessage.set('');
+
+    this.bookingService
+      .eliminaLockPrenotazione(lockId)
+      .pipe(
+        finalize(() => {
+          this.isReleasingLock.set(false);
+        }),
+      )
+      .subscribe({
+        next: () => {
+          this.clearBookingLock();
+          this.loadAvailableInstructors(true);
+        },
+        error: (error) => {
+          console.warn('Lock già assente o non eliminabile prima del caricamento istruttori:', error);
+
+          this.clearBookingLock();
+          this.loadAvailableInstructors(true);
+        },
+      });
+  }
+
+  private loadAvailableInstructors(recreateBaseLockAfterLoad: boolean): void {
     const campoId = this.selectedFieldId();
 
     if (!this.canUseInstructorWithSelectedDuration()) {
@@ -273,6 +320,10 @@ export class BookingExtraSelectionComponent implements OnInit {
         next: (instructors) => {
           this.instructors.set(instructors);
           this.cleanSelectedInstructorIfNotAvailable();
+
+          if (recreateBaseLockAfterLoad) {
+            this.createBaseFieldLockForExtraStep();
+          }
         },
         error: (error) => {
           console.error('Errore caricamento istruttori disponibili:', error);
@@ -280,8 +331,73 @@ export class BookingExtraSelectionComponent implements OnInit {
           this.selectedInstructorId.set(null);
           this.persistInstructorSelection();
           this.errorMessage.set('Non è stato possibile caricare gli istruttori disponibili.');
+
+          if (recreateBaseLockAfterLoad) {
+            this.createBaseFieldLockForExtraStep();
+          }
         },
       });
+  }
+
+  private createBaseFieldLockForExtraStep(): void {
+    const campoId = this.selectedFieldId();
+
+    if (!campoId) {
+      return;
+    }
+
+    if (this.getStoredLockId()) {
+      return;
+    }
+
+    const request: CreateBookingLockRequestDto = {
+      campoId,
+      inizio: this.buildDateTimeParam(this.selectedDate(), this.selectedStartTime()),
+      durataMinuti: this.durationMinutes(),
+      conIstruttore: false,
+      istruttoreId: null,
+    };
+
+    this.isReleasingLock.set(true);
+
+    this.bookingService
+      .creaLockPrenotazione(request)
+      .pipe(
+        finalize(() => {
+          this.isReleasingLock.set(false);
+        }),
+      )
+      .subscribe({
+        next: (lock) => {
+          this.persistBaseLock(lock.lockId, lock.scadeIl);
+        },
+        error: (error) => {
+          console.error('Errore ricreazione lock base nella pagina extra:', error);
+          this.clearBookingLock();
+          this.errorMessage.set(
+            'Gli istruttori sono stati caricati, ma non è stato possibile bloccare temporaneamente lo slot. Riprova tornando alla scelta data e ora.',
+          );
+        },
+      });
+  }
+
+  private persistBaseLock(lockId: number, scadeIl: string): void {
+    sessionStorage.setItem('booking.lockId', String(lockId));
+    sessionStorage.setItem('booking.lockSignature', this.buildBaseLockSignature());
+    sessionStorage.setItem('booking.lockExpiresAt', scadeIl);
+    this.notifyBookingLockChanged();
+  }
+
+  private buildBaseLockSignature(): string {
+    return [
+      this.selectedFieldId() ?? '',
+      this.selectedDate(),
+      this.selectedStartTime(),
+      this.selectedEndTime(),
+      this.durationMinutes(),
+      false,
+      '',
+    ].join('|');
   }
 
   private loadBookingContext(): void {

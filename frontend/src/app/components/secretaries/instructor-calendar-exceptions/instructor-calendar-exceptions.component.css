@@ -573,3 +573,22 @@ input:disabled {
     grid-template-columns: 1fr;
   }
 }
+
+/* Fix visibilità eventi indisponibilità istruttore: il TypeScript assegna questa classe. */
+.event-instructor-exception,
+.event-instructor-unavailable {
+  background: #8e24aa !important;
+  border-left: 5px solid #5e1675 !important;
+  color: #ffffff !important;
+}
+
+.event-instructor-exception .event-content h3,
+.event-instructor-exception .event-time,
+.event-instructor-exception .event-subtitle,
+.event-instructor-exception .event-details,
+.event-instructor-unavailable .event-content h3,
+.event-instructor-unavailable .event-time,
+.event-instructor-unavailable .event-subtitle,
+.event-instructor-unavailable .event-details {
+  color: #ffffff !important;
+}

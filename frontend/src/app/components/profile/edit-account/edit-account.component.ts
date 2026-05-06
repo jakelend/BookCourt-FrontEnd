@@ -2,7 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, OnInit, signal } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
-import { finalize } from 'rxjs/operators';
+import { finalize, map, switchMap } from 'rxjs/operators';
 import { AuthService, ProfileResponseDto } from '../../../services/auth.service';
 import { extractBackendErrorMessage } from '../../../util/error-message.util';
 
@@ -102,7 +102,18 @@ export class EditAccountComponent implements OnInit {
         email: String(formValue.email ?? '').trim(),
         telefono: String(formValue.telefono ?? '').trim(),
       })
-      .pipe(finalize(() => this.isSaving.set(false)))
+      .pipe(
+        /*
+          Ordine corretto:
+          1. updatePersonalData aggiorna il database;
+          2. solo dopo richiamiamo /api/auth/me;
+          3. AuthService aggiorna il localStorage e notifica la topbar.
+        */
+        switchMap((response) =>
+          this.authService.refreshCurrentUserFromAuthMe().pipe(map(() => response)),
+        ),
+        finalize(() => this.isSaving.set(false)),
+      )
       .subscribe({
         next: (response) => {
           this.currentProfile = response.cliente;

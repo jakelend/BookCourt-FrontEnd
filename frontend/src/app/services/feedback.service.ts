@@ -5,8 +5,12 @@ import { map, Observable, take, timeout } from 'rxjs';
 export interface PrenotazioneDaRecensireResponseDto {
   prenotazioneId: number;
   campoId: number;
+  nomeCampo?: string | null;
   inizio: string;
   fine: string;
+  istruttoreId?: number | null;
+  nomeIstruttore?: string | null;
+  cognomeIstruttore?: string | null;
   feedbackGiaInserito: boolean;
   recensibile: boolean;
 }
@@ -20,6 +24,13 @@ export interface FeedbackPrenotazioneResponseDto {
   id: number;
   prenotazioneId: number;
   clienteId: number;
+  campoId?: number | null;
+  nomeCampo?: string | null;
+  inizio?: string | null;
+  fine?: string | null;
+  istruttoreId?: number | null;
+  nomeIstruttore?: string | null;
+  cognomeIstruttore?: string | null;
   valutazione: number;
   commento: string | null;
   creatoIl: string;

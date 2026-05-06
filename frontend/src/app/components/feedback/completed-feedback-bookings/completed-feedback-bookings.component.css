@@ -228,3 +228,43 @@
     padding: 24px 18px 44px;
   }
 }
+
+/* BOOKING DETAILS */
+
+.booking-info-list {
+  border-top: 1px solid #edf0f2;
+}
+
+.booking-info-row {
+  border-bottom: 1px solid #edf0f2;
+  padding: 12px 0;
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.booking-info-row span {
+  color: #76777d;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.booking-info-row strong {
+  color: #191c1e;
+  font-size: 14px;
+  font-weight: 900;
+  text-align: right;
+}
+
+@media (max-width: 640px) {
+  .booking-info-row {
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .booking-info-row strong {
+    text-align: left;
+  }
+}

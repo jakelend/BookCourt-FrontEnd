@@ -176,6 +176,27 @@ export class PendingFeedbackBookingsComponent implements OnInit {
     return 'schedule';
   }
 
+  getFieldName(prenotazione: PrenotazioneDaRecensireResponseDto): string {
+    const nomeCampo = prenotazione.nomeCampo?.trim();
+
+    if (nomeCampo) {
+      return nomeCampo;
+    }
+
+    return `Campo #${prenotazione.campoId}`;
+  }
+
+  hasInstructor(prenotazione: PrenotazioneDaRecensireResponseDto): boolean {
+    return !!this.getInstructorName(prenotazione);
+  }
+
+  getInstructorName(prenotazione: PrenotazioneDaRecensireResponseDto): string {
+    const nome = prenotazione.nomeIstruttore?.trim() ?? '';
+    const cognome = prenotazione.cognomeIstruttore?.trim() ?? '';
+
+    return `${nome} ${cognome}`.trim();
+  }
+
   formatDate(value: string): string {
     return new Date(value).toLocaleDateString('it-IT', {
       weekday: 'long',

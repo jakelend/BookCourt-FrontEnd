@@ -46,7 +46,7 @@ interface CenterHoursCalendarEventView {
 })
 export class CenterHoursExceptionsComponent implements OnInit {
   readonly selectedDate = signal(this.formatLocalDate(new Date()));
-  readonly mode = signal<CenterHoursExceptionMode>('CLOSED');
+  readonly mode = signal<CenterHoursExceptionMode>('CUSTOM_HOURS');
   readonly openingTime = signal('08:00');
   readonly closingTime = signal('23:00');
   readonly reason = signal('');
@@ -122,12 +122,27 @@ export class CenterHoursExceptionsComponent implements OnInit {
     this.onSelectedDateChange();
   }
 
+  /**
+   * Cambia il tipo di eccezione che la segretaria vuole creare.
+   *
+   * Se la modalità è CLOSED, il centro viene considerato chiuso
+   * per tutta la giornata e gli orari non vengono inviati al backend.
+   *
+   * Se la modalità è CUSTOM_HOURS, la segretaria deve scegliere
+   * ora di apertura e ora di chiusura del centro.
+   */
   setMode(mode: CenterHoursExceptionMode): void {
     this.mode.set(mode);
     this.formErrorMessage.set('');
     this.clearFeedback();
   }
 
+  /**
+   * Gestisce il toggle "centro chiuso tutto il giorno".
+   *
+   * Quando il toggle è attivo, viene selezionata la modalità CLOSED.
+   * Quando il toggle è spento, viene selezionata la modalità CUSTOM_HOURS.
+   */
   toggleMode(isClosed: boolean): void {
     this.setMode(isClosed ? 'CLOSED' : 'CUSTOM_HOURS');
   }
@@ -336,7 +351,18 @@ export class CenterHoursExceptionsComponent implements OnInit {
     };
   }
 
+  /**
+   * Controlla i dati inseriti nel form.
+   *
+   * Se il centro è chiuso tutto il giorno non servono gli orari.
+   * Se invece la segretaria vuole personalizzare l'orario,
+   * allora apertura e chiusura sono obbligatorie.
+   */
   private validateForm(): string {
+    if (this.isClosedMode()) {
+      return '';
+    }
+
     if (!this.openingTime() || !this.closingTime()) {
       return 'Inserisci sia l’orario di apertura sia l’orario di chiusura.';
     }
@@ -351,12 +377,27 @@ export class CenterHoursExceptionsComponent implements OnInit {
     return '';
   }
 
+  /**
+   * Costruisce la request da mandare al backend.
+   *
+   * Caso centro chiuso:
+   * - chiuso = true
+   * - oraApertura = null
+   * - oraChiusura = null
+   *
+   * Caso orario personalizzato:
+   * - chiuso = false
+   * - oraApertura valorizzata
+   * - oraChiusura valorizzata
+   */
   private buildCreateRequest(): CreateCenterHoursExceptionRequestDto {
+    const closedAllDay = this.isClosedMode();
+
     return {
       data: this.selectedDate(),
-      chiuso: false,
-      oraApertura: this.openingTime(),
-      oraChiusura: this.closingTime(),
+      chiuso: closedAllDay,
+      oraApertura: closedAllDay ? null : this.openingTime(),
+      oraChiusura: closedAllDay ? null : this.closingTime(),
       motivo: this.reason().trim() || null,
     };
   }

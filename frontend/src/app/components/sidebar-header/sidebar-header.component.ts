@@ -110,11 +110,13 @@ export class SidebarHeaderComponent implements OnInit, OnDestroy {
     this.preloadRoleData();
     this.loadCurrentProfile();
     this.startBookingLockTimer();
+    window.addEventListener('bookcourt-user-updated', this.handleCurrentUserUpdated);
   }
 
   ngOnDestroy(): void {
     this.lockTimerSubscription?.unsubscribe();
     window.removeEventListener('booking-lock-updated', this.handleBookingLockUpdated);
+    window.removeEventListener('bookcourt-user-updated', this.handleCurrentUserUpdated);
   }
 
   get sidebarItems(): SidebarItem[] {
@@ -296,6 +298,38 @@ export class SidebarHeaderComponent implements OnInit, OnDestroy {
 
   private readonly handleBookingLockUpdated = (): void => {
     this.updateBookingLockTimer();
+  };
+
+  private readonly handleCurrentUserUpdated = (): void => {
+    const currentUser = this.authService.getCurrentUser();
+
+    if (!currentUser) {
+      return;
+    }
+
+    /*
+      Quando Gestione account salva i dati, AuthService richiama /api/auth/me
+      e aggiorna il localStorage. Qui leggiamo subito il nuovo utente dal
+      localStorage, così nome e cognome in alto cambiano senza refresh pagina.
+    */
+    this.profile = {
+      ...(this.profile ?? {
+        telefono: '',
+        fotoProfiloUrl: null,
+        attivo: true,
+      } as ProfileResponseDto),
+      id: currentUser.id,
+      email: currentUser.email,
+      nome: currentUser.nome,
+      cognome: currentUser.cognome,
+      ruolo: currentUser.ruolo,
+      fotoProfiloUrl: currentUser.fotoProfiloUrl ?? this.profile?.fotoProfiloUrl ?? null,
+    };
+
+    this.profileImageUrl = this.buildProfileImageUrl(
+      currentUser.fotoProfiloUrl ?? this.profile.fotoProfiloUrl ?? null,
+      currentUser.ruolo,
+    );
   };
 
   private startBookingLockTimer(): void {

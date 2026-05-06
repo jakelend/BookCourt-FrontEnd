@@ -129,14 +129,29 @@ export class AuthService {
     return this.http.get<MeResponseDto>(`${this.apiUrl}/me`);
   }
 
+  refreshCurrentUserFromAuthMe(): Observable<MeResponseDto> {
+    return this.me().pipe(
+      tap((response) => {
+        this.updateCurrentUserFromMe(response);
+        this.notifyCurrentUserUpdated();
+      }),
+    );
+  }
+
   getCurrentProfile(): Observable<ProfileResponseDto> {
     return this.http.get<ProfileResponseDto>(`${this.profileUrl}/me`);
   }
 
   updatePersonalData(payload: UpdatePersonalDataRequestDto): Observable<UpdatePersonalDataResponseDto> {
-    return this.http
-      .put<UpdatePersonalDataResponseDto>(`${this.profileUrl}/me/dati-personali`, payload)
-      .pipe(tap((response) => this.updateCurrentUserFromProfile(response.cliente)));
+    /*
+      Questa chiamata modifica prima i dati nel database.
+      Non aggiorniamo qui il localStorage: dopo il salvataggio il componente
+      richiama /api/auth/me e solo quella risposta aggiorna il nome in alto.
+    */
+    return this.http.put<UpdatePersonalDataResponseDto>(
+      `${this.profileUrl}/me/dati-personali`,
+      payload,
+    );
   }
 
   logout(): void {
@@ -189,6 +204,8 @@ export class AuthService {
         fotoProfiloUrl,
       }),
     );
+
+    this.notifyCurrentUserUpdated();
   }
 
   updateCurrentUserFromProfile(profile: ProfileResponseDto): void {
@@ -212,6 +229,35 @@ export class AuthService {
         fotoProfiloUrl: profile.fotoProfiloUrl,
       }),
     );
+
+    this.notifyCurrentUserUpdated();
+  }
+
+  private updateCurrentUserFromMe(me: MeResponseDto): void {
+    const currentUser = this.getCurrentUser();
+    const token = this.getToken();
+
+    if (!currentUser && !token) {
+      return;
+    }
+
+    localStorage.setItem(
+      this.userKey,
+      JSON.stringify({
+        token: currentUser?.token ?? token,
+        type: currentUser?.type ?? 'Bearer',
+        id: me.id,
+        email: me.email,
+        nome: me.nome,
+        cognome: me.cognome,
+        ruolo: me.ruolo,
+        fotoProfiloUrl: currentUser?.fotoProfiloUrl ?? null,
+      }),
+    );
+  }
+
+  private notifyCurrentUserUpdated(): void {
+    window.dispatchEvent(new CustomEvent('bookcourt-user-updated'));
   }
 
   getRedirectUrlForRole(role: Role | null): string {

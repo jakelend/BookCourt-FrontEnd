@@ -37,8 +37,35 @@
           </div>
 
           <div>
-            <h2>Prenotazione #{{ feedback.prenotazioneId }}</h2>
-            <p>Feedback inviato il {{ formatCreatedAt(feedback.creatoIl) }}</p>
+            <h2>Prenotazione</h2>
+            <p>{{ getFieldName(feedback) }}</p>
+          </div>
+        </div>
+
+        <div class="booking-info-list">
+          <div class="booking-info-row">
+            <span>Campo</span>
+            <strong>{{ getFieldName(feedback) }}</strong>
+          </div>
+
+          <div class="booking-info-row" *ngIf="hasBookingDate(feedback)">
+            <span>Data</span>
+            <strong>{{ formatBookingDate(feedback.inizio) }}</strong>
+          </div>
+
+          <div class="booking-info-row" *ngIf="hasBookingDate(feedback)">
+            <span>Ora</span>
+            <strong>{{ formatTimeRange(feedback.inizio, feedback.fine) }}</strong>
+          </div>
+
+          <div class="booking-info-row" *ngIf="hasInstructor(feedback)">
+            <span>Istruttore</span>
+            <strong>{{ getInstructorName(feedback) }}</strong>
+          </div>
+
+          <div class="booking-info-row">
+            <span>Feedback inviato</span>
+            <strong>{{ formatCreatedAt(feedback.creatoIl) }}</strong>
           </div>
         </div>
 
