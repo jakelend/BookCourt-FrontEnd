@@ -159,9 +159,13 @@ export class InstructorCalendarComponent implements OnInit {
     const range = this.resolveCalendarRange();
     const totalMinutes = Math.max(60, this.minutesBetween(range.start, range.end));
 
+    const visibleEvents = (agenda.eventi ?? []).filter((event) =>
+      ['LEZIONE', 'ECCEZIONE_ISTRUTTORE', 'ECCEZIONE_CENTRO'].includes(event.tipo),
+    );
+
     this.calendarHeightSignal.set(0);
     this.hourSlotsSignal.set(this.buildHourSlots(range.start, range.end, totalMinutes));
-    this.eventsSignal.set(this.layoutEvents(agenda.eventi ?? [], range.start, range.end, totalMinutes));
+    this.eventsSignal.set(this.layoutEvents(visibleEvents, range.start, range.end, totalMinutes));
   }
 
   private resolveCalendarRange(): { start: Date; end: Date } {
@@ -267,8 +271,8 @@ export class InstructorCalendarComponent implements OnInit {
       durationLabel: this.formatDuration(durationMinutes),
       subtitle: this.buildSubtitle(event),
       details: this.buildDetails(event),
-      cssClass: this.getEventCssClass(event.tipo),
-      icon: this.getEventIcon(event.tipo),
+      cssClass: this.getEventCssClass(event),
+      icon: this.getEventIcon(event),
     };
   }
 
@@ -322,27 +326,31 @@ export class InstructorCalendarComponent implements OnInit {
     return event.motivo || event.titolo || '';
   }
 
-  private getEventCssClass(tipo: string): string {
-    switch (tipo) {
+  private getEventCssClass(event: InstructorCalendarEventResponseDto): string {
+    switch (event.tipo) {
       case 'LEZIONE':
         return 'event-lesson';
       case 'ECCEZIONE_ISTRUTTORE':
-        return 'event-instructor-exception';
+        return 'event-instructor-unavailable';
       case 'ECCEZIONE_CENTRO':
-        return 'event-center-exception';
+        const isClosed = event.titolo?.toLowerCase().includes('chiuso') ||
+                         event.motivo?.toLowerCase().includes('chiuso');
+        return isClosed ? 'event-center-closed' : 'event-center-special-hours';
       default:
         return 'event-generic';
     }
   }
 
-  private getEventIcon(tipo: string): string {
-    switch (tipo) {
+  private getEventIcon(event: InstructorCalendarEventResponseDto): string {
+    switch (event.tipo) {
       case 'LEZIONE':
         return 'sports_tennis';
       case 'ECCEZIONE_ISTRUTTORE':
         return 'event_busy';
       case 'ECCEZIONE_CENTRO':
-        return 'domain_disabled';
+        const isClosed = event.titolo?.toLowerCase().includes('chiuso') ||
+                         event.motivo?.toLowerCase().includes('chiuso');
+        return isClosed ? 'domain_disabled' : 'schedule';
       default:
         return 'event';
     }

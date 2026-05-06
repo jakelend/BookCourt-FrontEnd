@@ -385,11 +385,13 @@ textarea:disabled {
 }
 
 .event-closed-day {
-  background: linear-gradient(135deg, rgba(186, 26, 26, 0.96), rgba(143, 21, 21, 0.94));
+  background: #4a4a4a;
+  border-left: 5px solid #222222;
 }
 
 .event-custom-hours {
-  background: linear-gradient(135deg, #f29900, #c26401);
+  background: #00897b;
+  border-left: 5px solid #00695c;
 }
 
 .event-main-row {
@@ -658,4 +660,3 @@ textarea:disabled {
     grid-template-columns: 1fr;
   }
 }
-

@@ -258,6 +258,8 @@ export class BookingDateTimeSelectionComponent implements OnInit, OnDestroy {
 
     const backendEvents = calendar.eventi
       .filter((event) => event.inizio && event.fine)
+    return calendar.eventi
+      .filter((event) => event.inizio && event.fine && event.tipo !== 'ECCEZIONE_ISTRUTTORE')
       .map((event, index) => this.toCalendarEventView(event, index))
       .filter((event): event is CalendarEventView => event !== null);
 
@@ -1108,10 +1110,12 @@ export class BookingDateTimeSelectionComponent implements OnInit, OnDestroy {
     const totalMinutes = Math.max(60, this.minutesBetween(dayStart, dayEnd));
     const durationMinutes = Math.max(1, this.minutesBetween(visibleStart, visibleEnd));
 
+    const titolo = this.getGenericTitleForClient(event.tipo, event.titolo);
+
     return {
       id: `${event.tipo}-${event.prenotazioneId ?? event.lockId ?? index}-${event.inizio}`,
       tipo: event.tipo,
-      titolo: event.titolo,
+      titolo: titolo,
       topPct: this.getCalendarTopPct(dayStart, visibleStart, totalMinutes),
       heightPct: this.getCalendarHeightPct(durationMinutes, totalMinutes),
       timeLabel: `${this.extractTimeFromDateTime(event.inizio)} - ${this.extractTimeFromDateTime(event.fine)}`,
@@ -1120,9 +1124,32 @@ export class BookingDateTimeSelectionComponent implements OnInit, OnDestroy {
     };
   }
 
+  private getGenericTitleForClient(tipo: string, originalTitle: string | null): string {
+    switch (tipo) {
+      case 'PRENOTAZIONE':
+      case 'LEZIONE':
+        return 'Slot occupato';
+      case 'MANUTENZIONE':
+        return 'Manutenzione campo';
+      case 'LOCK':
+        return 'Blocco temporaneo';
+      case 'FESTIVITA':
+        return 'Centro chiuso';
+      case 'ECCEZIONE_ISTRUTTORE':
+        return 'Slot non disponibile';
+      case 'ECCEZIONE_ORARIO_CENTRO':
+      case 'ECCEZIONE_ORARI_CENTRO':
+      case 'ECCEZIONE_CENTRO':
+        return originalTitle || 'Orario eccezionale';
+      default:
+        return 'Non disponibile';
+    }
+  }
+
   private getCalendarEventCssClass(tipo: string): string {
     switch (tipo) {
       case 'PRENOTAZIONE':
+      case 'LEZIONE':
         return 'field-event-booking';
 
       case 'MANUTENZIONE':
@@ -1132,9 +1159,12 @@ export class BookingDateTimeSelectionComponent implements OnInit, OnDestroy {
         return 'field-event-lock';
 
       case 'FESTIVITA':
+        return 'field-event-center-closed';
+
       case 'ECCEZIONE_ORARIO_CENTRO':
       case 'ECCEZIONE_ORARI_CENTRO':
-        return 'field-event-center-exception';
+      case 'ECCEZIONE_CENTRO':
+        return 'field-event-special-center-hours';
 
       default:
         return 'field-event-default';
@@ -1144,6 +1174,7 @@ export class BookingDateTimeSelectionComponent implements OnInit, OnDestroy {
   private getCalendarEventIcon(tipo: string): string {
     switch (tipo) {
       case 'PRENOTAZIONE':
+      case 'LEZIONE':
         return 'event_busy';
 
       case 'MANUTENZIONE':
@@ -1153,9 +1184,12 @@ export class BookingDateTimeSelectionComponent implements OnInit, OnDestroy {
         return 'lock_clock';
 
       case 'FESTIVITA':
+        return 'domain_disabled';
+
       case 'ECCEZIONE_ORARIO_CENTRO':
       case 'ECCEZIONE_ORARI_CENTRO':
-        return 'event_busy';
+      case 'ECCEZIONE_CENTRO':
+        return 'schedule';
 
       default:
         return 'block';

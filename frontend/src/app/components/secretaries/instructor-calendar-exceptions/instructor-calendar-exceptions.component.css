@@ -503,19 +503,23 @@ input:disabled {
 }
 
 .event-lesson {
-  background: linear-gradient(135deg, #1a73e8, #155fc0);
+  background: #1a73e8;
+  border-left: 5px solid #0b57d0;
 }
 
-.event-instructor-exception {
-  background: linear-gradient(135deg, #d93025, #a50e0e);
+.event-instructor-unavailable {
+  background: #8e24aa;
+  border-left: 5px solid #5e1675;
 }
 
 .event-center-exception {
-  background: linear-gradient(135deg, #f29900, #c26401);
+  background: #00897b;
+  border-left: 5px solid #00695c;
 }
 
 .event-generic {
-  background: linear-gradient(135deg, #5f6472, #3c4043);
+  background: #777777;
+  border-left: 5px solid #555555;
 }
 
 .primary-action mat-spinner,

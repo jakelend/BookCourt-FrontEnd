@@ -333,8 +333,12 @@ export class InstructorCalendarExceptionsComponent implements OnInit {
     const range = this.resolveCalendarRange();
     const totalMinutes = Math.max(60, this.minutesBetween(range.start, range.end));
 
+    const visibleEvents = (agenda.eventi ?? []).filter(
+      (event) => event.tipo === 'ECCEZIONE_ISTRUTTORE',
+    );
+
     this.hourSlotsSignal.set(this.buildHourSlots(range.start, range.end, totalMinutes));
-    this.eventsSignal.set(this.layoutEvents(agenda.eventi ?? [], range.start, range.end, totalMinutes));
+    this.eventsSignal.set(this.layoutEvents(visibleEvents, range.start, range.end, totalMinutes));
   }
 
   private resolveCalendarRange(): { start: Date; end: Date } {

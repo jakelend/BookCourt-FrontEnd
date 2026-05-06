@@ -713,7 +713,7 @@ button:disabled {
 }
 
 .booking-dot {
-  background: #3f4756;
+  background: #1a73e8;
 }
 
 .maintenance-dot {
@@ -721,7 +721,11 @@ button:disabled {
 }
 
 .exception-dot {
-  background: #c2185b;
+  background: #00897b;
+}
+
+.center-closed-dot {
+  background: #4a4a4a;
 }
 
 .lock-dot {
@@ -729,7 +733,7 @@ button:disabled {
 }
 
 .selection-dot {
-  background: #1a73e8;
+  background: #188038;
 }
 
 .field-event {
@@ -740,13 +744,13 @@ button:disabled {
 
 .selected-event {
   z-index: 3;
-  background: #1a73e8;
-  border-left: 5px solid #0b57d0;
+  background: #188038 !important;
+  border-left: 5px solid #0f5f2a !important;
 }
 
 .field-event-booking {
-  background: #3f4756 !important;
-  border-left: 5px solid #252b36 !important;
+  background: #1a73e8 !important;
+  border-left: 5px solid #0b57d0 !important;
 }
 
 .field-event-maintenance {
@@ -754,9 +758,14 @@ button:disabled {
   border-left: 5px solid #8f1515 !important;
 }
 
-.field-event-center-exception {
-  background: #c2185b !important;
-  border-left: 5px solid #880e4f !important;
+.field-event-center-closed {
+  background: #4a4a4a !important;
+  border-left: 5px solid #222222 !important;
+}
+
+.field-event-special-center-hours {
+  background: #00897b !important;
+  border-left: 5px solid #00695c !important;
 }
 
 .field-event-lock {
@@ -765,8 +774,8 @@ button:disabled {
 }
 
 .field-event-default {
-  background: #6b7280 !important;
-  border-left: 5px solid #4b5563 !important;
+  background: #777777 !important;
+  border-left: 5px solid #555555 !important;
 }
 
 .loading-feedback {

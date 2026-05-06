@@ -302,19 +302,24 @@
   border-left: 5px solid #0b57d0;
 }
 
-.event-instructor-exception {
-  background: #f29900;
-  border-left: 5px solid #b06000;
+.event-instructor-unavailable {
+  background: #8e24aa;
+  border-left: 5px solid #5e1675;
 }
 
-.event-center-exception {
-  background: #5f6368;
-  border-left: 5px solid #3c4043;
+.event-center-closed {
+  background: #4a4a4a;
+  border-left: 5px solid #222222;
+}
+
+.event-center-special-hours {
+  background: #00897b;
+  border-left: 5px solid #00695c;
 }
 
 .event-generic {
-  background: #6750a4;
-  border-left: 5px solid #4f378b;
+  background: #777777;
+  border-left: 5px solid #555555;
 }
 
 .side-panel {
