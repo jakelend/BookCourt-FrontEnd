@@ -1,0 +1,98 @@
+<main class="cancel-bookings-page">
+  <section class="cancel-bookings-container">
+    <header class="page-header">
+      <span class="page-kicker">Prenotazioni</span>
+      <h1>Annulla Prenotazioni</h1>
+      <p>
+        Qui trovi le tue prenotazioni future. Puoi annullarle solo se mancano almeno
+        <strong>48 ore</strong> all’inizio della prenotazione.
+      </p>
+    </header>
+
+    <section *ngIf="feedbackMessage()" class="form-alert success-feedback">
+      <span class="material-symbols-outlined">check_circle</span>
+      <span>{{ feedbackMessage() }}</span>
+    </section>
+
+    <section *ngIf="errorMessage()" class="form-alert error-feedback">
+      <span class="material-symbols-outlined">error</span>
+      <span>{{ errorMessage() }}</span>
+    </section>
+
+    <section *ngIf="isLoading()" class="loading-panel">
+      <div class="loading-spinner" aria-hidden="true"></div>
+      <span>Caricamento prenotazioni future...</span>
+    </section>
+
+    <section *ngIf="!isLoading() && prenotazioni().length === 0" class="empty-panel">
+      <span class="material-symbols-outlined">event_available</span>
+      <div>
+        <strong>Nessuna prenotazione futura</strong>
+        <p>Quando effettuerai una prenotazione futura, comparirà qui.</p>
+      </div>
+    </section>
+
+    <section *ngIf="!isLoading() && prenotazioni().length > 0" class="booking-grid">
+      <article
+        *ngFor="let prenotazione of prenotazioni(); trackBy: trackByPrenotazioneId"
+        class="booking-card"
+        [class.locked]="!canCancel(prenotazione)"
+      >
+        <div class="booking-card-header">
+          <div class="booking-icon" [class.locked]="!canCancel(prenotazione)">
+            <span class="material-symbols-outlined">
+              {{ getCancelStatusIcon(prenotazione) }}
+            </span>
+          </div>
+
+          <div>
+            <h2>Prenotazione</h2>
+            <p>Campo: {{ getCampoLabel(prenotazione) }}</p>
+          </div>
+        </div>
+
+        <div class="booking-info-list">
+          <div class="booking-info-row">
+            <span>Data</span>
+            <strong>{{ formatDate(prenotazione.inizio) }}</strong>
+          </div>
+
+          <div class="booking-info-row">
+            <span>Ora</span>
+            <strong>{{ formatTimeRange(prenotazione.inizio, prenotazione.fine) }}</strong>
+          </div>
+
+          <div class="booking-info-row">
+            <span>Stato</span>
+            <strong>{{ prenotazione.stato }}</strong>
+          </div>
+
+          <div class="booking-info-row">
+            <span>Costo</span>
+            <strong>{{ formatCurrency(prenotazione.costoTotale) }}</strong>
+          </div>
+
+          <div class="booking-info-row">
+            <span>Annullamento</span>
+            <strong>{{ getCancelStatusLabel(prenotazione) }}</strong>
+          </div>
+        </div>
+
+        <p class="cancel-info" [class.locked]="!canCancel(prenotazione)">
+          {{ getCancelInfoText(prenotazione) }}
+        </p>
+
+        <button
+          type="button"
+          class="danger-button"
+          [disabled]="!canCancel(prenotazione) || isCancelling(prenotazione.id)"
+          (click)="annullaPrenotazione(prenotazione)"
+        >
+          <span class="material-symbols-outlined">cancel</span>
+          <span *ngIf="!isCancelling(prenotazione.id)">ANNULLA</span>
+          <span *ngIf="isCancelling(prenotazione.id)">Annullamento...</span>
+        </button>
+      </article>
+    </section>
+  </section>
+</main>

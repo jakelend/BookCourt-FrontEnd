@@ -1,7 +1,8 @@
 <article
-  class="instructor-card"
+  class="field-card"
   [class.selection-card]="isSelectionMode"
   [class.selection-disabled]="isSelectionMode && !field.attivo"
+  [class.inactive-card]="!field.attivo"
   [attr.role]="isSelectionMode ? 'button' : null"
   [attr.tabindex]="isSelectionMode && field.attivo ? 0 : null"
   (click)="select()"
@@ -35,6 +36,7 @@
           <span class="material-symbols-outlined">sports_soccer</span>
           <span>Sport</span>
         </div>
+
         <strong>{{ field.sport }}</strong>
       </div>
 
@@ -45,6 +47,7 @@
           <span class="material-symbols-outlined">payments</span>
           <span>Tariffa</span>
         </div>
+
         <strong>{{ hourlyRateLabel }}</strong>
       </div>
     </div>

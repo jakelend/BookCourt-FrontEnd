@@ -2,8 +2,8 @@ import { CommonModule } from '@angular/common';
 import { Component, ElementRef, OnDestroy, OnInit, signal, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { forkJoin, Observable, of } from 'rxjs';
-import { finalize, switchMap } from 'rxjs/operators';
+import { forkJoin } from 'rxjs';
+import { finalize } from 'rxjs/operators';
 
 import { ManagerUpdateFieldRequestDto } from '../../../dto/request/manager/manager-create-field-request.dto';
 import { ManagerFieldImageResponseDto } from '../../../dto/response/manager/manager-field-image-response.dto';
@@ -132,6 +132,7 @@ export class ModifyFieldComponent implements OnInit, OnDestroy {
       sport,
       costoOrario: costoOrario!,
       attivo: this.field.active,
+      idImmaginiDaEliminare: Array.from(this.deletedExistingImageIds),
     };
 
     const uploadedImages = this.imagePreviews()
@@ -143,15 +144,6 @@ export class ModifyFieldComponent implements OnInit, OnDestroy {
     this.managerService
       .aggiornaCampo(this.field.id, payload, uploadedImages)
       .pipe(
-        switchMap(() => {
-          if (this.deletedExistingImageIds.size) {
-            return this.managerService.eliminaImmaginiCampo(
-              this.field.id,
-              Array.from(this.deletedExistingImageIds),
-            );
-          }
-          return of(null);
-        }),
         finalize(() => {
           this.isSaving.set(false);
         }),

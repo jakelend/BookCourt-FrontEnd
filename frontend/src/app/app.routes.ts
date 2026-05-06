@@ -28,9 +28,13 @@ import { Role } from './enumeration/role.enum';
 import { BookingSportSelectionComponent } from './components/booking/sport-selection/booking-sport-selection.component';
 import { BookingFieldSelectionComponent } from './components/booking/field-selection/booking-field-selection.component';
 import { BookingDateTimeSelectionComponent } from './components/booking/date-time-selection/booking-date-time-selection.component';
+import { BookingExtraSelectionComponent } from './components/booking/extra-selection/booking-extra-selection.component';
+import { BookingPreviewComponent } from './components/booking/preview/booking-preview.component';
+import { BookingConfirmationComponent } from './components/booking/confirmation/booking-confirmation.component';
 import { EditAccountComponent } from './components/profile/edit-account/edit-account.component';
 import { PendingFeedbackBookingsComponent } from './components/feedback/pending-feedback-bookings/pending-feedback-bookings.component';
 import { CompletedFeedbackBookingsComponent } from './components/feedback/completed-feedback-bookings/completed-feedback-bookings.component';
+import { CancelBookingsComponent } from './components/booking/cancel-bookings/cancel-bookings.component';
 
 export const routes: Routes = [
   {
@@ -168,6 +172,30 @@ export const routes: Routes = [
         data: { roles: [Role.CLIENTE] },
       },
       {
+        path: 'prenotazioni/extra',
+        component: BookingExtraSelectionComponent,
+        canActivate: [RoleGuard],
+        data: { roles: [Role.CLIENTE] },
+      },
+      {
+        path: 'prenotazioni/riepilogo',
+        component: BookingPreviewComponent,
+        canActivate: [RoleGuard],
+        data: { roles: [Role.CLIENTE] },
+      },
+      {
+        path: 'prenotazioni/conferma',
+        component: BookingConfirmationComponent,
+        canActivate: [RoleGuard],
+        data: { roles: [Role.CLIENTE] },
+      },
+      {
+        path: 'prenotazioni/annulla',
+        component: CancelBookingsComponent,
+        canActivate: [RoleGuard],
+        data: { roles: [Role.CLIENTE] },
+      },
+      {
         path: 'feedback/da-recensire',
         component: PendingFeedbackBookingsComponent,
         canActivate: [RoleGuard],
@@ -258,6 +286,22 @@ export const routes: Routes = [
   {
     path: 'prenotazioni/orario',
     redirectTo: 'dashboard/prenotazioni/orario',
+  },
+  {
+    path: 'prenotazioni/extra',
+    redirectTo: 'dashboard/prenotazioni/extra',
+  },
+  {
+    path: 'prenotazioni/riepilogo',
+    redirectTo: 'dashboard/prenotazioni/riepilogo',
+  },
+  {
+    path: 'prenotazioni/conferma',
+    redirectTo: 'dashboard/prenotazioni/conferma',
+  },
+  {
+    path: 'prenotazioni/annulla',
+    redirectTo: 'dashboard/prenotazioni/annulla',
   },
   {
     path: 'feedback/da-recensire',

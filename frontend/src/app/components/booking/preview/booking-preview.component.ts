@@ -443,6 +443,7 @@ export class BookingPreviewComponent implements OnInit {
     sessionStorage.setItem('booking.lockId', String(lock.lockId));
     sessionStorage.setItem('booking.lockSignature', this.buildLockSignature());
     sessionStorage.setItem('booking.lockExpiresAt', lock.scadeIl);
+    this.notifyBookingLockChanged();
   }
 
   private clearLockStorage(): void {
@@ -450,6 +451,7 @@ export class BookingPreviewComponent implements OnInit {
     sessionStorage.removeItem('booking.lockId');
     sessionStorage.removeItem('booking.lockSignature');
     sessionStorage.removeItem('booking.lockExpiresAt');
+    this.notifyBookingLockChanged();
   }
 
   private releaseCurrentLockAndNavigate(targetRoute: string[]): void {
@@ -512,6 +514,10 @@ export class BookingPreviewComponent implements OnInit {
       this.conIstruttore(),
       this.selectedInstructorId() ?? '',
     ].join('|');
+  }
+
+  private notifyBookingLockChanged(): void {
+    window.dispatchEvent(new Event('booking-lock-updated'));
   }
 
   private buildDateTimeParam(date: string, time: string): string {

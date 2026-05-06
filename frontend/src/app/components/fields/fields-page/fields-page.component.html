@@ -1,17 +1,21 @@
-<main class="instructors-page">
+<main class="fields-page">
   <header class="page-header">
     <div>
       <h1>Campi</h1>
       <p>Gestisci campi, sport associati, tariffe e disponibilità.</p>
     </div>
 
-    <button type="button" class="add-instructor-button" (click)="addField()">
+    <button type="button" class="add-field-button" (click)="addField()">
       <span class="material-symbols-outlined">add</span>
       <span>Aggiungi campo</span>
     </button>
   </header>
 
-  <section *ngIf="!loading && !errorMessage && fields.length" class="list-controls" aria-label="Filtro disponibilità campi">
+  <section
+    *ngIf="!loading && !errorMessage && fields.length"
+    class="list-controls"
+    aria-label="Filtro disponibilità campi"
+  >
     <span>Disponibilità</span>
 
     <div class="availability-filter" role="group" aria-label="Filtra campi per disponibilità">
@@ -22,6 +26,7 @@
       >
         Tutti
       </button>
+
       <button
         type="button"
         [class.active]="availabilityFilter === 'active'"
@@ -29,6 +34,7 @@
       >
         Attivi
       </button>
+
       <button
         type="button"
         [class.active]="availabilityFilter === 'inactive'"
@@ -40,7 +46,7 @@
   </section>
 
   <section *ngIf="loading" class="feedback-panel" aria-live="polite">
-    <span class="material-symbols-outlined">progress_activity</span>
+    <span class="material-symbols-outlined loading-icon">progress_activity</span>
     <span>Caricamento campi...</span>
   </section>
 
@@ -65,12 +71,20 @@
     <span>Nessun campo presente.</span>
   </section>
 
-  <section *ngIf="!loading && !errorMessage && fields.length && !filteredFields.length" class="feedback-panel" aria-live="polite">
+  <section
+    *ngIf="!loading && !errorMessage && fields.length && !filteredFields.length"
+    class="feedback-panel"
+    aria-live="polite"
+  >
     <span class="material-symbols-outlined">filter_alt_off</span>
     <span>Nessun campo corrisponde al filtro selezionato.</span>
   </section>
 
-  <section *ngIf="!loading && !errorMessage && filteredFields.length" class="instructors-grid" aria-label="Lista campi">
+  <section
+    *ngIf="!loading && !errorMessage && filteredFields.length"
+    class="fields-grid"
+    aria-label="Lista campi"
+  >
     <app-field-card
       *ngFor="let field of filteredFields; trackBy: trackByFieldId"
       [field]="field"

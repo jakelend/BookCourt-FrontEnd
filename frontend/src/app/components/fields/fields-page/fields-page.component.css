@@ -1,4 +1,131 @@
-@import '../../instructors/instructors-page/instructors-page.component.css';
+:host {
+  display: block;
+  flex: 1;
+}
+
+.fields-page {
+  width: min(1440px, 100%);
+  min-height: calc(100vh - 64px);
+  margin: 0 auto;
+  padding: 32px;
+  color: #191c1e;
+  font-family: Inter, Roboto, Arial, sans-serif;
+}
+
+/* HEADER */
+
+.page-header {
+  margin-bottom: 32px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid #e0e3e5;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.page-header h1 {
+  margin: 0;
+  color: #000000;
+  font-family: Lexend, Inter, Roboto, Arial, sans-serif;
+  font-size: 32px;
+  font-weight: 900;
+  letter-spacing: -0.03em;
+}
+
+.page-header p {
+  margin: 6px 0 0;
+  color: #45464d;
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.add-field-button {
+  min-height: 42px;
+  border: 0;
+  border-radius: 8px;
+  padding: 0 16px;
+  background: #0058be;
+  color: #ffffff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 15px;
+  font-weight: 900;
+  cursor: pointer;
+  box-shadow: 0 6px 16px rgba(0, 88, 190, 0.16);
+  transition:
+    background-color 160ms ease,
+    transform 160ms ease;
+}
+
+.add-field-button:hover {
+  background: #2170e4;
+  transform: translateY(-1px);
+}
+
+.add-field-button .material-symbols-outlined {
+  font-size: 19px;
+}
+
+/* FILTRI */
+
+.list-controls {
+  margin: -12px 0 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.list-controls > span {
+  color: #45464d;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.availability-filter {
+  border: 1px solid #d9dde3;
+  border-radius: 8px;
+  padding: 3px;
+  background: #ffffff;
+  display: inline-flex;
+  gap: 3px;
+}
+
+.availability-filter button {
+  min-height: 34px;
+  border: 0;
+  border-radius: 6px;
+  padding: 0 12px;
+  background: transparent;
+  color: #5f6472;
+  font-size: 13px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.availability-filter button:hover {
+  background: #f2f4f6;
+  color: #191c1e;
+}
+
+.availability-filter button.active {
+  background: #2170e4;
+  color: #ffffff;
+}
+
+/* GRID CAMPI */
+
+.fields-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: stretch;
+  gap: 24px;
+}
+
+/* FEEDBACK */
 
 .feedback-panel {
   margin-bottom: 24px;
@@ -14,6 +141,11 @@
   gap: 16px;
 }
 
+.feedback-panel .material-symbols-outlined {
+  color: #2170e4;
+  font-size: 30px;
+}
+
 .feedback-panel > div p {
   margin: 6px 0 0;
 }
@@ -22,6 +154,14 @@
   border-color: rgba(186, 26, 26, 0.18);
   background: rgba(186, 26, 26, 0.06);
   color: #8f1515;
+}
+
+.feedback-panel-error .material-symbols-outlined {
+  color: #8f1515;
+}
+
+.loading-icon {
+  animation: fields-spin 900ms linear infinite;
 }
 
 .retry-button {
@@ -33,4 +173,60 @@
   color: #ffffff;
   font-size: 14px;
   font-weight: 800;
+  cursor: pointer;
+}
+
+.retry-button:hover {
+  background: #0058be;
+}
+
+@keyframes fields-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* RESPONSIVE */
+
+@media (max-width: 1120px) {
+  .fields-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  .fields-page {
+    padding: 24px;
+  }
+
+  .page-header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .add-field-button {
+    width: 100%;
+  }
+
+  .list-controls {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .availability-filter {
+    width: 100%;
+  }
+
+  .availability-filter button {
+    flex: 1;
+  }
+
+  .fields-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .feedback-panel {
+    align-items: flex-start;
+    flex-direction: column;
+  }
 }

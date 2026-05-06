@@ -1,10 +1,12 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit, computed, signal } from '@angular/core';
 import { Router, RouterOutlet } from '@angular/router';
 import { Role } from '../../enumeration/role.enum';
 import { AuthService, ProfileResponseDto } from '../../services/auth.service';
 import { ChatService } from '../../services/chat.service';
 import { ManagerService } from '../../services/manager.service';
+import { BookingService } from '../../services/booking.service';
+import { Subscription, interval } from 'rxjs';
 
 interface SidebarItem {
   label: string;
@@ -19,12 +21,33 @@ interface SidebarItem {
   templateUrl: './sidebar-header.component.html',
   styleUrl: './sidebar-header.component.css',
 })
-export class SidebarHeaderComponent implements OnInit {
+export class SidebarHeaderComponent implements OnInit, OnDestroy {
   profile: ProfileResponseDto | null = null;
   profileImageUrl = '';
   selectedItemKey = '';
 
   private readonly backendBaseUrl = 'http://localhost:8080';
+  private readonly lockTimerRefreshMs = 1000;
+
+  private lockTimerSubscription?: Subscription;
+  private lockExpirationInProgress = false;
+
+  readonly bookingLockRemainingSeconds = signal(0);
+
+  readonly hasActiveBookingLock = computed(() => this.bookingLockRemainingSeconds() > 0);
+
+  readonly bookingLockRemainingLabel = computed(() => {
+    const seconds = this.bookingLockRemainingSeconds();
+
+    if (seconds <= 0) {
+      return '';
+    }
+
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+
+    return `${String(minutes).padStart(2, '0')}:${String(remainingSeconds).padStart(2, '0')}`;
+  });
 
   readonly menuByRole: Record<Role, SidebarItem[]> = {
     [Role.SEGRETARIA]: [
@@ -39,13 +62,19 @@ export class SidebarHeaderComponent implements OnInit {
     ],
 
     [Role.CLIENTE]: [
+      { label: 'Chat', icon: 'chat', key: 'chat', route: '/dashboard/chat' },
       {
-        label: 'Prenotazioni',
+        label: 'Prenotazione',
         icon: 'calendar_month',
         key: 'bookings',
         route: '/dashboard/prenotazioni',
       },
-      { label: 'Chat', icon: 'chat', key: 'chat', route: '/dashboard/chat' },
+      {
+        label: 'Annulla Prenotazione',
+        icon: 'event_busy',
+        key: 'cancel-bookings',
+        route: '/dashboard/prenotazioni/annulla',
+      },
       {
         label: 'Prenotazioni effettuate',
         icon: 'rate_review',
@@ -58,7 +87,7 @@ export class SidebarHeaderComponent implements OnInit {
         key: 'feedback-completed',
         route: '/dashboard/feedback/concluse',
       },
-      { label: 'Gestione Credenziali', icon: 'key', key: 'credentials' },
+      { label: 'Gestione credenziali', icon: 'key', key: 'credentials', route: '/dashboard/change-password' },
       { label: 'Gestione account', icon: 'manage_accounts', key: 'account-management', route: '/dashboard/account-management' },
     ],
 
@@ -72,6 +101,7 @@ export class SidebarHeaderComponent implements OnInit {
     private readonly authService: AuthService,
     private readonly chatService: ChatService,
     private readonly managerService: ManagerService,
+    private readonly bookingService: BookingService,
     private readonly router: Router,
   ) {}
 
@@ -79,6 +109,12 @@ export class SidebarHeaderComponent implements OnInit {
     this.initializeProfileImageFromSession();
     this.preloadRoleData();
     this.loadCurrentProfile();
+    this.startBookingLockTimer();
+  }
+
+  ngOnDestroy(): void {
+    this.lockTimerSubscription?.unsubscribe();
+    window.removeEventListener('booking-lock-updated', this.handleBookingLockUpdated);
   }
 
   get sidebarItems(): SidebarItem[] {
@@ -171,8 +207,14 @@ export class SidebarHeaderComponent implements OnInit {
   }
 
   isSidebarItemActive(item: SidebarItem): boolean {
-    if (item.route && this.router.url.startsWith(item.route)) {
-      return true;
+    const activeRouteKey = this.getActiveRouteItemKey();
+
+    if (activeRouteKey) {
+      return item.key === activeRouteKey;
+    }
+
+    if (item.route) {
+      return false;
     }
 
     if (this.selectedItemKey) {
@@ -180,6 +222,36 @@ export class SidebarHeaderComponent implements OnInit {
     }
 
     return item.key === 'center-management' && this.isStaffManagementActive;
+  }
+
+  private getActiveRouteItemKey(): string | null {
+    const currentUrl = this.normalizeRouteUrl(this.router.url);
+
+    const matchingItems = this.sidebarItems
+      .filter((item) => item.route)
+      .filter((item) => this.routeMatches(currentUrl, item.route as string))
+      .sort((a, b) => (b.route?.length ?? 0) - (a.route?.length ?? 0));
+
+    return matchingItems[0]?.key ?? null;
+  }
+
+  private routeMatches(currentUrl: string, route: string): boolean {
+    const normalizedRoute = this.normalizeRouteUrl(route);
+
+    return (
+      currentUrl === normalizedRoute ||
+      currentUrl.startsWith(`${normalizedRoute}/`)
+    );
+  }
+
+  private normalizeRouteUrl(url: string): string {
+    const cleanUrl = url.split('?')[0].split('#')[0];
+
+    if (cleanUrl.length > 1 && cleanUrl.endsWith('/')) {
+      return cleanUrl.slice(0, -1);
+    }
+
+    return cleanUrl;
   }
 
   openInstructors(): void {
@@ -220,6 +292,97 @@ export class SidebarHeaderComponent implements OnInit {
 
   trackByKey(_: number, item: SidebarItem): string {
     return item.key;
+  }
+
+  private readonly handleBookingLockUpdated = (): void => {
+    this.updateBookingLockTimer();
+  };
+
+  private startBookingLockTimer(): void {
+    this.updateBookingLockTimer();
+
+    window.addEventListener('booking-lock-updated', this.handleBookingLockUpdated);
+
+    this.lockTimerSubscription = interval(this.lockTimerRefreshMs).subscribe(() => {
+      this.updateBookingLockTimer();
+    });
+  }
+
+  private updateBookingLockTimer(): void {
+    const expiresAt = sessionStorage.getItem('booking.lockExpiresAt');
+    const lockId = this.getStoredLockId();
+
+    if (!expiresAt) {
+      this.bookingLockRemainingSeconds.set(0);
+      return;
+    }
+
+    const expirationDate = new Date(expiresAt);
+
+    if (Number.isNaN(expirationDate.getTime())) {
+      this.bookingLockRemainingSeconds.set(0);
+      this.clearBookingLockStorage();
+      return;
+    }
+
+    const remainingMilliseconds = expirationDate.getTime() - Date.now();
+    const remainingSeconds = Math.max(0, Math.ceil(remainingMilliseconds / 1000));
+
+    this.bookingLockRemainingSeconds.set(remainingSeconds);
+
+    if (remainingSeconds === 0 && lockId) {
+      this.deleteExpiredLockAndReturnToDateTime(lockId);
+    }
+  }
+
+  private deleteExpiredLockAndReturnToDateTime(lockId: number): void {
+    if (this.lockExpirationInProgress) {
+      return;
+    }
+
+    this.lockExpirationInProgress = true;
+
+    this.bookingService.eliminaLockPrenotazione(lockId).subscribe({
+      next: () => {
+        this.finishExpiredLockHandling();
+      },
+      error: (error) => {
+        console.warn('Lock scaduto già eliminato o non raggiungibile:', error);
+        this.finishExpiredLockHandling();
+      },
+    });
+  }
+
+  private finishExpiredLockHandling(): void {
+    this.clearBookingLockStorage();
+    this.lockExpirationInProgress = false;
+
+    const currentUrl = this.normalizeRouteUrl(this.router.url);
+
+    if (
+      currentUrl.startsWith('/dashboard/prenotazioni') &&
+      currentUrl !== '/dashboard/prenotazioni/orario' &&
+      currentUrl !== '/dashboard/prenotazioni/conferma'
+    ) {
+      void this.router.navigate(['/dashboard/prenotazioni/orario']);
+    }
+  }
+
+  private clearBookingLockStorage(): void {
+    sessionStorage.removeItem('booking.lockId');
+    sessionStorage.removeItem('booking.lockSignature');
+    sessionStorage.removeItem('booking.lockExpiresAt');
+    this.bookingLockRemainingSeconds.set(0);
+  }
+
+  private getStoredLockId(): number | null {
+    const lockId = Number(sessionStorage.getItem('booking.lockId'));
+
+    if (!Number.isFinite(lockId) || lockId <= 0) {
+      return null;
+    }
+
+    return lockId;
   }
 
   private loadCurrentProfile(): void {

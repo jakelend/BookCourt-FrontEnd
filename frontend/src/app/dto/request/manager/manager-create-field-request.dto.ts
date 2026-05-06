@@ -12,4 +12,5 @@ export interface ManagerUpdateFieldRequestDto {
   sport: ManagerFieldSport;
   costoOrario: number;
   attivo: boolean;
+  idImmaginiDaEliminare?: number[];
 }

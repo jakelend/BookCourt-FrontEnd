@@ -191,7 +191,15 @@ export class BookingExtraSelectionComponent implements OnInit {
 
     this.persistInstructorSelection();
     this.persistRacketsSelection();
-    this.releaseStoredLockThenNavigate(['/dashboard/prenotazioni/riepilogo']);
+
+    /*
+      Non eliminiamo qui il lock creato nella pagina data e ora.
+      Per TENNIS e PADEL il lock deve rimanere attivo anche mentre l'utente sceglie
+      istruttore e racchette, così gli altri utenti vedono subito lo slot occupato.
+      Se nella preview viene scelto un istruttore, la preview eliminerà il lock base
+      e creerà un nuovo lock completo con istruttore.
+    */
+    void this.router.navigate(['/dashboard/prenotazioni/riepilogo']);
   }
 
   trackByStepLabel(_: number, step: BookingStep): string {
@@ -362,6 +370,7 @@ export class BookingExtraSelectionComponent implements OnInit {
     sessionStorage.removeItem('booking.lockId');
     sessionStorage.removeItem('booking.lockSignature');
     sessionStorage.removeItem('booking.lockExpiresAt');
+    this.notifyBookingLockChanged();
   }
 
   private releaseStoredLockThenNavigate(targetRoute: string[]): void {
@@ -406,6 +415,10 @@ export class BookingExtraSelectionComponent implements OnInit {
     }
 
     return lockId;
+  }
+
+  private notifyBookingLockChanged(): void {
+    window.dispatchEvent(new Event('booking-lock-updated'));
   }
 
   private buildDateTimeParam(date: string, time: string): string {

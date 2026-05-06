@@ -66,6 +66,11 @@
       <div class="profile-summary">
         <div class="profile-text">
           <strong>{{ fullName }}</strong>
+
+          <span *ngIf="hasActiveBookingLock()" class="booking-lock-timer">
+            <span class="material-symbols-outlined">timer</span>
+            {{ bookingLockRemainingLabel() }} per completare
+          </span>
         </div>
 
         <button type="button" class="profile-button" aria-label="Profilo utente">

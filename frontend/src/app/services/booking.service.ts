@@ -86,6 +86,9 @@ export interface ConfermaPrenotazioneRequestDto {
 export interface PrenotazioneConfermataResponseDto {
   id: number;
   campoId: number;
+  nomeCampo?: string | null;
+  campoNome?: string | null;
+  nomeCampoSportivo?: string | null;
   clienteId: number;
   istruttoreId: number | null;
   inizio: string;
@@ -105,6 +108,13 @@ export class BookingService {
   private readonly backendBaseUrl = 'http://localhost:8080';
   private readonly campiApiUrl = `${this.backendBaseUrl}/api/campi`;
   private readonly prenotazioniApiUrl = `${this.backendBaseUrl}/api/prenotazioni`;
+
+  /*
+    * Durata del lock lato frontend in secondi (per test, in produzione dovrebbe essere più breve)
+    * 20 secondi per il test
+    * 300 per app normale
+  */
+  private readonly frontendLockDurationSecondsForTest = 300;
 
   constructor(private readonly http: HttpClient) {}
 
@@ -180,7 +190,14 @@ export class BookingService {
         `${this.prenotazioniApiUrl}/creazione-lock`,
         request,
       )
-      .pipe(timeout(10000), take(1));
+      .pipe(
+        timeout(10000),
+        take(1),
+        map((response) => ({
+          ...response,
+          scadeIl: this.buildFrontendLockExpirationIso(),
+        })),
+      );
   }
 
   getPreviewPrenotazione(request: BookingPreviewRequestDto): Observable<BookingPreviewResponseDto> {
@@ -226,6 +243,45 @@ export class BookingService {
         timeout(10000),
         take(1),
       );
+  }
+
+  getMiePrenotazioniFuture(): Observable<PrenotazioneConfermataResponseDto[]> {
+    return this.http
+      .get<PrenotazioneConfermataResponseDto[]>(`${this.prenotazioniApiUrl}/mie`)
+      .pipe(
+        timeout(10000),
+        take(1),
+        map((response) =>
+          (response ?? []).map((prenotazione) => ({
+            ...prenotazione,
+            costoTotale: Number(prenotazione.costoTotale ?? 0),
+          })),
+        ),
+      );
+  }
+
+  annullaPrenotazione(prenotazioneId: number): Observable<PrenotazioneConfermataResponseDto> {
+    return this.http
+      .delete<PrenotazioneConfermataResponseDto>(
+        `${this.prenotazioniApiUrl}/annullamento/${prenotazioneId}`,
+      )
+      .pipe(
+        timeout(10000),
+        take(1),
+        map((response) => ({
+          ...response,
+          costoTotale: Number(response.costoTotale ?? 0),
+        })),
+      );
+  }
+
+
+  private buildFrontendLockExpirationIso(): string {
+    const expirationDate = new Date(
+      Date.now() + this.frontendLockDurationSecondsForTest * 1000,
+    );
+
+    return expirationDate.toISOString();
   }
 
   private buildImageUrl(urlImmagine: string | null): string | null {

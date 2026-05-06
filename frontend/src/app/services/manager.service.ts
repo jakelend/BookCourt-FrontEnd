@@ -289,7 +289,9 @@ export class ManagerService {
   }
 
   eliminaImmaginiCampo(idCampo: number, idImmagini: number[]): Observable<{ message: string }> {
-    return this.http.post<{ message: string }>(`${this.managerApiUrl}/${idCampo}/immagini/elimina`, { idImmagini });
+    return this.http
+      .post<{ message: string }>(`${this.managerApiUrl}/${idCampo}/immagini/elimina`, { idImmagini })
+      .pipe(tap(() => this.clearFieldsCache()));
   }
 
   disattivaCampo(idCampo: number): Observable<string> {

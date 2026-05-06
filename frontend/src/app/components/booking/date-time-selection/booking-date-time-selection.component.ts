@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
+  OnDestroy,
   OnInit,
   computed,
   signal,
@@ -13,12 +14,14 @@ import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
-import { finalize } from 'rxjs';
+import { Subscription, finalize, interval } from 'rxjs';
 import { BookingSport } from '../../../dto/response/booking/booking-field-response.dto';
 import {
   BookingCalendarEventResponseDto,
   BookingFieldCalendarResponseDto,
+  BookingLockResponseDto,
   BookingService,
+  CreateBookingLockRequestDto,
 } from '../../../services/booking.service';
 
 interface BookingStep {
@@ -63,7 +66,7 @@ interface SelectedBookingEventView {
   styleUrl: './booking-date-time-selection.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class BookingDateTimeSelectionComponent implements OnInit {
+export class BookingDateTimeSelectionComponent implements OnInit, OnDestroy {
   readonly currentStep = 3;
 
   readonly steps: BookingStep[] = [
@@ -84,8 +87,8 @@ export class BookingDateTimeSelectionComponent implements OnInit {
   readonly selectedEndTime = signal('09:00');
 
   readonly calendarData = signal<BookingFieldCalendarResponseDto | null>(null);
-  readonly hourSlots = signal<CalendarHourSlot[]>([]);
-  readonly startTimeOptions = signal<string[]>([]);
+  readonly hourSlots = computed(() => this.buildHourSlots());
+  readonly startTimeOptions = computed(() => this.buildStartTimeOptions());
 
   readonly isCalendarLoading = signal(false);
   readonly isReleasingLock = signal(false);
@@ -93,25 +96,39 @@ export class BookingDateTimeSelectionComponent implements OnInit {
   readonly formErrorMessage = signal('');
   readonly feedbackMessage = signal('');
 
-  private readonly fallbackDayStartTime = '08:00';
-  private readonly fallbackDayEndTime = '23:00';
+  readonly minBookingDate = this.toDateOnly(this.formatLocalDate(new Date()));
+
+  private readonly visibleDayStartTime = '08:00';
+  private readonly visibleDayEndTime = '24:00';
+  private readonly fallbackBookingStartTime = '08:00';
+  private readonly fallbackBookingEndTime = '24:00';
   private readonly minimumDurationMinutes = 60;
   private readonly durationStepMinutes = 30;
   private readonly calendarVerticalInsetPct = 2.4;
+  private readonly realtimeRefreshMs = 3000;
+
+  private calendarRealtimeSubscription?: Subscription;
+  private realtimeRefreshInProgress = false;
 
   readonly selectedDateValue = computed(() => this.toDateOnly(this.selectedDate()));
 
-  readonly dayStartTime = computed(() => {
-    return this.extractTimeFromDateTime(this.calendarData()?.apertura) ?? this.fallbackDayStartTime;
+  readonly dayStartTime = computed(() => this.visibleDayStartTime);
+
+  readonly dayEndTime = computed(() => this.visibleDayEndTime);
+
+  readonly bookingStartTime = computed(() => {
+    return (
+      this.extractTimeFromDateTime(this.calendarData()?.apertura) ??
+      this.fallbackBookingStartTime
+    );
   });
 
-  readonly dayEndTime = computed(() => {
-    return this.extractTimeFromDateTime(this.calendarData()?.chiusura) ?? this.fallbackDayEndTime;
+  readonly bookingEndTime = computed(() => {
+    return this.normalizeClosingTime(
+      this.extractTimeFromDateTime(this.calendarData()?.chiusura) ??
+        this.fallbackBookingEndTime,
+    );
   });
-
-  readonly bookingStartTime = computed(() => this.dayStartTime());
-
-  readonly bookingEndTime = computed(() => this.dayEndTime());
 
   readonly selectedDateTitle = computed(() => {
     return this.toDateOnly(this.selectedDate()).toLocaleDateString('it-IT', {
@@ -152,7 +169,7 @@ export class BookingDateTimeSelectionComponent implements OnInit {
       return 'Il centro è chiuso per questa data.';
     }
 
-    return `Centro aperto dalle ${this.dayStartTime()} alle ${this.dayEndTime()}.`;
+    return `Centro prenotabile dalle ${this.bookingStartTime()} alle ${this.bookingEndTime()}.`;
   });
 
   readonly endTimeOptions = computed(() => {
@@ -237,10 +254,14 @@ export class BookingDateTimeSelectionComponent implements OnInit {
       return [];
     }
 
-    return calendar.eventi
+    const centerExceptionEvents = this.buildCenterExceptionEventViews();
+
+    const backendEvents = calendar.eventi
       .filter((event) => event.inizio && event.fine)
       .map((event, index) => this.toCalendarEventView(event, index))
       .filter((event): event is CalendarEventView => event !== null);
+
+    return [...centerExceptionEvents, ...backendEvents];
   });
 
   readonly selectedBookingEvent = computed<SelectedBookingEventView | null>(() => {
@@ -282,6 +303,7 @@ export class BookingDateTimeSelectionComponent implements OnInit {
       !this.isCalendarLoading() &&
       !this.calendarErrorMessage() &&
       !this.isClosedDay() &&
+      !this.isReleasingLock() &&
       this.isTimeRangeValid()
     );
   });
@@ -300,7 +322,13 @@ export class BookingDateTimeSelectionComponent implements OnInit {
     }
 
     this.restoreSavedDateTime();
-    this.loadCalendarioCampo();
+    this.ensureSelectedDateIsNotPast();
+    this.releaseStoredLockOnPageEntryThenLoadCalendar();
+    this.startCalendarRealtimeRefresh();
+  }
+
+  ngOnDestroy(): void {
+    this.calendarRealtimeSubscription?.unsubscribe();
   }
 
   get totalSteps(): number {
@@ -309,14 +337,6 @@ export class BookingDateTimeSelectionComponent implements OnInit {
 
   goToToday(): void {
     this.selectedDate.set(this.formatLocalDate(new Date()));
-    this.afterDateChanged();
-  }
-
-  goToPreviousDay(): void {
-    this.selectedDate.set(
-      this.formatLocalDate(this.addDays(this.toDateOnly(this.selectedDate()), -1)),
-    );
-
     this.afterDateChanged();
   }
 
@@ -330,6 +350,12 @@ export class BookingDateTimeSelectionComponent implements OnInit {
 
   onDateSelected(date: Date | null): void {
     if (!date) {
+      return;
+    }
+
+    if (this.isDateBeforeToday(date)) {
+      this.selectedDate.set(this.formatLocalDate(new Date()));
+      this.afterDateChanged();
       return;
     }
 
@@ -374,15 +400,13 @@ export class BookingDateTimeSelectionComponent implements OnInit {
     this.persistSelectedDateTime();
 
     if (this.selectedSport() === 'CALCETTO') {
-      this.releaseStoredLockThenNavigate(['/dashboard/prenotazioni/riepilogo'], () => {
-        this.clearBookingExtrasForCalcetto();
-      });
+      this.clearBookingExtrasForCalcetto();
+      this.createDateTimeFieldLockThenNavigate(['/dashboard/prenotazioni/riepilogo']);
       return;
     }
 
-    this.releaseStoredLockThenNavigate(['/dashboard/prenotazioni/extra'], () => {
-      this.clearInstructorSelectionIfDurationIsNotHourly();
-    });
+    this.clearInstructorSelectionIfDurationIsNotHourly();
+    this.createDateTimeFieldLockThenNavigate(['/dashboard/prenotazioni/extra']);
   }
 
   trackByStepLabel(_: number, step: BookingStep): string {
@@ -403,6 +427,135 @@ export class BookingDateTimeSelectionComponent implements OnInit {
 
   isStepCompleted(index: number): boolean {
     return index + 1 <= this.currentStep;
+  }
+
+  private startCalendarRealtimeRefresh(): void {
+    this.calendarRealtimeSubscription?.unsubscribe();
+
+    this.calendarRealtimeSubscription = interval(this.realtimeRefreshMs).subscribe(() => {
+      if (!this.selectedFieldId() || this.isCalendarLoading() || this.realtimeRefreshInProgress) {
+        return;
+      }
+
+      this.loadCalendarioCampo(true);
+    });
+  }
+
+  private releaseStoredLockOnPageEntryThenLoadCalendar(): void {
+    const lockId = this.getStoredLockId();
+
+    if (!lockId) {
+      this.clearBookingLock();
+      this.loadCalendarioCampo();
+      return;
+    }
+
+    this.isReleasingLock.set(true);
+
+    this.bookingService
+      .eliminaLockPrenotazione(lockId)
+      .pipe(
+        finalize(() => {
+          this.isReleasingLock.set(false);
+        }),
+      )
+      .subscribe({
+        next: () => {
+          this.clearBookingLock();
+          this.loadCalendarioCampo();
+        },
+        error: () => {
+          this.clearBookingLock();
+          this.loadCalendarioCampo();
+        },
+      });
+  }
+
+  private createDateTimeFieldLockThenNavigate(targetRoute: string[]): void {
+    const campoId = this.selectedFieldId();
+
+    if (!campoId) {
+      this.formErrorMessage.set('Campo non selezionato.');
+      return;
+    }
+
+    const existingLockId = this.getStoredLockId();
+    const existingSignature = sessionStorage.getItem('booking.lockSignature');
+    const currentSignature = this.buildDateTimeLockSignature(false, null);
+
+    if (existingLockId && existingSignature === currentSignature && !this.isStoredLockExpired()) {
+      void this.router.navigate(targetRoute);
+      return;
+    }
+
+    if (existingLockId) {
+      this.isReleasingLock.set(true);
+
+      this.bookingService
+        .eliminaLockPrenotazione(existingLockId)
+        .pipe(
+          finalize(() => {
+            this.isReleasingLock.set(false);
+          }),
+        )
+        .subscribe({
+          next: () => {
+            this.clearBookingLock();
+            this.createDateTimeLockAndNavigate(targetRoute);
+          },
+          error: () => {
+            this.clearBookingLock();
+            this.createDateTimeLockAndNavigate(targetRoute);
+          },
+        });
+
+      return;
+    }
+
+    this.createDateTimeLockAndNavigate(targetRoute);
+  }
+
+  private createDateTimeLockAndNavigate(targetRoute: string[]): void {
+    const campoId = this.selectedFieldId();
+
+    if (!campoId) {
+      this.formErrorMessage.set('Campo non selezionato.');
+      return;
+    }
+
+    const request: CreateBookingLockRequestDto = {
+      campoId,
+      inizio: this.buildDateTimeParam(this.selectedDate(), this.selectedStartTime()),
+      durataMinuti: this.selectedDurationMinutes(),
+      conIstruttore: false,
+      istruttoreId: null,
+    };
+
+    this.isReleasingLock.set(true);
+    this.formErrorMessage.set('');
+    this.feedbackMessage.set('');
+
+    this.bookingService
+      .creaLockPrenotazione(request)
+      .pipe(
+        finalize(() => {
+          this.isReleasingLock.set(false);
+        }),
+      )
+      .subscribe({
+        next: (lock) => {
+          this.persistLock(lock, this.buildDateTimeLockSignature(false, null));
+          void this.router.navigate(targetRoute);
+        },
+        error: (error) => {
+          console.error('Errore creazione lock data e ora:', error);
+          this.clearBookingLock();
+          this.formErrorMessage.set(
+            'Non è stato possibile bloccare temporaneamente lo slot. Controlla che sia ancora disponibile.',
+          );
+          this.loadCalendarioCampo(true);
+        },
+      });
   }
 
   private clearBookingExtrasForCalcetto(): void {
@@ -430,6 +583,51 @@ export class BookingDateTimeSelectionComponent implements OnInit {
     sessionStorage.removeItem('booking.lockId');
     sessionStorage.removeItem('booking.lockSignature');
     sessionStorage.removeItem('booking.lockExpiresAt');
+    this.notifyBookingLockChanged();
+  }
+
+  private persistLock(lock: BookingLockResponseDto, signature: string): void {
+    sessionStorage.setItem('booking.lockId', String(lock.lockId));
+    sessionStorage.setItem('booking.lockSignature', signature);
+    sessionStorage.setItem('booking.lockExpiresAt', lock.scadeIl);
+    this.notifyBookingLockChanged();
+  }
+
+  private buildDateTimeLockSignature(conIstruttore: boolean, istruttoreId: number | null): string {
+    return [
+      this.selectedFieldId() ?? '',
+      this.selectedDate(),
+      this.selectedStartTime(),
+      this.selectedEndTime(),
+      this.selectedDurationMinutes(),
+      conIstruttore,
+      istruttoreId ?? '',
+    ].join('|');
+  }
+
+  private isStoredLockExpired(): boolean {
+    const expiresAt = sessionStorage.getItem('booking.lockExpiresAt');
+
+    if (!expiresAt) {
+      return true;
+    }
+
+    const expirationDate = new Date(expiresAt);
+
+    if (Number.isNaN(expirationDate.getTime())) {
+      return true;
+    }
+
+    return expirationDate.getTime() <= Date.now();
+  }
+
+  private notifyBookingLockChanged(): void {
+    window.dispatchEvent(new Event('booking-lock-updated'));
+  }
+
+  private buildDateTimeParam(date: string, time: string): string {
+    const normalizedTime = time.length === 5 ? `${time}:00` : time;
+    return `${date}T${normalizedTime}`;
   }
 
   private releaseStoredLockThenNavigate(targetRoute: string[], beforeNavigate?: () => void): void {
@@ -480,12 +678,13 @@ export class BookingDateTimeSelectionComponent implements OnInit {
   }
 
   private afterDateChanged(): void {
+    this.ensureSelectedDateIsNotPast();
     this.formErrorMessage.set('');
     this.feedbackMessage.set('');
     this.loadCalendarioCampo();
   }
 
-  private loadCalendarioCampo(): void {
+  private loadCalendarioCampo(silent = false): void {
     const campoId = this.selectedFieldId();
 
     if (!campoId) {
@@ -493,16 +692,24 @@ export class BookingDateTimeSelectionComponent implements OnInit {
       return;
     }
 
-    this.isCalendarLoading.set(true);
-    this.calendarErrorMessage.set('');
-    this.formErrorMessage.set('');
-    this.feedbackMessage.set('');
+    if (silent) {
+      this.realtimeRefreshInProgress = true;
+    } else {
+      this.isCalendarLoading.set(true);
+      this.calendarErrorMessage.set('');
+      this.formErrorMessage.set('');
+      this.feedbackMessage.set('');
+    }
 
     this.bookingService
       .getCalendarioCampo(campoId, this.selectedDate())
       .pipe(
         finalize(() => {
-          this.isCalendarLoading.set(false);
+          if (silent) {
+            this.realtimeRefreshInProgress = false;
+          } else {
+            this.isCalendarLoading.set(false);
+          }
         }),
       )
       .subscribe({
@@ -511,31 +718,44 @@ export class BookingDateTimeSelectionComponent implements OnInit {
           this.selectedFieldName.set(calendar.nomeCampo);
           this.selectedSport.set(calendar.sport);
 
-          this.rebuildPage();
+          if (!silent) {
+            this.isCalendarLoading.set(false);
+          }
+
           this.ensureValidStartTime();
           this.ensureValidEndTimeForStart();
-
-          if (calendar.chiuso) {
-            this.formErrorMessage.set('Il centro è chiuso in questa data.');
-          } else if (this.startTimeOptions().length === 0) {
-            this.formErrorMessage.set(
-              'Non ci sono intervalli disponibili per questa data.',
-            );
-          } else {
-            this.persistSelectedDateTimeIfValid();
-          }
+          this.updateAvailabilityMessage(calendar);
         },
         error: (error) => {
+          if (silent) {
+            console.warn('Aggiornamento real-time calendario non riuscito:', error);
+            return;
+          }
+
           console.error('Errore caricamento calendario campo:', error);
 
           this.calendarData.set(null);
-          this.hourSlots.set([]);
-          this.startTimeOptions.set([]);
           this.calendarErrorMessage.set(
             'Non è stato possibile caricare il calendario del campo.',
           );
         },
       });
+  }
+
+
+  private updateAvailabilityMessage(calendar: BookingFieldCalendarResponseDto): void {
+    if (calendar.chiuso) {
+      this.formErrorMessage.set('Il centro è chiuso in questa data.');
+      return;
+    }
+
+    if (this.startTimeOptions().length === 0) {
+      this.formErrorMessage.set('Non ci sono intervalli disponibili per questa data.');
+      return;
+    }
+
+    this.formErrorMessage.set('');
+    this.persistSelectedDateTimeIfValid();
   }
 
   private loadBookingContext(): void {
@@ -572,11 +792,6 @@ export class BookingDateTimeSelectionComponent implements OnInit {
     }
   }
 
-  private rebuildPage(): void {
-    this.hourSlots.set(this.buildHourSlots());
-    this.startTimeOptions.set(this.buildStartTimeOptions());
-  }
-
   private validateTimeSelection(): string {
     if (this.isCalendarLoading()) {
       return 'Attendi il caricamento del calendario.';
@@ -596,6 +811,10 @@ export class BookingDateTimeSelectionComponent implements OnInit {
 
     if (!this.selectedDate()) {
       return 'Seleziona una data.';
+    }
+
+    if (this.isSelectedDateBeforeToday()) {
+      return 'Puoi prenotare solo da oggi in poi.';
     }
 
     if (!this.selectedStartTime()) {
@@ -636,11 +855,15 @@ export class BookingDateTimeSelectionComponent implements OnInit {
       this.buildHtmlDateTime(this.selectedDate(), this.selectedEndTime()),
     );
     const dayStart = new Date(
-      this.buildHtmlDateTime(this.selectedDate(), this.dayStartTime()),
+      this.buildHtmlDateTime(this.selectedDate(), this.bookingStartTime()),
     );
     const dayEnd = new Date(
-      this.buildHtmlDateTime(this.selectedDate(), this.dayEndTime()),
+      this.buildHtmlDateTime(this.selectedDate(), this.bookingEndTime()),
     );
+
+    if (this.isSelectedDateBeforeToday()) {
+      return false;
+    }
 
     if (!this.isHalfHourAligned(this.selectedStartTime())) {
       return false;
@@ -667,18 +890,23 @@ export class BookingDateTimeSelectionComponent implements OnInit {
   }
 
   private buildStartTimeOptions(): string[] {
-    if (this.isClosedDay()) {
+    if (
+      !this.calendarData() ||
+      this.isCalendarLoading() ||
+      this.calendarErrorMessage() ||
+      this.isClosedDay()
+    ) {
       return [];
     }
 
     const options: string[] = [];
 
     const dayStart = new Date(
-      this.buildHtmlDateTime(this.selectedDate(), this.dayStartTime()),
+      this.buildHtmlDateTime(this.selectedDate(), this.bookingStartTime()),
     );
 
     const dayEnd = new Date(
-      this.buildHtmlDateTime(this.selectedDate(), this.dayEndTime()),
+      this.buildHtmlDateTime(this.selectedDate(), this.bookingEndTime()),
     );
 
     const latestValidStart = new Date(dayEnd);
@@ -706,7 +934,7 @@ export class BookingDateTimeSelectionComponent implements OnInit {
     firstValidEnd.setMinutes(firstValidEnd.getMinutes() + this.minimumDurationMinutes);
 
     const dayEnd = new Date(
-      this.buildHtmlDateTime(this.selectedDate(), this.dayEndTime()),
+      this.buildHtmlDateTime(this.selectedDate(), this.bookingEndTime()),
     );
 
     const cursor = new Date(firstValidEnd);
@@ -761,6 +989,99 @@ export class BookingDateTimeSelectionComponent implements OnInit {
     return (this.calendarData()?.eventi ?? []).filter(
       (event) => event.selezionabile === false,
     );
+  }
+
+  private buildCenterExceptionEventViews(): CalendarEventView[] {
+    const calendar = this.calendarData();
+
+    if (!calendar) {
+      return [];
+    }
+
+    const displayStart = new Date(
+      this.buildHtmlDateTime(this.selectedDate(), this.dayStartTime()),
+    );
+    const displayEnd = new Date(
+      this.buildHtmlDateTime(this.selectedDate(), this.dayEndTime()),
+    );
+    const totalMinutes = Math.max(60, this.minutesBetween(displayStart, displayEnd));
+
+    if (calendar.chiuso) {
+      return [
+        this.buildSyntheticCenterExceptionEventView(
+          'center-closed-full-day',
+          'Centro chiuso',
+          displayStart,
+          displayEnd,
+          `${this.dayStartTime()} - ${this.dayEndTime()}`,
+          totalMinutes,
+        ),
+      ];
+    }
+
+    const bookingStart = new Date(
+      this.buildHtmlDateTime(this.selectedDate(), this.bookingStartTime()),
+    );
+    const bookingEnd = new Date(
+      this.buildHtmlDateTime(this.selectedDate(), this.bookingEndTime()),
+    );
+
+    const events: CalendarEventView[] = [];
+
+    if (bookingStart > displayStart) {
+      events.push(
+        this.buildSyntheticCenterExceptionEventView(
+          'center-exception-before-opening',
+          'Centro non prenotabile',
+          displayStart,
+          bookingStart,
+          `${this.dayStartTime()} - ${this.bookingStartTime()}`,
+          totalMinutes,
+        ),
+      );
+    }
+
+    if (bookingEnd < displayEnd) {
+      events.push(
+        this.buildSyntheticCenterExceptionEventView(
+          'center-exception-after-closing',
+          'Centro non prenotabile',
+          bookingEnd,
+          displayEnd,
+          `${this.bookingEndTime()} - ${this.dayEndTime()}`,
+          totalMinutes,
+        ),
+      );
+    }
+
+    return events;
+  }
+
+  private buildSyntheticCenterExceptionEventView(
+    id: string,
+    titolo: string,
+    start: Date,
+    end: Date,
+    timeLabel: string,
+    totalMinutes: number,
+  ): CalendarEventView {
+    const displayStart = new Date(
+      this.buildHtmlDateTime(this.selectedDate(), this.dayStartTime()),
+    );
+
+    return {
+      id,
+      tipo: 'ECCEZIONE_ORARI_CENTRO',
+      titolo,
+      topPct: this.getCalendarTopPct(displayStart, start, totalMinutes),
+      heightPct: this.getCalendarHeightPct(
+        Math.max(1, this.minutesBetween(start, end)),
+        totalMinutes,
+      ),
+      timeLabel,
+      cssClass: 'field-event-center-exception',
+      icon: 'event_busy',
+    };
   }
 
   private toCalendarEventView(
@@ -892,7 +1213,14 @@ export class BookingDateTimeSelectionComponent implements OnInit {
   }
 
   private buildHtmlDateTime(date: string, time: string): string {
-    return `${date}T${this.normalizeTime(time)}`;
+    const normalizedTime = this.normalizeTime(time);
+
+    if (normalizedTime === '24:00') {
+      const nextDay = this.addDays(this.toDateOnly(date), 1);
+      return `${this.formatLocalDate(nextDay)}T00:00`;
+    }
+
+    return `${date}T${normalizedTime}`;
   }
 
   private normalizeTime(time: string): string {
@@ -915,6 +1243,33 @@ export class BookingDateTimeSelectionComponent implements OnInit {
     }
 
     return timePart.slice(0, 5);
+  }
+
+  private normalizeClosingTime(time: string): string {
+    const normalizedTime = this.normalizeTime(time);
+
+    if (normalizedTime === '00:00') {
+      return '24:00';
+    }
+
+    return normalizedTime;
+  }
+
+  private ensureSelectedDateIsNotPast(): void {
+    if (this.isSelectedDateBeforeToday()) {
+      this.selectedDate.set(this.formatLocalDate(new Date()));
+    }
+  }
+
+  private isSelectedDateBeforeToday(): boolean {
+    return this.isDateBeforeToday(this.toDateOnly(this.selectedDate()));
+  }
+
+  private isDateBeforeToday(date: Date): boolean {
+    const value = this.toDateOnly(this.formatLocalDate(date));
+    const today = this.toDateOnly(this.formatLocalDate(new Date()));
+
+    return value < today;
   }
 
   private toDateOnly(value: string): Date {

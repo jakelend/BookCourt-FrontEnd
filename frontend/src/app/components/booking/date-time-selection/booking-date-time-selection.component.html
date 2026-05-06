@@ -50,15 +50,6 @@
           </div>
 
           <div class="toolbar-actions">
-            <button
-              type="button"
-              class="day-nav-button"
-              aria-label="Giorno precedente"
-              (click)="goToPreviousDay()"
-            >
-              <span class="material-symbols-outlined">chevron_left</span>
-            </button>
-
             <button type="button" class="today-button" (click)="goToToday()">
               Oggi
             </button>
@@ -77,6 +68,7 @@
               <input
                 matInput
                 [matDatepicker]="picker"
+                [min]="minBookingDate"
                 [ngModel]="selectedDateValue()"
                 (ngModelChange)="onDateSelected($event)"
                 readonly
@@ -212,13 +204,17 @@
             Caricamento calendario del campo...
           </div>
 
+          <div *ngIf="isReleasingLock()" class="form-alert loading-feedback">
+            Blocco temporaneamente lo slot selezionato...
+          </div>
+
           <form class="booking-time-form">
             <div class="form-grid two-columns">
               <label>
                 <span>Ora inizio</span>
                 <select
                   name="bookingStartTime"
-                  [disabled]="isCalendarLoading() || isClosedDay() || startTimeOptions().length === 0"
+                  [disabled]="isCalendarLoading() || isReleasingLock() || isClosedDay() || startTimeOptions().length === 0"
                   [ngModel]="selectedStartTime()"
                   (ngModelChange)="setStartTime($event)"
                 >
@@ -235,7 +231,7 @@
                 <span>Ora fine</span>
                 <select
                   name="bookingEndTime"
-                  [disabled]="isCalendarLoading() || isClosedDay() || endTimeOptions().length === 0"
+                  [disabled]="isCalendarLoading() || isReleasingLock() || isClosedDay() || endTimeOptions().length === 0"
                   [ngModel]="selectedEndTime()"
                   (ngModelChange)="setEndTime($event)"
                 >
@@ -321,7 +317,7 @@
           </div>
 
           <div class="booking-actions">
-            <button type="button" class="back-button" (click)="goBack()">
+            <button type="button" class="back-button" [disabled]="isReleasingLock()" (click)="goBack()">
               <span class="material-symbols-outlined">arrow_back</span>
               <span>Indietro</span>
             </button>
