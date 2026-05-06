@@ -15,6 +15,7 @@ import { ModifyInstructorComponent } from './components/instructors/modify-instr
 import { CreateSecretaryComponent } from './components/secretaries/create-secretary/create-secretary.component';
 import { FieldMaintenanceComponent } from './components/secretaries/field-maintenance/field-maintenance.component';
 import { InstructorCalendarExceptionsComponent } from './components/secretaries/instructor-calendar-exceptions/instructor-calendar-exceptions.component';
+import { CenterHoursExceptionsComponent } from './components/secretaries/center-hours-exceptions/center-hours-exceptions.component';
 import { ModifySecretaryComponent } from './components/secretaries/modify-secretary/modify-secretary.component';
 import { SecretariesPageComponent } from './components/secretaries/secretaries-page/secretaries-page.component';
 import { SidebarHeaderComponent } from './components/sidebar-header/sidebar-header.component';
@@ -137,6 +138,12 @@ export const routes: Routes = [
         data: { roles: [Role.SEGRETARIA] },
       },
       {
+        path: 'center-hours',
+        component: CenterHoursExceptionsComponent,
+        canActivate: [RoleGuard],
+        data: { roles: [Role.SEGRETARIA] },
+      },
+      {
         path: 'chat',
         component: ChatPageComponent,
         canActivate: [RoleGuard],
@@ -235,6 +242,10 @@ export const routes: Routes = [
   {
     path: 'secretary-instructor-calendar',
     redirectTo: 'dashboard/secretary-instructor-calendar',
+  },
+  {
+    path: 'center-hours',
+    redirectTo: 'dashboard/center-hours',
   },
   {
     path: 'prenotazioni',

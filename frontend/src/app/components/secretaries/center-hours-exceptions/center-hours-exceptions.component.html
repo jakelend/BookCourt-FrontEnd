@@ -1,0 +1,194 @@
+<main class="center-hours-page">
+  <section class="calendar-toolbar-card">
+    <div class="toolbar-title-block">
+      <span class="material-symbols-outlined toolbar-icon">schedule</span>
+      <div>
+        <p class="eyebrow">Segreteria · orari centro</p>
+        <h2>{{ selectedDateTitle() }}</h2>
+        <p class="subtitle">Gestione chiusure straordinarie e variazioni di apertura.</p>
+      </div>
+    </div>
+
+    <div class="toolbar-actions">
+      <button type="button" class="day-nav-button" aria-label="Giorno precedente" (click)="goToPreviousDay()">
+        <span class="material-symbols-outlined">chevron_left</span>
+      </button>
+
+      <button type="button" class="today-button" (click)="goToToday()">Oggi</button>
+
+      <button type="button" class="day-nav-button" aria-label="Giorno successivo" (click)="goToNextDay()">
+        <span class="material-symbols-outlined">chevron_right</span>
+      </button>
+
+      <mat-form-field appearance="outline" class="date-picker-field">
+        <mat-label>Scegli giorno</mat-label>
+        <input
+          matInput
+          [matDatepicker]="centerHoursDatePicker"
+          [ngModel]="selectedDateValue()"
+          (ngModelChange)="onDateSelected($event)"
+          readonly
+        />
+        <mat-datepicker-toggle matIconSuffix [for]="centerHoursDatePicker"></mat-datepicker-toggle>
+        <mat-datepicker #centerHoursDatePicker></mat-datepicker>
+      </mat-form-field>
+    </div>
+  </section>
+
+  <section *ngIf="errorMessage() || feedbackMessage()" class="feedback-container">
+    <section *ngIf="errorMessage()" class="feedback-panel feedback-panel-error">
+      <div>
+        <strong>Errore caricamento</strong>
+        <p>{{ errorMessage() }}</p>
+      </div>
+      <button type="button" class="retry-button" (click)="retry()">Riprova</button>
+    </section>
+
+    <section *ngIf="feedbackMessage()" class="feedback-panel" [class.feedback-panel-success]="feedbackType() === 'success'" [class.feedback-panel-error]="feedbackType() === 'error'">
+      <div>
+        <strong>{{ feedbackType() === 'success' ? 'Operazione completata' : 'Operazione non riuscita' }}</strong>
+        <p>{{ feedbackMessage() }}</p>
+      </div>
+    </section>
+  </section>
+
+  <section class="workspace-grid">
+    <section class="calendar-shell" [class.loading-state]="loading()">
+      <div *ngIf="loading()" class="loading-overlay">
+        <mat-spinner diameter="42"></mat-spinner>
+        <p>Caricamento eccezioni...</p>
+      </div>
+
+      <div class="calendar-scroll-area">
+        <div class="time-column">
+          <div
+            *ngFor="let slot of hourSlots(); trackBy: trackByHour"
+            class="time-label"
+            [style.top.%]="slot.topPct"
+          >
+            {{ slot.label }}
+          </div>
+        </div>
+
+        <div class="day-column">
+          <div
+            *ngFor="let slot of hourSlots(); trackBy: trackByHour"
+            class="hour-line"
+            [style.top.%]="slot.topPct"
+          ></div>
+          <article
+            *ngFor="let event of eventViews(); trackBy: trackByEvent"
+            class="calendar-event"
+            [ngClass]="event.cssClass"
+            [style.top.%]="event.topPct"
+            [style.height.%]="event.heightPct"
+          >
+            <div class="event-main-row">
+              <span class="material-symbols-outlined event-icon">{{ event.icon }}</span>
+              <div class="event-content">
+                <h3>{{ event.title }}</h3>
+                <p class="event-time">{{ event.timeLabel }}</p>
+                <p class="event-subtitle">{{ event.subtitle }}</p>
+              </div>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <aside class="side-panel">
+      <section class="form-card">
+        <div class="panel-header">
+          <div>
+            <h3>Nuova eccezione</h3>
+          </div>
+        </div>
+
+        <div *ngIf="currentException()" class="readonly-note-panel">
+          <span class="material-symbols-outlined">info</span>
+          <p>Per il giorno selezionato esiste già una eccezione. Eliminala per poterne inserire una nuova.</p>
+        </div>
+
+        <form class="exception-form" (ngSubmit)="submitCreate()">
+          <div class="form-grid two-columns">
+            <label class="field-block">
+              <span>Ora apertura</span>
+              <input
+                type="time"
+                name="openingTime"
+                [ngModel]="openingTime()"
+                (ngModelChange)="setOpeningTime($event)"
+                [disabled]="!canCreateException()"
+              />
+            </label>
+
+            <label class="field-block">
+              <span>Ora chiusura</span>
+              <input
+                type="time"
+                name="closingTime"
+                [ngModel]="closingTime()"
+                (ngModelChange)="setClosingTime($event)"
+                [disabled]="!canCreateException()"
+              />
+            </label>
+          </div>
+
+          <label class="field-block">
+            <span>Motivo</span>
+            <textarea
+              name="reason"
+              rows="3"
+              maxlength="255"
+              placeholder="Esempio: lavori straordinari, festività..."
+              [ngModel]="reason()"
+              (ngModelChange)="setReason($event)"
+              [disabled]="!canCreateException()"
+            ></textarea>
+          </label>
+
+          <p *ngIf="formErrorMessage()" class="form-error">{{ formErrorMessage() }}</p>
+
+          <button type="submit" class="primary-action" [disabled]="!canCreateException()">
+            <mat-spinner *ngIf="saving()" diameter="18"></mat-spinner>
+            <span *ngIf="!saving()" class="material-symbols-outlined">save</span>
+            {{ saving() ? 'Salvataggio...' : 'Salva eccezione' }}
+          </button>
+        </form>
+      </section>
+
+      <section class="form-card">
+        <div class="panel-header">
+          <div>
+            <h3>Eccezioni del giorno</h3>
+          </div>
+        </div>
+
+        <div *ngIf="!loading() && !exceptions().length" class="compact-empty-state">
+          <span class="material-symbols-outlined">event_busy</span>
+          <p>Nessuna eccezione eliminabile.</p>
+        </div>
+
+        <div *ngIf="exceptions().length" class="exception-list">
+          <article *ngFor="let exception of exceptions(); trackBy: trackByException" class="exception-list-item">
+            <div>
+              <strong>{{ formatExceptionTitle(exception) }}</strong>
+              <p>{{ formatExceptionSubtitle(exception) }}</p>
+            </div>
+
+            <button
+              type="button"
+              class="danger-action"
+              [disabled]="isDeleting(exception.id)"
+              (click)="deleteException(exception)"
+            >
+              <mat-spinner *ngIf="isDeleting(exception.id)" diameter="18"></mat-spinner>
+              <span *ngIf="!isDeleting(exception.id)" class="material-symbols-outlined">delete</span>
+              {{ isDeleting(exception.id) ? 'Elimino...' : 'Elimina' }}
+            </button>
+          </article>
+        </div>
+      </section>
+    </aside>
+  </section>
+</main>

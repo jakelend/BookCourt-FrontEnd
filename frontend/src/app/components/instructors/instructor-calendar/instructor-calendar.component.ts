@@ -165,34 +165,14 @@ export class InstructorCalendarComponent implements OnInit {
   }
 
   private resolveCalendarRange(): { start: Date; end: Date } {
-    const start = this.getDisplayStartTime();
-    const end = this.getDisplayEndTime();
+    const start = this.cloneDateOnly(this.selectedDate);
+    start.setHours(8, 0, 0, 0);
 
-    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || end <= start) {
-      const fallbackStart = this.cloneDateOnly(this.selectedDate);
-      fallbackStart.setHours(8, 0, 0, 0);
-
-      const fallbackEnd = this.cloneDateOnly(this.selectedDate);
-      fallbackEnd.setDate(fallbackEnd.getDate() + 1);
-      fallbackEnd.setHours(0, 0, 0, 0);
-
-      return { start: fallbackStart, end: fallbackEnd };
-    }
+    const end = this.cloneDateOnly(this.selectedDate);
+    end.setDate(end.getDate() + 1);
+    end.setHours(0, 0, 0, 0);
 
     return { start, end };
-  }
-
-  private getDisplayStartTime(): Date {
-    const displayStart = this.cloneDateOnly(this.selectedDate);
-    displayStart.setHours(8, 0, 0, 0);
-    return displayStart;
-  }
-
-  private getDisplayEndTime(): Date {
-    const displayEnd = this.cloneDateOnly(this.selectedDate);
-    displayEnd.setDate(displayEnd.getDate() + 1);
-    displayEnd.setHours(0, 0, 0, 0);
-    return displayEnd;
   }
 
   private buildHourSlots(start: Date, end: Date, totalMinutes: number): CalendarHourSlot[] {

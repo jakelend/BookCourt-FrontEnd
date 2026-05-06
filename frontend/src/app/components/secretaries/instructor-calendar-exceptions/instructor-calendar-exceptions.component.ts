@@ -14,8 +14,6 @@ import { SecretaryInstructorResponseDto } from '../../../dto/response/secretary/
 import { SecretaryInstructorCalendarService } from '../../../services/secretary-instructor-calendar.service';
 import { extractBackendErrorMessage } from '../../../util/error-message.util';
 
-type CreateMode = 'DAY' | 'PERIOD';
-
 interface CalendarHourSlot {
   label: string;
   topPct: number;
@@ -39,8 +37,6 @@ interface CalendarEventView {
 }
 
 interface CreateUnavailabilityForm {
-  mode: CreateMode;
-  dayDate: string;
   startDate: string;
   startTime: string;
   endDate: string;
@@ -77,8 +73,7 @@ export class InstructorCalendarExceptionsComponent implements OnInit {
   readonly successMessage = signal('');
   readonly formErrorMessage = signal('');
 
-  showCreatePanel = false;
-  createForm: CreateUnavailabilityForm = this.buildCreateForm('DAY');
+  createForm: CreateUnavailabilityForm = this.buildCreateForm();
   selectedEvent: CalendarEventView | null = null;
 
   private readonly instructorsSignal = signal<SecretaryInstructorResponseDto[]>([]);
@@ -134,7 +129,7 @@ export class InstructorCalendarExceptionsComponent implements OnInit {
     const numericValue = Number(value);
     this.selectedInstructorId = Number.isFinite(numericValue) && numericValue > 0 ? numericValue : null;
     this.selectedEvent = null;
-    this.closeCreatePanel();
+    this.createForm = this.buildCreateForm();
     this.loadAgenda();
   }
 
@@ -145,28 +140,28 @@ export class InstructorCalendarExceptionsComponent implements OnInit {
 
     this.selectedDate = this.cloneDateOnly(date);
     this.selectedEvent = null;
-    this.closeCreatePanel();
+    this.createForm = this.buildCreateForm();
     this.loadAgenda();
   }
 
   goToToday(): void {
     this.selectedDate = this.cloneDateOnly(new Date());
     this.selectedEvent = null;
-    this.closeCreatePanel();
+    this.createForm = this.buildCreateForm();
     this.loadAgenda();
   }
 
   goToPreviousDay(): void {
     this.selectedDate = this.addDays(this.selectedDate, -1);
     this.selectedEvent = null;
-    this.closeCreatePanel();
+    this.createForm = this.buildCreateForm();
     this.loadAgenda();
   }
 
   goToNextDay(): void {
     this.selectedDate = this.addDays(this.selectedDate, 1);
     this.selectedEvent = null;
-    this.closeCreatePanel();
+    this.createForm = this.buildCreateForm();
     this.loadAgenda();
   }
 
@@ -177,25 +172,6 @@ export class InstructorCalendarExceptionsComponent implements OnInit {
     }
 
     this.loadAgenda();
-  }
-
-  openCreatePanel(mode: CreateMode): void {
-    if (!this.selectedInstructorId) {
-      this.errorMessage.set('Seleziona prima un istruttore.');
-      return;
-    }
-
-    this.selectedEvent = null;
-    this.errorMessage.set('');
-    this.successMessage.set('');
-    this.formErrorMessage.set('');
-    this.createForm = this.buildCreateForm(mode);
-    this.showCreatePanel = true;
-  }
-
-  closeCreatePanel(): void {
-    this.showCreatePanel = false;
-    this.formErrorMessage.set('');
   }
 
   submitCreate(): void {
@@ -220,7 +196,8 @@ export class InstructorCalendarExceptionsComponent implements OnInit {
       .subscribe({
         next: () => {
           this.successMessage.set('Indisponibilità istruttore inserita correttamente.');
-          this.closeCreatePanel();
+          this.formErrorMessage.set('');
+          this.createForm.motivo = '';
           this.loadAgenda();
         },
         error: (error) => {
@@ -235,7 +212,6 @@ export class InstructorCalendarExceptionsComponent implements OnInit {
 
   openEventDetails(event: CalendarEventView, domEvent?: Event): void {
     domEvent?.stopPropagation();
-    this.closeCreatePanel();
     this.selectedEvent = event;
     this.errorMessage.set('');
     this.successMessage.set('');
@@ -493,35 +469,22 @@ export class InstructorCalendarExceptionsComponent implements OnInit {
     let inizio = '';
     let fine = '';
 
-    if (this.createForm.mode === 'DAY') {
-      if (!this.createForm.dayDate) {
-        this.formErrorMessage.set('Seleziona il giorno dell’indisponibilità.');
-        return null;
-      }
+    if (
+      !this.createForm.startDate ||
+      !this.createForm.startTime ||
+      !this.createForm.endDate ||
+      !this.createForm.endTime
+    ) {
+      this.formErrorMessage.set('Compila data e ora di inizio/fine del periodo.');
+      return null;
+    }
 
-      const dayStart = this.parseLocalDate(this.createForm.dayDate);
-      const dayEnd = this.addDays(dayStart, 1);
+    inizio = this.combineDateAndTime(this.createForm.startDate, this.createForm.startTime);
+    fine = this.combineDateAndTime(this.createForm.endDate, this.createForm.endTime);
 
-      inizio = `${this.createForm.dayDate}T00:00:00`;
-      fine = `${this.formatLocalDate(dayEnd)}T00:00:00`;
-    } else {
-      if (
-        !this.createForm.startDate ||
-        !this.createForm.startTime ||
-        !this.createForm.endDate ||
-        !this.createForm.endTime
-      ) {
-        this.formErrorMessage.set('Compila data e ora di inizio/fine del periodo.');
-        return null;
-      }
-
-      inizio = this.combineDateAndTime(this.createForm.startDate, this.createForm.startTime);
-      fine = this.combineDateAndTime(this.createForm.endDate, this.createForm.endTime);
-
-      if (this.parseDateTime(fine) <= this.parseDateTime(inizio)) {
-        this.formErrorMessage.set('L’orario di fine deve essere successivo all’orario di inizio.');
-        return null;
-      }
+    if (this.parseDateTime(fine) <= this.parseDateTime(inizio)) {
+      this.formErrorMessage.set('L’orario di fine deve essere successivo all’orario di inizio.');
+      return null;
     }
 
     this.formErrorMessage.set('');
@@ -534,12 +497,10 @@ export class InstructorCalendarExceptionsComponent implements OnInit {
     };
   }
 
-  private buildCreateForm(mode: CreateMode): CreateUnavailabilityForm {
+  private buildCreateForm(): CreateUnavailabilityForm {
     const selectedDay = this.formatLocalDate(this.selectedDate);
 
     return {
-      mode,
-      dayDate: selectedDay,
       startDate: selectedDay,
       startTime: '09:00',
       endDate: selectedDay,
