@@ -116,7 +116,12 @@ export class BookingExtraSelectionComponent implements OnInit {
   readonly racketsCost = computed(() => this.selectedRackets() * this.racketUnitPrice);
 
   readonly canContinue = computed(() => {
-    return !this.isLoadingInstructors() && !this.isReleasingLock() && !this.errorMessage();
+    return (
+      !this.isLoadingInstructors() &&
+      !this.isReleasingLock() &&
+      !this.errorMessage() &&
+      !this.isStoredLockTimerExpired()
+    );
   });
 
   constructor(
@@ -184,6 +189,13 @@ export class BookingExtraSelectionComponent implements OnInit {
   goNext(): void {
     this.errorMessage.set('');
     this.feedbackMessage.set('');
+
+    if (this.isStoredLockTimerExpired()) {
+      this.clearBookingLock();
+      this.errorMessage.set('Tempo scaduto: seleziona di nuovo data e ora per bloccare lo slot.');
+      void this.router.navigate(['/dashboard/prenotazioni/orario']);
+      return;
+    }
 
     if (!this.canContinue()) {
       this.errorMessage.set('Completa la scelta degli extra prima di continuare.');
@@ -275,13 +287,13 @@ export class BookingExtraSelectionComponent implements OnInit {
       )
       .subscribe({
         next: () => {
-          this.clearBookingLock();
+          this.clearBookingLock(false);
           this.loadAvailableInstructors(true);
         },
         error: (error) => {
           console.warn('Lock già assente o non eliminabile prima del caricamento istruttori:', error);
 
-          this.clearBookingLock();
+          this.clearBookingLock(false);
           this.loadAvailableInstructors(true);
         },
       });
@@ -340,6 +352,13 @@ export class BookingExtraSelectionComponent implements OnInit {
   }
 
   private createBaseFieldLockForExtraStep(): void {
+    if (this.isStoredLockTimerExpired()) {
+      this.clearBookingLock();
+      this.errorMessage.set('Tempo scaduto: seleziona di nuovo data e ora per bloccare lo slot.');
+      void this.router.navigate(['/dashboard/prenotazioni/orario']);
+      return;
+    }
+
     const campoId = this.selectedFieldId();
 
     if (!campoId) {
@@ -384,7 +403,7 @@ export class BookingExtraSelectionComponent implements OnInit {
   private persistBaseLock(lockId: number, scadeIl: string): void {
     sessionStorage.setItem('booking.lockId', String(lockId));
     sessionStorage.setItem('booking.lockSignature', this.buildBaseLockSignature());
-    sessionStorage.setItem('booking.lockExpiresAt', scadeIl);
+    sessionStorage.setItem('booking.lockExpiresAt', this.resolveLockTimerExpiration(scadeIl));
     this.notifyBookingLockChanged();
   }
 
@@ -482,11 +501,43 @@ export class BookingExtraSelectionComponent implements OnInit {
     sessionStorage.setItem('booking.racketsCost', String(this.racketsCost()));
   }
 
-  private clearBookingLock(): void {
+  private clearBookingLock(clearTimer = true): void {
     sessionStorage.removeItem('booking.lockId');
     sessionStorage.removeItem('booking.lockSignature');
-    sessionStorage.removeItem('booking.lockExpiresAt');
+
+    if (clearTimer) {
+      sessionStorage.removeItem('booking.lockExpiresAt');
+    }
+
     this.notifyBookingLockChanged();
+  }
+
+  private resolveLockTimerExpiration(newExpiration: string): string {
+    const currentExpiration = sessionStorage.getItem('booking.lockExpiresAt');
+
+    if (currentExpiration && !this.isLockExpirationExpired(currentExpiration)) {
+      return currentExpiration;
+    }
+
+    return newExpiration;
+  }
+
+  private isStoredLockTimerExpired(): boolean {
+    return this.isLockExpirationExpired(sessionStorage.getItem('booking.lockExpiresAt'));
+  }
+
+  private isLockExpirationExpired(expiration: string | null): boolean {
+    if (!expiration) {
+      return true;
+    }
+
+    const expirationDate = new Date(expiration);
+
+    if (Number.isNaN(expirationDate.getTime())) {
+      return true;
+    }
+
+    return expirationDate.getTime() <= Date.now();
   }
 
   private releaseStoredLockThenNavigate(targetRoute: string[]): void {

@@ -1,0 +1,381 @@
+/*
+ * Stili comuni BookCourt.
+ * Importato una sola volta da src/styles.css.
+ * Qui vanno solo regole realmente riutilizzate da più componenti.
+ */
+
+/* =========================
+   STEPPER PRENOTAZIONE
+========================= */
+
+.booking-stepper {
+  width: 100%;
+  margin-bottom: 34px;
+}
+
+.stepper-current {
+  color: #76777d;
+}
+
+.stepper-current,
+.stepper-title {
+  font-size: 11px;
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.stepper-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 12px;
+}
+
+.stepper-segments {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 8px;
+  height: 8px;
+}
+
+.stepper-segments span {
+  border-radius: 999px;
+  background: #e0e3e5;
+}
+
+.stepper-segments span.active {
+  background: #2170e4;
+}
+
+.stepper-title {
+  color: #2170e4;
+}
+
+.step-labels {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 11px;
+  color: #9a9da6;
+  font-size: 9px;
+  font-weight: 900;
+  line-height: 1.2;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.step-labels .active {
+  color: #2170e4;
+}
+
+.step-labels span {
+  text-align: center;
+}
+
+.step-labels span:first-child {
+  text-align: left;
+}
+
+.step-labels span:last-child {
+  text-align: right;
+}
+
+/* =========================
+   HEADER E TITOLI
+========================= */
+
+.page-kicker {
+  color: #2170e4;
+  font-size: 11px;
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.page-header {
+  margin-bottom: 24px;
+}
+
+.page-header h1 {
+  margin: 0;
+  color: #191c1e;
+  font-family: Lexend, Inter, Roboto, Arial, sans-serif;
+  font-size: clamp(30px, 3.4vw, 42px);
+  font-weight: 900;
+  line-height: 1.15;
+  letter-spacing: -0.05em;
+}
+
+.page-header p {
+  margin: 10px 0 0;
+  color: #76777d;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+.page-header strong {
+  color: #191c1e;
+}
+
+.eyebrow {
+  margin: 0 0 4px;
+  color: #5f6472;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+/* =========================
+   CALENDARI
+========================= */
+
+.calendar-column {
+  min-width: 0;
+}
+
+.calendar-event h3,
+.calendar-event p {
+  margin: 0;
+}
+
+.calendar-scroll-area {
+  height: 100%;
+  min-height: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  display: grid;
+  grid-template-columns: 78px minmax(0, 1fr);
+}
+
+.calendar-shell {
+  height: 600px;
+  min-height: 0;
+  overflow: hidden;
+  position: relative;
+}
+
+.calendar-toolbar-card {
+  min-height: 82px;
+  margin-bottom: 12px;
+  padding: 14px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 22px;
+}
+
+.toolbar-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.date-picker-field {
+  width: 190px;
+  margin-left: 8px;
+}
+
+.date-picker-field .mat-mdc-form-field-subscript-wrapper {
+  display: none;
+}
+
+.date-picker-field .mat-mdc-text-field-wrapper {
+  background: #ffffff;
+  border-radius: 999px;
+}
+
+.time-column {
+  border-right: 1px solid #dadce0;
+  background: #ffffff;
+}
+
+.time-column,
+.day-column {
+  position: relative;
+  height: 100%;
+}
+
+.time-label {
+  position: absolute;
+  right: 10px;
+  transform: translateY(-50%);
+  color: #70757a;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.day-column {
+  min-width: 520px;
+  background:
+  linear-gradient(to right, rgba(218, 220, 224, 0.45) 1px, transparent 1px) 0 0 / 100% 100%,
+  #ffffff;
+}
+
+.day-nav-button {
+  width: 40px;
+  padding: 0;
+}
+
+.hour-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: #edf0f2;
+}
+
+.event-content {
+  min-width: 0;
+}
+
+.event-icon {
+  flex: 0 0 auto;
+  margin-top: 1px;
+  font-size: 18px;
+}
+
+.event-time {
+  margin-top: 3px !important;
+  font-size: 11px;
+  font-weight: 800;
+  opacity: 0.94;
+}
+
+/* =========================
+   FEEDBACK, EMPTY E LOADING
+========================= */
+
+.form-alert,
+.empty-panel,
+.loading-panel {
+  min-height: 82px;
+  border: 1px solid #e0e3e5;
+  border-radius: 18px;
+  padding: 18px;
+  background: #ffffff;
+  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.04);
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  color: #3c4043;
+  font-size: 14px;
+  font-weight: 800;
+  margin-bottom: 18px;
+}
+
+.error-feedback {
+  border-color: rgba(186, 26, 26, 0.18) !important;
+  background: rgba(186, 26, 26, 0.06) !important;
+  color: #8f1515 !important;
+}
+
+.success-feedback {
+  border-color: rgba(24, 128, 56, 0.18) !important;
+  background: rgba(24, 128, 56, 0.08) !important;
+  color: #137333 !important;
+}
+
+.feedback-panel > div p {
+  margin: 6px 0 0;
+}
+
+.feedback-panel-error {
+  border-color: rgba(186, 26, 26, 0.18);
+  background: rgba(186, 26, 26, 0.06);
+  color: #8f1515;
+}
+
+.empty-panel .material-symbols-outlined {
+  color: #2170e4;
+  font-size: 34px;
+}
+
+.empty-panel p {
+  margin: 4px 0 0;
+  color: #76777d;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.empty-panel strong {
+  color: #191c1e;
+  font-size: 16px;
+  font-weight: 900;
+}
+
+.loading-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  background: rgba(255, 255, 255, 0.74);
+  backdrop-filter: blur(3px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  color: #5f6472;
+  font-weight: 800;
+}
+
+.loading-panel {
+  justify-content: center;
+}
+
+/* =========================
+   INFO PRENOTAZIONI E PANNELLI
+========================= */
+
+.booking-info-list {
+  border-top: 1px solid #edf0f2;
+}
+
+.booking-info-row {
+  border-bottom: 1px solid #edf0f2;
+  padding: 12px 0;
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.booking-info-row span {
+  color: #76777d;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.booking-info-row strong {
+  color: #191c1e;
+  font-size: 14px;
+  font-weight: 900;
+  text-align: right;
+}
+
+.section-heading.compact {
+  align-items: flex-start;
+  margin-bottom: 14px;
+}
+
+.side-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.rate-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}

@@ -146,15 +146,6 @@
   font-size: 30px;
 }
 
-.feedback-panel > div p {
-  margin: 6px 0 0;
-}
-
-.feedback-panel-error {
-  border-color: rgba(186, 26, 26, 0.18);
-  background: rgba(186, 26, 26, 0.06);
-  color: #8f1515;
-}
 
 .feedback-panel-error .material-symbols-outlined {
   color: #8f1515;

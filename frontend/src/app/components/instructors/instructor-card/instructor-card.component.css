@@ -107,12 +107,6 @@
   opacity: 0.78;
 }
 
-.rate-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-}
 
 .rate-name {
   color: #45464d;

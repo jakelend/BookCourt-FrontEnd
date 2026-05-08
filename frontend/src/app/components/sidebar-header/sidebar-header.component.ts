@@ -364,9 +364,16 @@ export class SidebarHeaderComponent implements OnInit, OnDestroy {
 
     this.bookingLockRemainingSeconds.set(remainingSeconds);
 
-    if (remainingSeconds === 0 && lockId) {
-      this.deleteExpiredLockAndReturnToDateTime(lockId);
+    if (remainingSeconds !== 0) {
+      return;
     }
+
+    if (lockId) {
+      this.deleteExpiredLockAndReturnToDateTime(lockId);
+      return;
+    }
+
+    this.finishExpiredLockHandling();
   }
 
   private deleteExpiredLockAndReturnToDateTime(lockId: number): void {

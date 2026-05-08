@@ -163,6 +163,12 @@ export class BookingPreviewComponent implements OnInit {
       return;
     }
 
+    if (this.isStoredLockTimerExpired()) {
+      this.clearLockStorage();
+      void this.router.navigate(['/dashboard/prenotazioni/orario']);
+      return;
+    }
+
     if (this.selectedSport() === 'CALCETTO') {
       this.normalizeCalcettoExtras();
     }
@@ -180,7 +186,9 @@ export class BookingPreviewComponent implements OnInit {
         ? ['/dashboard/prenotazioni/orario']
         : ['/dashboard/prenotazioni/extra'];
 
-    this.releaseCurrentLockAndNavigate(targetRoute);
+    const keepTimerActive = this.selectedSport() !== 'CALCETTO';
+
+    this.releaseCurrentLockAndNavigate(targetRoute, keepTimerActive);
   }
 
   confirmBooking(): void {
@@ -193,6 +201,13 @@ export class BookingPreviewComponent implements OnInit {
       this.errorMessage.set(
         'Lock prenotazione non trovato. Ricalcola il riepilogo prima di confermare.',
       );
+      return;
+    }
+
+    if (this.isStoredLockTimerExpired()) {
+      this.clearLockStorage();
+      this.errorMessage.set('Tempo scaduto: seleziona di nuovo data e ora per bloccare lo slot.');
+      void this.router.navigate(['/dashboard/prenotazioni/orario']);
       return;
     }
 
@@ -352,11 +367,11 @@ export class BookingPreviewComponent implements OnInit {
     }
 
     if (Number.isFinite(storedLockId) && storedLockId > 0) {
-      this.releaseCurrentLockThenRun(() => this.createLockAndLoadPreview());
+      this.releaseCurrentLockThenRun(() => this.createLockAndLoadPreview(), false);
       return;
     }
 
-    this.clearLockStorage();
+    this.clearLockStorage(false);
     this.createLockAndLoadPreview();
   }
 
@@ -427,7 +442,7 @@ export class BookingPreviewComponent implements OnInit {
           console.error('Errore preview prenotazione:', error);
 
           if (retryWithNewLock) {
-            this.releaseCurrentLockThenRun(() => this.createLockAndLoadPreview());
+            this.releaseCurrentLockThenRun(() => this.createLockAndLoadPreview(), false);
             return;
           }
 
@@ -442,29 +457,61 @@ export class BookingPreviewComponent implements OnInit {
   private persistLock(lock: BookingLockResponseDto): void {
     sessionStorage.setItem('booking.lockId', String(lock.lockId));
     sessionStorage.setItem('booking.lockSignature', this.buildLockSignature());
-    sessionStorage.setItem('booking.lockExpiresAt', lock.scadeIl);
+    sessionStorage.setItem('booking.lockExpiresAt', this.resolveLockTimerExpiration(lock.scadeIl));
     this.notifyBookingLockChanged();
   }
 
-  private clearLockStorage(): void {
+  private clearLockStorage(clearTimer = true): void {
     this.lock.set(null);
     sessionStorage.removeItem('booking.lockId');
     sessionStorage.removeItem('booking.lockSignature');
-    sessionStorage.removeItem('booking.lockExpiresAt');
+
+    if (clearTimer) {
+      sessionStorage.removeItem('booking.lockExpiresAt');
+    }
+
     this.notifyBookingLockChanged();
   }
 
-  private releaseCurrentLockAndNavigate(targetRoute: string[]): void {
-    this.releaseCurrentLockThenRun(() => {
-      void this.router.navigate(targetRoute);
-    });
+  private resolveLockTimerExpiration(newExpiration: string): string {
+    const currentExpiration = sessionStorage.getItem('booking.lockExpiresAt');
+
+    if (currentExpiration && !this.isLockExpirationExpired(currentExpiration)) {
+      return currentExpiration;
+    }
+
+    return newExpiration;
   }
 
-  private releaseCurrentLockThenRun(afterRelease: () => void): void {
+  private isStoredLockTimerExpired(): boolean {
+    return this.isLockExpirationExpired(sessionStorage.getItem('booking.lockExpiresAt'));
+  }
+
+  private isLockExpirationExpired(expiration: string | null): boolean {
+    if (!expiration) {
+      return true;
+    }
+
+    const expirationDate = new Date(expiration);
+
+    if (Number.isNaN(expirationDate.getTime())) {
+      return true;
+    }
+
+    return expirationDate.getTime() <= Date.now();
+  }
+
+  private releaseCurrentLockAndNavigate(targetRoute: string[], keepTimerActive = false): void {
+    this.releaseCurrentLockThenRun(() => {
+      void this.router.navigate(targetRoute);
+    }, !keepTimerActive);
+  }
+
+  private releaseCurrentLockThenRun(afterRelease: () => void, clearTimer = true): void {
     const lockId = this.getStoredLockId();
 
     if (!lockId) {
-      this.clearLockStorage();
+      this.clearLockStorage(clearTimer);
       afterRelease();
       return;
     }
@@ -482,13 +529,13 @@ export class BookingPreviewComponent implements OnInit {
       )
       .subscribe({
         next: () => {
-          this.clearLockStorage();
+          this.clearLockStorage(clearTimer);
           afterRelease();
         },
         error: (error) => {
           console.warn('Lock già assente o non eliminabile:', error);
 
-          this.clearLockStorage();
+          this.clearLockStorage(clearTimer);
           afterRelease();
         },
       });

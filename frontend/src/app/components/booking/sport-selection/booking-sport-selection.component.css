@@ -58,34 +58,6 @@
   transition: width 300ms ease;
 }
 
-.step-labels {
-  display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
-  gap: 8px;
-  margin-top: 11px;
-  color: #9a9da6;
-  font-size: 9px;
-  font-weight: 900;
-  line-height: 1.2;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-}
-
-.step-labels span {
-  text-align: center;
-}
-
-.step-labels span:first-child {
-  text-align: left;
-}
-
-.step-labels span:last-child {
-  text-align: right;
-}
-
-.step-labels .active {
-  color: #2170e4;
-}
 
 .booking-hero {
   margin-bottom: 42px;

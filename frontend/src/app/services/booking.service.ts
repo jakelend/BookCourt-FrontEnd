@@ -110,11 +110,11 @@ export class BookingService {
   private readonly prenotazioniApiUrl = `${this.backendBaseUrl}/api/prenotazioni`;
 
   /*
-    * Durata del lock lato frontend in secondi (per test, in produzione dovrebbe essere più breve)
-    * 20 secondi per il test
-    * 300 per app normale
+    Durata del timer frontend del lock in secondi.
+    Il countdown parte quando l'utente conferma data e ora e deve restare
+    continuo fino alla conferma della prenotazione.
   */
-  private readonly frontendLockDurationSecondsForTest = 300;
+  private readonly frontendLockDurationSeconds = 300;
 
   constructor(private readonly http: HttpClient) {}
 
@@ -278,7 +278,7 @@ export class BookingService {
 
   private buildFrontendLockExpirationIso(): string {
     const expirationDate = new Date(
-      Date.now() + this.frontendLockDurationSecondsForTest * 1000,
+      Date.now() + this.frontendLockDurationSeconds * 1000,
     );
 
     return expirationDate.toISOString();

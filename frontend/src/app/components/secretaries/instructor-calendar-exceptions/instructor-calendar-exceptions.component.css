@@ -59,14 +59,6 @@
   font-size: 26px;
 }
 
-.eyebrow {
-  margin: 0 0 4px;
-  color: #5f6472;
-  font-size: 12px;
-  font-weight: 900;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-}
 
 .toolbar-title-block h2,
 .editor-header h3,
@@ -92,21 +84,11 @@
   font-weight: 700;
 }
 
-.toolbar-actions {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 10px;
-  flex-wrap: wrap;
-}
+
 .instructor-select-field {
   width: 240px;
 }
 
-.date-picker-field {
-  width: 190px;
-  margin-left: 8px;
-}
 
 .instructor-select-field ::ng-deep .mat-mdc-form-field-subscript-wrapper,
 .date-picker-field ::ng-deep .mat-mdc-form-field-subscript-wrapper {
@@ -352,20 +334,6 @@ input:disabled {
   position: relative;
 }
 
-.loading-overlay {
-  position: absolute;
-  inset: 0;
-  z-index: 20;
-  background: rgba(255, 255, 255, 0.74);
-  backdrop-filter: blur(3px);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  color: #5f6472;
-  font-weight: 800;
-}
 
 .empty-state {
   min-height: 280px;
@@ -396,41 +364,6 @@ input:disabled {
   background: #ffffff;
 }
 
-.time-column,
-.day-column {
-  position: relative;
-  height: 100%;
-}
-
-.time-column {
-  border-right: 1px solid #dadce0;
-  background: #ffffff;
-}
-
-.day-column {
-  min-width: 520px;
-  background:
-    linear-gradient(to right, rgba(218, 220, 224, 0.45) 1px, transparent 1px) 0 0 / 100% 100%,
-    #ffffff;
-}
-
-.time-label {
-  position: absolute;
-  right: 10px;
-  transform: translateY(-50%);
-  color: #70757a;
-  font-size: 11px;
-  font-weight: 700;
-  white-space: nowrap;
-}
-
-.hour-line {
-  position: absolute;
-  left: 0;
-  right: 0;
-  height: 1px;
-  background: #edf0f2;
-}
 
 .calendar-event {
   position: absolute;
@@ -470,9 +403,6 @@ input:disabled {
   flex: 0 0 auto;
 }
 
-.event-content {
-  min-width: 0;
-}
 
 .event-content h3,
 .event-time,
