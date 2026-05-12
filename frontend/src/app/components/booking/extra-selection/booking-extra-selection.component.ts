@@ -16,10 +16,19 @@ import {
   CreateBookingLockRequestDto,
 } from '../../../services/booking.service';
 
+/**
+ * Singolo step mostrato nella timeline del flusso di prenotazione.
+ */
 interface BookingStep {
   label: string;
 }
 
+/**
+ * Step extra della prenotazione, usato per tennis e padel.
+ *
+ * Permette di scegliere un istruttore disponibile e il numero di racchette,
+ * mantenendo attivo il lock sullo slot scelto prima di arrivare alla preview.
+ */
 @Component({
   selector: 'app-booking-extra-selection',
   imports: [CommonModule, FormsModule],
@@ -39,6 +48,7 @@ export class BookingExtraSelectionComponent implements OnInit {
     { label: 'Pagamento' },
   ];
 
+  /** Contesto principale della prenotazione selezionato negli step precedenti. */
   readonly selectedSport = signal<BookingSport | null>(null);
   readonly selectedFieldId = signal<number | null>(null);
   readonly selectedFieldName = signal('');
@@ -47,10 +57,13 @@ export class BookingExtraSelectionComponent implements OnInit {
   readonly selectedEndTime = signal('');
   readonly durationMinutes = signal(0);
 
+  /** Istruttori disponibili nello slot selezionato, caricati dal backend. */
   readonly instructors = signal<BookingAvailableInstructorResponseDto[]>([]);
+  /** Id dell'istruttore scelto, nullo quando il cliente non vuole istruttore. */
   readonly selectedInstructorId = signal<number | null>(null);
 
   readonly racketOptions = [0, 1, 2, 3, 4];
+  /** Numero di racchette selezionate dal cliente. */
   readonly selectedRackets = signal(0);
   readonly racketUnitPrice = 4;
 
@@ -61,6 +74,7 @@ export class BookingExtraSelectionComponent implements OnInit {
 
   private readonly backendBaseUrl = 'http://localhost:8080';
 
+  /** Indica se lo sport selezionato supporta la scelta dell'istruttore. */
   readonly isInstructorSport = computed(() => {
     const sport = this.selectedSport();
     return sport === 'TENNIS' || sport === 'PADEL';
@@ -124,11 +138,18 @@ export class BookingExtraSelectionComponent implements OnInit {
     );
   });
 
+  /** Inietta Router e BookingService per navigazione, lock e caricamento istruttori. */
   constructor(
     private readonly router: Router,
     private readonly bookingService: BookingService,
   ) {}
 
+  /**
+   * Inizializza lo step extra.
+   *
+   * Ricostruisce il contesto salvato, ripristina eventuali extra già scelti e
+   * ricarica gli istruttori disponibili senza perdere il lock corrente.
+   */
   ngOnInit(): void {
     this.loadBookingContext();
     this.restoreSavedExtras();
@@ -148,10 +169,16 @@ export class BookingExtraSelectionComponent implements OnInit {
     this.persistInstructorSelection();
   }
 
+  /** Numero totale di step del wizard. */
   get totalSteps(): number {
     return this.steps.length;
   }
 
+  /**
+   * Seleziona un istruttore e salva la scelta in sessionStorage.
+   *
+   * @param instructor istruttore scelto tra quelli disponibili.
+   */
   selectInstructor(instructor: BookingAvailableInstructorResponseDto): void {
     if (!this.canUseInstructorWithSelectedDuration()) {
       this.selectedInstructorId.set(null);
@@ -165,16 +192,19 @@ export class BookingExtraSelectionComponent implements OnInit {
     this.persistInstructorSelection();
   }
 
+  /** Rimuove la selezione dell'istruttore e aggiorna il contesto persistito. */
   clearInstructorSelection(): void {
     this.selectedInstructorId.set(null);
     this.feedbackMessage.set('');
     this.persistInstructorSelection();
   }
 
+  /** Verifica se una card istruttore corrisponde all'istruttore scelto. */
   isInstructorSelected(instructor: BookingAvailableInstructorResponseDto): boolean {
     return this.selectedInstructorId() === instructor.istruttoreId;
   }
 
+  /** Aggiorna il numero di racchette selezionate e lo salva nel flusso. */
   selectRackets(count: number): void {
     const normalizedCount = Math.max(0, Math.min(4, count));
     this.selectedRackets.set(normalizedCount);
@@ -182,10 +212,16 @@ export class BookingExtraSelectionComponent implements OnInit {
     this.persistRacketsSelection();
   }
 
+  /** Rilascia il lock corrente e torna allo step data/ora. */
   goBack(): void {
     this.releaseStoredLockThenNavigate(['/dashboard/prenotazioni/orario']);
   }
 
+  /**
+   * Valida gli extra, aggiorna il lock con l'eventuale istruttore e va alla preview.
+   *
+   * Se la durata non è compatibile con l'istruttore, impedisce di continuare.
+   */
   goNext(): void {
     this.errorMessage.set('');
     this.feedbackMessage.set('');
@@ -215,30 +251,37 @@ export class BookingExtraSelectionComponent implements OnInit {
     void this.router.navigate(['/dashboard/prenotazioni/riepilogo']);
   }
 
+  /** TrackBy usato per la timeline degli step. */
   trackByStepLabel(_: number, step: BookingStep): string {
     return step.label;
   }
 
+  /** TrackBy usato per la lista degli istruttori disponibili. */
   trackByInstructorId(_: number, instructor: BookingAvailableInstructorResponseDto): number {
     return instructor.istruttoreId;
   }
 
+  /** TrackBy usato per le opzioni di numero racchette. */
   trackByRacketOption(_: number, option: number): number {
     return option;
   }
 
+  /** Determina se uno step precedente deve risultare completato nella timeline. */
   isStepCompleted(index: number): boolean {
     return index + 1 <= this.currentStep;
   }
 
+  /** Restituisce nome e cognome completi dell'istruttore. */
   getInstructorFullName(instructor: BookingAvailableInstructorResponseDto): string {
     return `${instructor.nome} ${instructor.cognome}`.trim();
   }
 
+  /** Format della tariffa oraria dell'istruttore. */
   getInstructorRateLabel(instructor: BookingAvailableInstructorResponseDto): string {
     return instructor.costoOrario != null ? `€${Number(instructor.costoOrario).toFixed(2)}/h` : 'Tariffa non disponibile';
   }
 
+  /** Restituisce l'URL dell'immagine profilo istruttore o null se assente. */
   getInstructorImageUrl(instructor: BookingAvailableInstructorResponseDto): string | null {
     const path = instructor.fotoProfiloUrl?.trim();
 
@@ -253,6 +296,12 @@ export class BookingExtraSelectionComponent implements OnInit {
     return path.startsWith('/') ? `${this.backendBaseUrl}${path}` : `${this.backendBaseUrl}/${path}`;
   }
 
+  /**
+   * Ricarica gli istruttori rilasciando temporaneamente il lock dello slot.
+   *
+   * Serve per evitare che il lock del cliente faccia risultare occupato lo stesso
+   * slot durante il calcolo disponibilità degli istruttori.
+   */
   private reloadInstructorsWithoutBlockingOwnLock(): void {
     /*
       Nella pagina Data e ora creiamo già un lock base sul campo.
@@ -299,6 +348,11 @@ export class BookingExtraSelectionComponent implements OnInit {
       });
   }
 
+  /**
+   * Recupera dal backend gli istruttori disponibili nello slot selezionato.
+   *
+   * @param recreateBaseLockAfterLoad se true ricrea il lock base dopo il caricamento.
+   */
   private loadAvailableInstructors(recreateBaseLockAfterLoad: boolean): void {
     const campoId = this.selectedFieldId();
 
@@ -351,6 +405,7 @@ export class BookingExtraSelectionComponent implements OnInit {
       });
   }
 
+  /** Crea un lock base sul campo mentre il cliente sceglie gli extra. */
   private createBaseFieldLockForExtraStep(): void {
     if (this.isStoredLockTimerExpired()) {
       this.clearBookingLock();
@@ -400,6 +455,7 @@ export class BookingExtraSelectionComponent implements OnInit {
       });
   }
 
+  /** Salva in sessionStorage id e scadenza del lock base. */
   private persistBaseLock(lockId: number, scadeIl: string): void {
     sessionStorage.setItem('booking.lockId', String(lockId));
     sessionStorage.setItem('booking.lockSignature', this.buildBaseLockSignature());
@@ -407,6 +463,7 @@ export class BookingExtraSelectionComponent implements OnInit {
     this.notifyBookingLockChanged();
   }
 
+  /** Costruisce la firma del lock base per riconoscere lo stesso slot. */
   private buildBaseLockSignature(): string {
     return [
       this.selectedFieldId() ?? '',
@@ -419,6 +476,7 @@ export class BookingExtraSelectionComponent implements OnInit {
     ].join('|');
   }
 
+  /** Legge da sessionStorage sport, campo, data, ora e durata scelti negli step precedenti. */
   private loadBookingContext(): void {
     const sport = sessionStorage.getItem('booking.selectedSport');
     const fieldId = Number(sessionStorage.getItem('booking.selectedFieldId'));
@@ -438,6 +496,7 @@ export class BookingExtraSelectionComponent implements OnInit {
     this.durationMinutes.set(Number(sessionStorage.getItem('booking.durationMinutes') ?? 0));
   }
 
+  /** Ripristina istruttore e racchette se l'utente torna su questo step. */
   private restoreSavedExtras(): void {
     const savedInstructorId = Number(sessionStorage.getItem('booking.selectedInstructorId'));
     const savedRackets = Number(sessionStorage.getItem('booking.racketsCount') ?? 0);
@@ -451,6 +510,7 @@ export class BookingExtraSelectionComponent implements OnInit {
     }
   }
 
+  /** Verifica che tutti i dati minimi per lo step extra siano presenti. */
   private hasRequiredBookingContext(): boolean {
     return Boolean(
       this.selectedSport() &&
@@ -461,6 +521,7 @@ export class BookingExtraSelectionComponent implements OnInit {
     );
   }
 
+  /** Rimuove l'istruttore salvato se non è più presente tra quelli disponibili. */
   private cleanSelectedInstructorIfNotAvailable(): void {
     const selectedId = this.selectedInstructorId();
 
@@ -478,6 +539,7 @@ export class BookingExtraSelectionComponent implements OnInit {
     }
   }
 
+  /** Salva la scelta dell'istruttore e i dati visuali collegati. */
   private persistInstructorSelection(): void {
     const instructor = this.selectedInstructor();
 
@@ -495,12 +557,14 @@ export class BookingExtraSelectionComponent implements OnInit {
     sessionStorage.setItem('booking.selectedInstructorHourlyRate', String(instructor.costoOrario ?? 0));
   }
 
+  /** Salva il numero di racchette nel contesto del flusso. */
   private persistRacketsSelection(): void {
     sessionStorage.setItem('booking.racketsCount', String(this.selectedRackets()));
     sessionStorage.setItem('booking.racketUnitPrice', String(this.racketUnitPrice));
     sessionStorage.setItem('booking.racketsCost', String(this.racketsCost()));
   }
 
+  /** Rimuove dal browser i dati del lock e, opzionalmente, anche il timer condiviso. */
   private clearBookingLock(clearTimer = true): void {
     sessionStorage.removeItem('booking.lockId');
     sessionStorage.removeItem('booking.lockSignature');
@@ -512,6 +576,7 @@ export class BookingExtraSelectionComponent implements OnInit {
     this.notifyBookingLockChanged();
   }
 
+  /** Mantiene la scadenza timer esistente se ancora valida, altrimenti usa quella del nuovo lock. */
   private resolveLockTimerExpiration(newExpiration: string): string {
     const currentExpiration = sessionStorage.getItem('booking.lockExpiresAt');
 
@@ -522,10 +587,12 @@ export class BookingExtraSelectionComponent implements OnInit {
     return newExpiration;
   }
 
+  /** Indica se il timer del lock salvato nel browser è già scaduto. */
   private isStoredLockTimerExpired(): boolean {
     return this.isLockExpirationExpired(sessionStorage.getItem('booking.lockExpiresAt'));
   }
 
+  /** Controlla se una specifica data di scadenza lock è passata. */
   private isLockExpirationExpired(expiration: string | null): boolean {
     if (!expiration) {
       return true;
@@ -540,6 +607,7 @@ export class BookingExtraSelectionComponent implements OnInit {
     return expirationDate.getTime() <= Date.now();
   }
 
+  /** Rilascia il lock corrente tramite API e poi naviga alla route indicata. */
   private releaseStoredLockThenNavigate(targetRoute: string[]): void {
     const lockId = this.getStoredLockId();
 
@@ -574,6 +642,7 @@ export class BookingExtraSelectionComponent implements OnInit {
       });
   }
 
+  /** Legge e valida l'id del lock salvato in sessionStorage. */
   private getStoredLockId(): number | null {
     const lockId = Number(sessionStorage.getItem('booking.lockId'));
 
@@ -584,10 +653,12 @@ export class BookingExtraSelectionComponent implements OnInit {
     return lockId;
   }
 
+  /** Notifica agli altri componenti, come la sidebar, che il timer lock è cambiato. */
   private notifyBookingLockChanged(): void {
     window.dispatchEvent(new Event('booking-lock-updated'));
   }
 
+  /** Costruisce una data ISO locale combinando giorno e orario selezionati. */
   private buildDateTimeParam(date: string, time: string): string {
     const normalizedTime = time.length === 5 ? `${time}:00` : time;
     return `${date}T${normalizedTime}`;

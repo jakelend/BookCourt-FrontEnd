@@ -8,6 +8,9 @@ import { ManagerSecretaryResponseDto } from '../../../dto/response/manager/manag
 import { ManagerService } from '../../../services/manager.service';
 import { SecretaryCardComponent, SecretaryToggleEvent } from '../secretary-card/secretary-card.component';
 
+/**
+ * Filtro applicabile alla lista segretarie in base allo stato attivo/inattivo.
+ */
 type AvailabilityFilter = 'all' | 'active' | 'inactive';
 
 @Component({
@@ -16,44 +19,81 @@ type AvailabilityFilter = 'all' | 'active' | 'inactive';
   templateUrl: './secretaries-page.component.html',
   styleUrl: './secretaries-page.component.css',
 })
+/**
+ * Pagina manager per la gestione delle segretarie.
+ * Carica la lista, applica filtri e gestisce attivazione/disattivazione account.
+ */
 export class SecretariesPageComponent implements OnInit, OnDestroy {
+  /**
+   * Lista segretarie caricata dal backend.
+   */
   secretaries: ManagerSecretaryResponseDto[] = [];
   availabilityFilter: AvailabilityFilter = 'all';
+  /**
+   * Stati della pagina e messaggi di errore mostrati nel template.
+   */
   loading = true;
   errorMessage = '';
   toggleError = '';
+  /**
+   * Richieste di cambio stato in corso, indicizzate per id segretaria.
+   */
   private readonly toggleRequests = new Map<number, Subscription>();
 
+  /**
+   * Inietta router e ManagerService per navigazione e chiamate API.
+   */
   constructor(
     private readonly router: Router,
     private readonly managerService: ManagerService,
   ) {}
 
+  /**
+   * Carica la lista segretarie all'apertura della pagina.
+   */
   ngOnInit(): void {
     this.loadSecretaries();
   }
 
+  /**
+   * Annulla eventuali richieste pendenti alla distruzione del componente.
+   */
   ngOnDestroy(): void {
     this.toggleRequests.forEach((request) => request.unsubscribe());
     this.toggleRequests.clear();
   }
 
+  /**
+   * Naviga alla pagina di creazione segretaria.
+   */
   addSecretary(): void {
     void this.router.navigate(['/dashboard/secretaries/create']);
   }
 
+  /**
+   * Naviga alla pagina di modifica della segretaria selezionata.
+   */
   modifySecretary(secretary: ManagerSecretaryResponseDto): void {
     void this.router.navigate(['/dashboard/secretaries/modify', secretary.id]);
   }
 
+  /**
+   * Restituisce le segretarie filtrate in base al filtro corrente.
+   */
   get filteredSecretaries(): ManagerSecretaryResponseDto[] {
     return this.secretaries.filter((secretary) => this.matchesAvailabilityFilter(secretary.attivo));
   }
 
+  /**
+   * Aggiorna il filtro attivo.
+   */
   setAvailabilityFilter(filter: AvailabilityFilter): void {
     this.availabilityFilter = filter;
   }
 
+  /**
+   * Gestisce la richiesta di attivare o disattivare una segretaria dalla card.
+   */
   onToggleSecretary(event: SecretaryToggleEvent): void {
     this.toggleError = '';
     const previousActive = event.secretary.attivo;
@@ -85,18 +125,30 @@ export class SecretariesPageComponent implements OnInit, OnDestroy {
     this.toggleRequests.set(event.secretary.id, request);
   }
 
+  /**
+   * Indica se per quella segretaria è già in corso una richiesta di toggle.
+   */
   isToggling(id: number): boolean {
     return this.toggleRequests.has(id);
   }
 
+  /**
+   * Funzione trackBy per ottimizzare la lista card segretarie.
+   */
   trackBySecretaryId(_: number, secretary: ManagerSecretaryResponseDto): string {
     return String(secretary.id);
   }
 
+  /**
+   * Riprova il caricamento dopo un errore.
+   */
   retry(): void {
     this.loadSecretaries();
   }
 
+  /**
+   * Verifica se lo stato della segretaria rispetta il filtro corrente.
+   */
   private matchesAvailabilityFilter(active: boolean): boolean {
     if (this.availabilityFilter === 'active') {
       return active;
@@ -109,6 +161,9 @@ export class SecretariesPageComponent implements OnInit, OnDestroy {
     return true;
   }
 
+  /**
+   * Carica o aggiorna la lista segretarie tramite ManagerService.
+   */
   private loadSecretaries(): void {
     this.loading = true;
     this.errorMessage = '';
@@ -126,6 +181,9 @@ export class SecretariesPageComponent implements OnInit, OnDestroy {
       });
   }
 
+  /**
+   * Aggiorna localmente lo stato della segretaria dopo il successo backend.
+   */
   private setSecretaryActive(id: number, active: boolean): void {
     this.secretaries = this.secretaries.map((secretary) =>
       secretary.id === id
@@ -137,6 +195,9 @@ export class SecretariesPageComponent implements OnInit, OnDestroy {
     );
   }
 
+  /**
+   * Estrae un messaggio di errore leggibile dal backend.
+   */
   private extractErrorMessage(error: unknown, fallback: string): string {
     return extractBackendErrorMessage(error, fallback);
   }

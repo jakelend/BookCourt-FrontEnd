@@ -1,3 +1,10 @@
+/**
+ * Servizio responsabile della comunicazione real-time della chat tramite WebSocket/STOMP.
+ *
+ * Mantiene una singola connessione verso il backend, gestisce le sottoscrizioni
+ * ai topic delle conversazioni e al topic della lista conversazioni, e pubblica
+ * gli eventi ricevuti tramite Observable utilizzabili dai componenti Angular.
+ */
 import { Injectable, NgZone, OnDestroy } from '@angular/core';
 import { Client, IFrame, IMessage, StompSubscription } from '@stomp/stompjs';
 import * as SockJS from 'sockjs-client';
@@ -5,6 +12,9 @@ import { Observable, Subject, filter } from 'rxjs';
 import { MessaggioChatResponseDto } from '../dto/response/chat/messaggio-chat-response.dto';
 import { AuthService } from './auth.service';
 
+/**
+ * Service Angular singleton che gestisce la connessione WebSocket/STOMP della chat.
+ */
 @Injectable({
   providedIn: 'root',
 })
@@ -12,6 +22,7 @@ export class ChatWebsocketService implements OnDestroy {
   private readonly websocketUrl = 'http://localhost:8080/ws-chat';
   private readonly conversationListDestination = '/topic/chat/conversazioni';
 
+  // Client STOMP mantenuto come istanza unica per evitare connessioni duplicate.
   private client: Client | null = null;
   private connected = false;
   private connecting = false;
@@ -19,9 +30,11 @@ export class ChatWebsocketService implements OnDestroy {
   private conversationListRequested = false;
   private conversationListSubscription: StompSubscription | null = null;
 
+  // Conversazioni richieste dai componenti: dopo una riconnessione vengono sottoscritte di nuovo.
   private readonly requestedConversationIds = new Set<number>();
   private readonly activeSubscriptions = new Map<number, StompSubscription>();
 
+  // Subject interni usati per trasformare gli eventi STOMP in Observable Angular.
   private readonly messagesSubject = new Subject<MessaggioChatResponseDto>();
   private readonly conversationListSubject = new Subject<MessaggioChatResponseDto>();
   private readonly connectionErrorsSubject = new Subject<string>();
@@ -33,10 +46,18 @@ export class ChatWebsocketService implements OnDestroy {
     private readonly ngZone: NgZone,
   ) {}
 
+  /**
+   * Rilascia le risorse WebSocket quando il servizio viene distrutto.
+   */
   ngOnDestroy(): void {
     this.disconnect();
   }
 
+  /**
+   * Sottoscrive il frontend al topic real-time di una singola conversazione.
+   * @param conversazioneId Identificativo della conversazione da ascoltare.
+   * @returns Observable filtrato sui messaggi della conversazione richiesta.
+   */
   listenToConversation(conversazioneId: number): Observable<MessaggioChatResponseDto> {
     this.requestedConversationIds.add(conversazioneId);
     this.ensureConnected();
@@ -50,6 +71,10 @@ export class ChatWebsocketService implements OnDestroy {
       .pipe(filter((message) => message.conversazioneId === conversazioneId));
   }
 
+  /**
+   * Sottoscrive il frontend al topic globale della lista conversazioni.
+   * @returns Observable con gli eventi che aggiornano la lista conversazioni.
+   */
   listenToConversationList(): Observable<MessaggioChatResponseDto> {
     this.conversationListRequested = true;
     this.ensureConnected();
@@ -61,6 +86,9 @@ export class ChatWebsocketService implements OnDestroy {
     return this.conversationListSubject.asObservable();
   }
 
+  /**
+   * Chiude la connessione WebSocket e rimuove tutte le sottoscrizioni attive.
+   */
   disconnect(): void {
     this.activeSubscriptions.forEach((subscription) => subscription.unsubscribe());
     this.activeSubscriptions.clear();
@@ -79,6 +107,9 @@ export class ChatWebsocketService implements OnDestroy {
     this.connecting = false;
   }
 
+  /**
+   * Apre la connessione STOMP se non è già attiva o in fase di connessione.
+   */
   private ensureConnected(): void {
     if (this.connected || this.connecting || this.client?.active) {
       return;
@@ -147,6 +178,10 @@ export class ChatWebsocketService implements OnDestroy {
     this.client.activate();
   }
 
+  /**
+   * Registra la sottoscrizione STOMP al topic di una conversazione specifica.
+   * @param conversazioneId Identificativo della conversazione.
+   */
   private subscribeToConversation(conversazioneId: number): void {
     if (!this.client || !this.connected || this.activeSubscriptions.has(conversazioneId)) {
       return;
@@ -168,6 +203,9 @@ export class ChatWebsocketService implements OnDestroy {
     this.activeSubscriptions.set(conversazioneId, subscription);
   }
 
+  /**
+   * Registra la sottoscrizione STOMP al topic che notifica nuove conversazioni o aggiornamenti lista.
+   */
   private subscribeToConversationList(): void {
     if (!this.client || !this.connected || this.conversationListSubscription) {
       return;
@@ -188,11 +226,19 @@ export class ChatWebsocketService implements OnDestroy {
     );
   }
 
+  /**
+   * Crea l'istanza SockJS usata dal client STOMP.
+   * @returns Socket SockJS compatibile con STOMP.
+   */
   private createSockJsSocket(): any {
     const SockJsConstructor = (SockJS as any).default ?? SockJS;
     return new SockJsConstructor(this.websocketUrl);
   }
 
+  /**
+   * Pubblica un errore di connessione verso i componenti interessati.
+   * @param message Messaggio di errore da mostrare o gestire.
+   */
   private emitConnectionError(message: string): void {
     this.connectionErrorsSubject.next(message);
   }

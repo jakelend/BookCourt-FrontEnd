@@ -1,3 +1,10 @@
+/**
+ * Servizio REST della chat applicativa.
+ *
+ * Gestisce il recupero delle conversazioni, il caricamento dei messaggi,
+ * l'invio dei nuovi messaggi e una cache lato frontend basata su memoria e
+ * sessionStorage, utile per rendere la navigazione più fluida.
+ */
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { catchError, Observable, of, shareReplay, tap, throwError } from 'rxjs';
@@ -6,6 +13,9 @@ import { ConversazioneChatResponseDto } from '../dto/response/chat/conversazione
 import { MessaggioChatResponseDto } from '../dto/response/chat/messaggio-chat-response.dto';
 import { AuthService } from './auth.service';
 
+/**
+ * Service Angular singleton che gestisce le API REST della chat e la cache dei messaggi.
+ */
 @Injectable({
   providedIn: 'root',
 })
@@ -24,10 +34,18 @@ export class ChatService {
     private readonly authService: AuthService,
   ) {}
 
+  /**
+   * Recupera la conversazione del cliente autenticato oppure la crea se non esiste.
+   * @returns Observable con la conversazione personale del cliente.
+   */
   getOrCreateMyConversation(): Observable<ConversazioneChatResponseDto> {
     return this.http.post<ConversazioneChatResponseDto>(`${this.apiUrl}/conversazioni/mia`, {});
   }
 
+  /**
+   * Restituisce la lista conversazioni usando prima cache in memoria, poi sessionStorage, poi backend.
+   * @returns Observable con le conversazioni visibili all'utente.
+   */
   getConversazioni(): Observable<ConversazioneChatResponseDto[]> {
     if (this.conversationsCache) {
       return of(this.conversationsCache);
@@ -53,6 +71,10 @@ export class ChatService {
     return this.conversationsRequest$;
   }
 
+  /**
+   * Forza il ricaricamento della lista conversazioni dal backend.
+   * @returns Observable con la lista aggiornata.
+   */
   refreshConversazioni(): Observable<ConversazioneChatResponseDto[]> {
     this.conversationsRequest$ = this.http.get<ConversazioneChatResponseDto[]>(`${this.apiUrl}/conversazioni`).pipe(
       tap((conversations) => this.setConversationsCache(conversations)),
@@ -66,6 +88,11 @@ export class ChatService {
     return this.conversationsRequest$;
   }
 
+  /**
+   * Recupera i messaggi di una conversazione usando cache, sessionStorage o richiesta HTTP.
+   * @param conversazioneId Identificativo della conversazione.
+   * @returns Observable con i messaggi della conversazione.
+   */
   getMessaggi(conversazioneId: number): Observable<MessaggioChatResponseDto[]> {
     const cachedMessages = this.messagesCache.get(conversazioneId);
 
@@ -101,6 +128,11 @@ export class ChatService {
     return request$;
   }
 
+  /**
+   * Forza il ricaricamento dei messaggi di una conversazione dal backend.
+   * @param conversazioneId Identificativo della conversazione.
+   * @returns Observable con i messaggi aggiornati.
+   */
   refreshMessaggi(conversazioneId: number): Observable<MessaggioChatResponseDto[]> {
     this.messagesRequests.delete(conversazioneId);
 
@@ -119,6 +151,12 @@ export class ChatService {
     return request$;
   }
 
+  /**
+   * Invia un messaggio REST al backend e aggiorna la cache locale al salvataggio.
+   * @param conversazioneId Conversazione in cui inviare il messaggio.
+   * @param payload Contenuto del messaggio.
+   * @returns Observable con il messaggio salvato dal backend.
+   */
   inviaMessaggio(
     conversazioneId: number,
     payload: InviaMessaggioChatRequestDto,
@@ -128,6 +166,9 @@ export class ChatService {
       .pipe(tap((message) => this.addMessageToCache(message)));
   }
 
+  /**
+   * Precarica conversazioni e messaggi per rendere più veloce l'apertura della chat lato centro.
+   */
   preloadCentroChat(): void {
     this.getConversazioni().subscribe({
       next: (conversations) => this.preloadMessagesForConversations(conversations),
@@ -135,12 +176,21 @@ export class ChatService {
     });
   }
 
+  /**
+   * Precarica i messaggi delle conversazioni ricevute.
+   * @param conversations Conversazioni per cui caricare i messaggi.
+   */
   preloadMessagesForConversations(conversations: ConversazioneChatResponseDto[]): void {
     conversations.forEach((conversation) => {
       this.getMessaggi(conversation.id).subscribe({ error: () => undefined });
     });
   }
 
+  /**
+   * Restituisce i messaggi già presenti in memoria o in sessionStorage senza chiamare il backend.
+   * @param conversazioneId Identificativo della conversazione.
+   * @returns Messaggi cache oppure null.
+   */
   getCachedMessages(conversazioneId: number): MessaggioChatResponseDto[] | null {
     const cachedMessages = this.messagesCache.get(conversazioneId);
 
@@ -158,14 +208,26 @@ export class ChatService {
     return storedMessages;
   }
 
+  /**
+   * Restituisce la conversazione attualmente selezionata nella UI.
+   * @returns Id conversazione oppure null.
+   */
   getSelectedConversationId(): number | null {
     return this.selectedConversationId;
   }
 
+  /**
+   * Memorizza la conversazione selezionata dall'utente nella UI.
+   * @param conversationId Identificativo della conversazione selezionata.
+   */
   setSelectedConversationId(conversationId: number): void {
     this.selectedConversationId = conversationId;
   }
 
+  /**
+   * Aggiunge un messaggio alla cache evitando duplicati e aggiorna la preview della conversazione.
+   * @param message Messaggio ricevuto o inviato.
+   */
   addMessageToCache(message: MessaggioChatResponseDto): void {
     const cachedMessages = this.messagesCache.get(message.conversazioneId) ?? [];
 
@@ -187,6 +249,12 @@ export class ChatService {
     }
   }
 
+  /**
+   * Sostituisce un messaggio temporaneo con quello definitivo restituito dal backend.
+   * @param conversazioneId Conversazione interessata.
+   * @param temporaryMessageId Id temporaneo generato dal frontend.
+   * @param savedMessage Messaggio definitivo salvato dal backend.
+   */
   replaceMessageInCache(
     conversazioneId: number,
     temporaryMessageId: number,
@@ -209,6 +277,11 @@ export class ChatService {
     this.updateConversationPreviewCache(savedMessage);
   }
 
+  /**
+   * Rimuove un messaggio dalla cache e ricalcola la preview della conversazione.
+   * @param conversazioneId Conversazione interessata.
+   * @param messageId Messaggio da rimuovere.
+   */
   removeMessageFromCache(conversazioneId: number, messageId: number): void {
     const cachedMessages = this.messagesCache.get(conversazioneId);
 
@@ -221,11 +294,19 @@ export class ChatService {
     this.updateConversationPreviewCacheFromMessages(conversazioneId, nextMessages);
   }
 
+  /**
+   * Aggiorna cache in memoria e sessionStorage della lista conversazioni.
+   * @param conversations Lista conversazioni da salvare.
+   */
   private setConversationsCache(conversations: ConversazioneChatResponseDto[]): void {
     this.conversationsCache = conversations;
     this.storeConversations(conversations);
   }
 
+  /**
+   * Aggiorna la preview dell'ultimo messaggio nella lista conversazioni.
+   * @param message Messaggio da usare come ultimo messaggio visibile.
+   */
   private updateConversationPreviewCache(message: MessaggioChatResponseDto): void {
     if (!this.conversationsCache) {
       return;
@@ -243,6 +324,11 @@ export class ChatService {
     this.storeConversations(this.conversationsCache);
   }
 
+  /**
+   * Ricalcola la preview della conversazione partendo dall'elenco messaggi aggiornato.
+   * @param conversazioneId Conversazione da aggiornare.
+   * @param messages Messaggi attuali della conversazione.
+   */
   private updateConversationPreviewCacheFromMessages(
     conversazioneId: number,
     messages: MessaggioChatResponseDto[],
@@ -265,11 +351,20 @@ export class ChatService {
     this.storeConversations(this.conversationsCache);
   }
 
+  /**
+   * Aggiorna cache in memoria e sessionStorage dei messaggi di una conversazione.
+   * @param conversazioneId Conversazione interessata.
+   * @param messages Messaggi da salvare.
+   */
   private setMessagesCache(conversazioneId: number, messages: MessaggioChatResponseDto[]): void {
     this.messagesCache.set(conversazioneId, messages);
     this.storeMessages(conversazioneId, messages);
   }
 
+  /**
+   * Legge da sessionStorage la lista conversazioni salvata per l'utente corrente.
+   * @returns Lista conversazioni valida oppure null.
+   */
   private readStoredConversations(): ConversazioneChatResponseDto[] | null {
     const rawConversations = sessionStorage.getItem(this.conversationsStorageKey);
 
@@ -286,10 +381,19 @@ export class ChatService {
     }
   }
 
+  /**
+   * Salva in sessionStorage la lista conversazioni dell'utente corrente.
+   * @param conversations Conversazioni da persistere nel browser.
+   */
   private storeConversations(conversations: ConversazioneChatResponseDto[]): void {
     sessionStorage.setItem(this.conversationsStorageKey, JSON.stringify(conversations));
   }
 
+  /**
+   * Legge da sessionStorage i messaggi di una conversazione.
+   * @param conversazioneId Conversazione interessata.
+   * @returns Messaggi validi oppure null.
+   */
   private readStoredMessages(conversazioneId: number): MessaggioChatResponseDto[] | null {
     const rawMessages = sessionStorage.getItem(this.getMessagesStorageKey(conversazioneId));
 
@@ -306,10 +410,19 @@ export class ChatService {
     }
   }
 
+  /**
+   * Salva in sessionStorage i messaggi di una conversazione.
+   * @param conversazioneId Conversazione interessata.
+   * @param messages Messaggi da salvare.
+   */
   private storeMessages(conversazioneId: number, messages: MessaggioChatResponseDto[]): void {
     sessionStorage.setItem(this.getMessagesStorageKey(conversazioneId), JSON.stringify(messages));
   }
 
+  /**
+   * Costruisce la chiave sessionStorage delle conversazioni separandola per utente.
+   * @returns Chiave sessionStorage della lista conversazioni.
+   */
   private get conversationsStorageKey(): string {
     const currentUserId = this.authService.getCurrentUser()?.id;
     return currentUserId
@@ -317,6 +430,11 @@ export class ChatService {
       : this.conversationsStorageKeyPrefix;
   }
 
+  /**
+   * Costruisce la chiave sessionStorage dei messaggi separandola per utente e conversazione.
+   * @param conversazioneId Conversazione interessata.
+   * @returns Chiave sessionStorage.
+   */
   private getMessagesStorageKey(conversazioneId: number): string {
     const currentUserId = this.authService.getCurrentUser()?.id;
     const userKey = currentUserId ? String(currentUserId) : 'anonymous';

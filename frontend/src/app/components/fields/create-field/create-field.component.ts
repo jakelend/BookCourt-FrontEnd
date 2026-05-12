@@ -10,13 +10,22 @@ import { ManagerService } from '../../../services/manager.service';
 import { extractBackendErrorMessage, extractBackendFieldErrors, FieldErrors } from '../../../util/error-message.util';
 import { FieldSportType } from '../field-card/field-card.component';
 
+/**
+ * Rappresenta un'immagine selezionata localmente con il file originale e l'URL temporaneo di preview.
+ */
 interface FieldImagePreview {
   file: File;
   url: string;
 }
 
+/**
+ * Chiavi dei possibili errori di validazione gestiti lato frontend/backend per il form campo.
+ */
 type FieldErrorKey = 'images' | 'nome' | 'sport' | 'costoOrario' | 'attivo' | 'idImmagini';
 
+/**
+ * Campi backend riconosciuti e mappabili sui messaggi di errore del form.
+ */
 const KNOWN_BACKEND_FIELDS: readonly FieldErrorKey[] = [
   'images',
   'nome',
@@ -32,23 +41,46 @@ const KNOWN_BACKEND_FIELDS: readonly FieldErrorKey[] = [
   templateUrl: './create-field.component.html',
   styleUrl: './create-field.component.css',
 })
+/**
+ * Componente usato dal manager per creare un nuovo campo sportivo.
+ * Gestisce validazione del form, caricamento immagini, preview locale e invio al backend.
+ */
 export class CreateFieldComponent implements OnDestroy {
+  /**
+   * Riferimento all'input file nascosto usato per aprire il selettore immagini da pulsante custom.
+   */
   @ViewChild('fieldImagesInput') private readonly fieldImagesInput?: ElementRef<HTMLInputElement>;
 
+  /**
+   * Sport selezionabili nella creazione del campo.
+   */
   readonly sportTypes: FieldSportType[] = ['CALCETTO', 'TENNIS', 'PADEL'];
   readonly maxImages = 6;
 
+  /**
+   * Lista reattiva delle immagini selezionate prima del salvataggio.
+   */
   readonly imagePreviews = signal<FieldImagePreview[]>([]);
+  /**
+   * Signal di stato del form: caricamento, successo, errore generale ed errori per singolo campo.
+   */
   readonly isLoading = signal(false);
   readonly submitError = signal('');
   readonly submitSuccess = signal('');
   readonly fieldErrors = signal<FieldErrors<FieldErrorKey>>({});
 
+  /**
+   * Inietta router e servizio manager per salvataggio del campo e refresh della lista campi.
+   */
   constructor(
     private readonly router: Router,
     private readonly managerService: ManagerService,
   ) {}
 
+  /**
+   * Gestisce il submit del form di creazione campo.
+   * Legge i dati dal form, valida input e immagini, crea il payload e invia tutto al backend.
+   */
   createField(event: SubmitEvent): void {
     event.preventDefault();
 
@@ -123,10 +155,16 @@ export class CreateFieldComponent implements OnDestroy {
       });
   }
 
+  /**
+   * Restituisce il messaggio di errore associato a un campo specifico.
+   */
   fieldError(fieldName: FieldErrorKey): string {
     return this.fieldErrors()[fieldName] ?? '';
   }
 
+  /**
+   * Cancella l'errore di un campo quando l'utente modifica l'input corrispondente.
+   */
   clearFieldError(fieldName: FieldErrorKey): void {
     const currentErrors = { ...this.fieldErrors() };
 
@@ -143,12 +181,18 @@ export class CreateFieldComponent implements OnDestroy {
     }
   }
 
+  /**
+   * Blocca l'inserimento manuale di segni non ammessi nei campi numerici.
+   */
   preventNegativeValue(event: KeyboardEvent): void {
     if (event.key === '-' || event.key === '+') {
       event.preventDefault();
     }
   }
 
+  /**
+   * Normalizza il costo orario evitando valori negativi nell'input HTML.
+   */
   normalizeHourlyRate(event: Event): void {
     const input = event.target as HTMLInputElement;
     const value = Number(input.value);
@@ -158,10 +202,17 @@ export class CreateFieldComponent implements OnDestroy {
     }
   }
 
+  /**
+   * Apre programmaticamente il selettore file per le immagini del campo.
+   */
   openImagesPicker(): void {
     this.fieldImagesInput?.nativeElement.click();
   }
 
+  /**
+   * Gestisce le immagini scelte dall'utente.
+   * Controlla numero massimo, formato e dimensione prima di creare le preview locali.
+   */
   onImagesSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
     const files = Array.from(input.files ?? []);
@@ -200,6 +251,9 @@ export class CreateFieldComponent implements OnDestroy {
     input.value = '';
   }
 
+  /**
+   * Rimuove una preview immagine e libera l'URL temporaneo creato con URL.createObjectURL.
+   */
   removeImage(index: number): void {
     const preview = this.imagePreviews()[index];
 
@@ -216,19 +270,31 @@ export class CreateFieldComponent implements OnDestroy {
     this.clearFieldError('images');
   }
 
+  /**
+   * Annulla la creazione, pulisce le preview e torna alla lista campi.
+   */
   cancel(): void {
     this.clearImages();
     void this.router.navigate(['/dashboard/fields']);
   }
 
+  /**
+   * Libera gli URL temporanei delle immagini quando il componente viene distrutto.
+   */
   ngOnDestroy(): void {
     this.clearImages();
   }
 
+  /**
+   * Funzione trackBy per ottimizzare il rendering delle preview immagini.
+   */
   trackByImageUrl(_: number, preview: FieldImagePreview): string {
     return preview.url;
   }
 
+  /**
+   * Valida i dati principali del form prima di inviarli al backend.
+   */
   private validateForm(data: {
     nome: string;
     sport: string;
@@ -268,6 +334,9 @@ export class CreateFieldComponent implements OnDestroy {
     return Object.keys(errors).length === 0;
   }
 
+  /**
+   * Imposta un errore puntuale su un campo del form.
+   */
   private setFieldError(fieldName: FieldErrorKey, message: string): void {
     this.fieldErrors.update((currentErrors) => ({
       ...currentErrors,
@@ -275,6 +344,10 @@ export class CreateFieldComponent implements OnDestroy {
     }));
   }
 
+  /**
+   * Mappa gli errori di validazione restituiti dal backend sui campi del form.
+   * Restituisce true se almeno un errore è stato applicato.
+   */
   private applyBackendFieldErrors(error: unknown, fallbackMessage: string): boolean {
     const mappedErrors = extractBackendFieldErrors(error, KNOWN_BACKEND_FIELDS);
     let hasFieldErrors = false;
@@ -312,6 +385,9 @@ export class CreateFieldComponent implements OnDestroy {
     return hasFieldErrors;
   }
 
+  /**
+   * Rimuove tutte le immagini selezionate e revoca gli URL di preview.
+   */
   private clearImages(): void {
     for (const preview of this.imagePreviews()) {
       URL.revokeObjectURL(preview.url);
@@ -325,6 +401,9 @@ export class CreateFieldComponent implements OnDestroy {
     }
   }
 
+  /**
+   * Converte il valore testuale del costo orario in numero valido oppure null.
+   */
   private toHourlyRate(rawValue: string): number | null {
     if (!rawValue) {
       return null;
@@ -335,10 +414,16 @@ export class CreateFieldComponent implements OnDestroy {
     return Number.isFinite(numericValue) ? numericValue : null;
   }
 
+  /**
+   * Type guard che verifica se lo sport ricevuto dal form è uno sport valido per il backend.
+   */
   private isValidSport(value: string): value is ManagerFieldSport {
     return this.sportTypes.includes(value as FieldSportType);
   }
 
+  /**
+   * Estrae un messaggio di errore leggibile da una risposta backend.
+   */
   private extractErrorMessage(error: unknown, fallback: string): string {
     return extractBackendErrorMessage(error, fallback);
   }

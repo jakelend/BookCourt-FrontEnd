@@ -12,6 +12,12 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { finalize } from 'rxjs/operators';
 import { AuthService, ResetPasswordRequestDto } from '../../../services/auth.service';
 
+/**
+ * Componente della pagina di reset password.
+ *
+ * Viene aperto tramite il link ricevuto via email e usa il token presente
+ * nella route o nella query string per impostare una nuova password.
+ */
 @Component({
   selector: 'app-reset-password',
   imports: [CommonModule, ReactiveFormsModule],
@@ -19,14 +25,28 @@ import { AuthService, ResetPasswordRequestDto } from '../../../services/auth.ser
   styleUrl: './reset-password.component.css',
 })
 export class ResetPasswordComponent implements OnInit {
+  /** Indica se l'utente ha provato a inviare il form. */
   submitted = false;
+
+  /** Indica se è in corso la chiamata HTTP di cambio password tramite token. */
   isLoading = false;
+
+  /** Messaggio di errore mostrato quando il reset fallisce. */
   resetPasswordError = '';
+
+  /** Messaggio di successo mostrato quando la password viene aggiornata. */
   resetPasswordSuccess = '';
+
+  /** Token di recupero letto dal path o dalla query string. */
   token = '';
+
+  /** Controlla la visibilità del campo nuova password. */
   showNewPassword = false;
+
+  /** Controlla la visibilità del campo conferma nuova password. */
   showConfirmNewPassword = false;
 
+  /** Form reattivo con nuova password e conferma nuova password. */
   resetPasswordForm: FormGroup;
 
   constructor(
@@ -35,8 +55,11 @@ export class ResetPasswordComponent implements OnInit {
     private readonly router: Router,
     private readonly route: ActivatedRoute,
   ) {
-    // Form per impostare la nuova password dopo il link ricevuto via email.
-    // Controllo anche che le due password coincidano.
+    /*
+      Form per impostare la nuova password dopo il link ricevuto via email.
+      Oltre ai validatori base, applico un validatore custom per controllare
+      che le due password inserite coincidano.
+    */
     this.resetPasswordForm = this.fb.group(
       {
         nuovaPassword: [
@@ -49,9 +72,13 @@ export class ResetPasswordComponent implements OnInit {
     );
   }
 
+  /**
+   * All'inizializzazione legge il token dalla route.
+   *
+   * Il componente supporta sia il formato /reset-password/:token
+   * sia il formato /reset-password?token=... .
+   */
   ngOnInit(): void {
-    // Supporto sia /reset-password?token=... sia /reset-password/:token.
-    // Così il frontend funziona anche se il backend cambia leggermente formato del link.
     const tokenFromPath = this.route.snapshot.paramMap.get('token');
     const tokenFromQuery = this.route.snapshot.queryParamMap.get('token');
 
@@ -63,14 +90,22 @@ export class ResetPasswordComponent implements OnInit {
     }
   }
 
+  /** Restituisce il controllo della nuova password. */
   get nuovaPassword() {
     return this.resetPasswordForm.get('nuovaPassword');
   }
 
+  /** Restituisce il controllo della conferma nuova password. */
   get confermaNuovaPassword() {
     return this.resetPasswordForm.get('confermaNuovaPassword');
   }
 
+  /**
+   * Gestisce l'invio del form di reset password.
+   *
+   * Se il token esiste e il form è valido, invia al backend il token
+   * e la nuova password. Dopo il successo riporta automaticamente al login.
+   */
   onSubmit(): void {
     this.submitted = true;
     this.resetPasswordError = '';
@@ -117,18 +152,27 @@ export class ResetPasswordComponent implements OnInit {
       });
   }
 
+  /** Porta l'utente alla pagina di login. */
   onLogin(): void {
     void this.router.navigate(['/login']);
   }
 
+  /** Alterna la visibilità della nuova password. */
   toggleNewPasswordVisibility(): void {
     this.showNewPassword = !this.showNewPassword;
   }
 
+  /** Alterna la visibilità della conferma nuova password. */
   toggleConfirmNewPasswordVisibility(): void {
     this.showConfirmNewPassword = !this.showConfirmNewPassword;
   }
 
+  /**
+   * Validatore custom che controlla la coincidenza tra le due password.
+   *
+   * @param control FormGroup che contiene nuovaPassword e confermaNuovaPassword.
+   * @returns null se coincidono, altrimenti errore passwordsMismatch.
+   */
   private passwordsMatchValidator(control: AbstractControl): ValidationErrors | null {
     const nuovaPassword = control.get('nuovaPassword')?.value;
     const confermaNuovaPassword = control.get('confermaNuovaPassword')?.value;
@@ -140,6 +184,12 @@ export class ResetPasswordComponent implements OnInit {
     return nuovaPassword === confermaNuovaPassword ? null : { passwordsMismatch: true };
   }
 
+  /**
+   * Estrae un messaggio leggibile dagli errori della procedura di reset.
+   *
+   * @param error Errore HTTP o generico ricevuto dal backend.
+   * @returns Messaggio da mostrare all'utente.
+   */
   private extractResetPasswordErrorMessage(error: any): string {
     if (error?.error?.message) {
       return error.error.message;

@@ -8,6 +8,9 @@ import { ManagerCreateSecretaryRequestDto } from '../../../dto/request/manager/m
 import { ManagerService } from '../../../services/manager.service';
 import { extractBackendErrorMessage, extractBackendFieldErrors, FieldErrors } from '../../../util/error-message.util';
 
+/**
+ * Chiavi degli errori di validazione gestiti nel form di creazione segretaria.
+ */
 type FieldErrorKey =
   | 'profilePhoto'
   | 'nome'
@@ -17,6 +20,9 @@ type FieldErrorKey =
   | 'password'
   | 'fotoProfiloUrl';
 
+/**
+ * Elenco dei campi backend riconosciuti e mostrabili come errori puntuali nel form.
+ */
 const KNOWN_BACKEND_FIELDS: readonly FieldErrorKey[] = [
   'profilePhoto',
   'nome',
@@ -33,24 +39,46 @@ const KNOWN_BACKEND_FIELDS: readonly FieldErrorKey[] = [
   templateUrl: './create-secretary.component.html',
   styleUrl: './create-secretary.component.css',
 })
+/**
+ * Componente usato dal manager per creare una nuova segretaria.
+ * Gestisce dati anagrafici, credenziali e foto profilo opzionale.
+ */
 export class CreateSecretaryComponent implements OnDestroy {
+  /**
+   * Input file nascosto per selezionare la foto profilo opzionale.
+   */
   @ViewChild('profilePhotoInput') private readonly profilePhotoInput?: ElementRef<HTMLInputElement>;
 
+  /**
+   * File foto selezionato e URL temporaneo per mostrarne l'anteprima.
+   */
   readonly profilePhotoFile = signal<File | null>(null);
   readonly profilePhotoPreviewUrl = signal('');
 
+  /**
+   * Controlla se la password è visibile nel form.
+   */
   readonly showPassword = signal(false);
 
+  /**
+   * Stati reattivi di invio, esito e validazione del form.
+   */
   readonly isLoading = signal(false);
   readonly submitError = signal('');
   readonly submitSuccess = signal('');
   readonly fieldErrors = signal<FieldErrors<FieldErrorKey>>({});
 
+  /**
+   * Inietta router e ManagerService per creare la segretaria e aggiornare la lista.
+   */
   constructor(
     private readonly router: Router,
     private readonly managerService: ManagerService,
   ) {}
 
+  /**
+   * Gestisce il submit del form, valida i dati e invia la richiesta al backend.
+   */
   createSecretary(event: SubmitEvent): void {
     event.preventDefault();
 
@@ -129,10 +157,16 @@ export class CreateSecretaryComponent implements OnDestroy {
       });
   }
 
+  /**
+   * Restituisce il messaggio di errore di un campo specifico.
+   */
   fieldError(fieldName: FieldErrorKey): string {
     return this.fieldErrors()[fieldName] ?? '';
   }
 
+  /**
+   * Rimuove l'errore del campo modificato dall'utente.
+   */
   clearFieldError(fieldName: FieldErrorKey): void {
     const currentErrors = { ...this.fieldErrors() };
 
@@ -149,14 +183,23 @@ export class CreateSecretaryComponent implements OnDestroy {
     }
   }
 
+  /**
+   * Mostra o nasconde la password inserita.
+   */
   togglePasswordVisibility(): void {
     this.showPassword.update((currentValue) => !currentValue);
   }
 
+  /**
+   * Apre il selettore della foto profilo.
+   */
   openProfilePhotoPicker(): void {
     this.profilePhotoInput?.nativeElement.click();
   }
 
+  /**
+   * Valida la foto selezionata e crea l'anteprima locale.
+   */
   onProfilePhotoSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0] ?? null;
@@ -187,6 +230,9 @@ export class CreateSecretaryComponent implements OnDestroy {
     this.profilePhotoPreviewUrl.set(URL.createObjectURL(file));
   }
 
+  /**
+   * Rimuove la foto selezionata e libera l'URL temporaneo.
+   */
   clearProfilePhoto(): void {
     this.profilePhotoFile.set(null);
     this.revokeProfilePhotoPreview();
@@ -197,15 +243,24 @@ export class CreateSecretaryComponent implements OnDestroy {
     }
   }
 
+  /**
+   * Annulla la creazione e torna alla lista segretarie.
+   */
   cancel(): void {
     this.clearProfilePhoto();
     void this.router.navigate(['/dashboard/secretaries']);
   }
 
+  /**
+   * Revoca eventuali URL temporanei quando il componente viene distrutto.
+   */
   ngOnDestroy(): void {
     this.revokeProfilePhotoPreview();
   }
 
+  /**
+   * Valida dati obbligatori, email, password, telefono e formato immagine.
+   */
   private validateForm(data: {
     nome: string;
     cognome: string;
@@ -252,6 +307,9 @@ export class CreateSecretaryComponent implements OnDestroy {
     return Object.keys(errors).length === 0;
   }
 
+  /**
+   * Imposta un errore puntuale nel form.
+   */
   private setFieldError(fieldName: FieldErrorKey, message: string): void {
     this.fieldErrors.update((currentErrors) => ({
       ...currentErrors,
@@ -259,6 +317,9 @@ export class CreateSecretaryComponent implements OnDestroy {
     }));
   }
 
+  /**
+   * Mappa gli errori backend sui campi della creazione segretaria.
+   */
   private applyBackendFieldErrors(error: unknown, fallbackMessage: string): boolean {
     const mappedErrors = extractBackendFieldErrors(error, KNOWN_BACKEND_FIELDS);
     let hasFieldErrors = false;
@@ -291,6 +352,9 @@ export class CreateSecretaryComponent implements OnDestroy {
     return hasFieldErrors;
   }
 
+  /**
+   * Revoca l'URL temporaneo della foto profilo selezionata.
+   */
   private revokeProfilePhotoPreview(): void {
     const previewUrl = this.profilePhotoPreviewUrl();
 
@@ -302,10 +366,16 @@ export class CreateSecretaryComponent implements OnDestroy {
     this.profilePhotoPreviewUrl.set('');
   }
 
+  /**
+   * Verifica il formato base dell'indirizzo email.
+   */
   private isValidEmail(email: string): boolean {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   }
 
+  /**
+   * Estrae un messaggio di errore leggibile dal backend.
+   */
   private extractErrorMessage(error: unknown, fallback: string): string {
     return extractBackendErrorMessage(error, fallback);
   }

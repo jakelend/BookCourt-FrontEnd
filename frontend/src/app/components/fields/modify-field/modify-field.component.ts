@@ -12,6 +12,9 @@ import { ManagerService } from '../../../services/manager.service';
 import { extractBackendErrorMessage, extractBackendFieldErrors, FieldErrors } from '../../../util/error-message.util';
 import { FieldSportType } from '../field-card/field-card.component';
 
+/**
+ * Modello locale usato per mantenere i dati editabili del campo nel form.
+ */
 interface EditableField {
   id: number;
   name: string;
@@ -20,6 +23,9 @@ interface EditableField {
   active: boolean;
 }
 
+/**
+ * Rappresenta un'immagine del campo, distinguendo tra immagine già salvata e nuovo file caricato.
+ */
 interface FieldImagePreview {
   file: File | null;
   url: string;
@@ -27,8 +33,14 @@ interface FieldImagePreview {
   existingImageId: number | null;
 }
 
+/**
+ * Chiavi degli errori di validazione gestiti nella modifica del campo.
+ */
 type FieldErrorKey = 'images' | 'nome' | 'sport' | 'costoOrario' | 'attivo' | 'idImmagini';
 
+/**
+ * Elenco dei campi backend che possono essere mostrati come errori puntuali nel form.
+ */
 const KNOWN_BACKEND_FIELDS: readonly FieldErrorKey[] = [
   'images',
   'nome',
@@ -44,19 +56,38 @@ const KNOWN_BACKEND_FIELDS: readonly FieldErrorKey[] = [
   templateUrl: './modify-field.component.html',
   styleUrl: './modify-field.component.css',
 })
+/**
+ * Componente di modifica di un campo sportivo esistente.
+ * Carica il campo, gestisce modifiche dei dati principali e consente aggiunta/rimozione immagini.
+ */
 export class ModifyFieldComponent implements OnInit, OnDestroy {
+  /**
+   * Input file nascosto usato per selezionare nuove immagini del campo.
+   */
   @ViewChild('fieldImagesInput') private readonly fieldImagesInput?: ElementRef<HTMLInputElement>;
 
+  /**
+   * Sport disponibili per il campo.
+   */
   readonly sportTypes: FieldSportType[] = ['CALCETTO', 'TENNIS', 'PADEL'];
   readonly maxImages = 6;
 
+  /**
+   * Preview reattive delle immagini esistenti e di quelle appena caricate.
+   */
   readonly imagePreviews = signal<FieldImagePreview[]>([]);
+  /**
+   * Stati reattivi della pagina di modifica e degli errori del form.
+   */
   readonly loading = signal(true);
   readonly isSaving = signal(false);
   readonly submitError = signal('');
   readonly submitSuccess = signal('');
   readonly fieldErrors = signal<FieldErrors<FieldErrorKey>>({});
 
+  /**
+   * Dati editabili del campo caricati dal backend e collegati al form.
+   */
   field: EditableField = {
     id: 0,
     name: '',
@@ -65,14 +96,23 @@ export class ModifyFieldComponent implements OnInit, OnDestroy {
     active: true,
   };
 
+  /**
+   * Id delle immagini già salvate che l'utente ha deciso di eliminare.
+   */
   private readonly deletedExistingImageIds = new Set<number>();
 
+  /**
+   * Inietta route, router e ManagerService per leggere l'id, navigare e comunicare con il backend.
+   */
   constructor(
     private readonly route: ActivatedRoute,
     private readonly router: Router,
     private readonly managerService: ManagerService,
   ) {}
 
+  /**
+   * Legge l'id dalla route e carica dati del campo e immagini associate.
+   */
   ngOnInit(): void {
     const fieldId = Number(this.route.snapshot.paramMap.get('id'));
 
@@ -102,6 +142,10 @@ export class ModifyFieldComponent implements OnInit, OnDestroy {
       });
   }
 
+  /**
+   * Gestisce il submit della modifica campo.
+   * Valida i dati, costruisce il payload e invia al backend anche nuove immagini ed eliminazioni.
+   */
   modifyField(event: SubmitEvent): void {
     event.preventDefault();
 
@@ -164,10 +208,16 @@ export class ModifyFieldComponent implements OnInit, OnDestroy {
       });
   }
 
+  /**
+   * Restituisce l'errore associato a uno specifico campo del form.
+   */
   fieldError(fieldName: FieldErrorKey): string {
     return this.fieldErrors()[fieldName] ?? '';
   }
 
+  /**
+   * Rimuove un errore di campo quando l'utente corregge il valore.
+   */
   clearFieldError(fieldName: FieldErrorKey): void {
     const currentErrors = { ...this.fieldErrors() };
 
@@ -184,12 +234,18 @@ export class ModifyFieldComponent implements OnInit, OnDestroy {
     }
   }
 
+  /**
+   * Blocca caratteri non validi nei campi numerici.
+   */
   preventNegativeValue(event: KeyboardEvent): void {
     if (event.key === '-' || event.key === '+') {
       event.preventDefault();
     }
   }
 
+  /**
+   * Normalizza il costo orario evitando valori negativi.
+   */
   normalizeHourlyRate(event: Event): void {
     const input = event.target as HTMLInputElement;
     const value = Number(input.value);
@@ -200,10 +256,16 @@ export class ModifyFieldComponent implements OnInit, OnDestroy {
     }
   }
 
+  /**
+   * Apre il selettore delle immagini del campo.
+   */
   openImagesPicker(): void {
     this.fieldImagesInput?.nativeElement.click();
   }
 
+  /**
+   * Valida le nuove immagini selezionate e ne crea le preview locali.
+   */
   onImagesSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
     const files = Array.from(input.files ?? []);
@@ -247,6 +309,10 @@ export class ModifyFieldComponent implements OnInit, OnDestroy {
     input.value = '';
   }
 
+  /**
+   * Rimuove un'immagine dalla lista.
+   * Se era già salvata, memorizza il suo id per comunicarne l'eliminazione al backend.
+   */
   removeImage(index: number): void {
     const preview = this.imagePreviews()[index];
 
@@ -274,19 +340,31 @@ export class ModifyFieldComponent implements OnInit, OnDestroy {
     this.clearFieldError('images');
   }
 
+  /**
+   * Annulla la modifica e torna alla lista campi.
+   */
   cancel(): void {
     this.clearUploadedImages();
     void this.router.navigate(['/dashboard/fields']);
   }
 
+  /**
+   * Libera gli URL temporanei delle immagini caricate localmente.
+   */
   ngOnDestroy(): void {
     this.clearUploadedImages();
   }
 
+  /**
+   * Funzione trackBy per la lista delle preview immagini.
+   */
   trackByImageUrl(_: number, preview: FieldImagePreview): string {
     return preview.url;
   }
 
+  /**
+   * Valida nome, sport, costo e vincolo sulle immagini prima del salvataggio.
+   */
   private validateForm(data: {
     nome: string;
     sport: string;
@@ -324,6 +402,9 @@ export class ModifyFieldComponent implements OnInit, OnDestroy {
     return Object.keys(errors).length === 0;
   }
 
+  /**
+   * Imposta un messaggio di errore su un campo specifico.
+   */
   private setFieldError(fieldName: FieldErrorKey, message: string): void {
     this.fieldErrors.update((currentErrors) => ({
       ...currentErrors,
@@ -331,6 +412,9 @@ export class ModifyFieldComponent implements OnInit, OnDestroy {
     }));
   }
 
+  /**
+   * Trasforma gli errori di validazione backend in errori mostrabili sui campi del form.
+   */
   private applyBackendFieldErrors(error: unknown, fallbackMessage: string): boolean {
     const mappedErrors = extractBackendFieldErrors(error, KNOWN_BACKEND_FIELDS);
     let hasFieldErrors = false;
@@ -368,6 +452,9 @@ export class ModifyFieldComponent implements OnInit, OnDestroy {
     return hasFieldErrors;
   }
 
+  /**
+   * Popola lo stato locale del form partendo dai dati campo e dalle immagini ricevute dal backend.
+   */
   private hydrateField(field: ManagerFieldResponseDto, images: ManagerFieldImageResponseDto[]): void {
     this.field = {
       id: field.id,
@@ -388,6 +475,9 @@ export class ModifyFieldComponent implements OnInit, OnDestroy {
     );
   }
 
+  /**
+   * Costruisce l'URL completo dell'immagine partendo dal path restituito dal backend.
+   */
   private buildImageUrl(path: string): string {
     if (!path) {
       return '';
@@ -400,6 +490,9 @@ export class ModifyFieldComponent implements OnInit, OnDestroy {
     return path.startsWith('/') ? `http://localhost:8080${path}` : `http://localhost:8080/${path}`;
   }
 
+  /**
+   * Revoca gli URL temporanei delle sole immagini caricate localmente.
+   */
   private clearUploadedImages(): void {
     for (const preview of this.imagePreviews()) {
       if (preview.uploaded) {
@@ -412,6 +505,9 @@ export class ModifyFieldComponent implements OnInit, OnDestroy {
     }
   }
 
+  /**
+   * Converte il costo orario in numero valido oppure null.
+   */
   private toHourlyRate(value: number | string | null): number | null {
     if (value == null || value === '') {
       return null;
@@ -422,10 +518,16 @@ export class ModifyFieldComponent implements OnInit, OnDestroy {
     return Number.isFinite(numericValue) ? numericValue : null;
   }
 
+  /**
+   * Type guard per verificare che lo sport sia uno dei valori gestiti dal backend.
+   */
   private isValidSport(value: string): value is ManagerFieldSport {
     return this.sportTypes.includes(value as FieldSportType);
   }
 
+  /**
+   * Estrae un messaggio di errore leggibile da mostrare nella pagina.
+   */
   private extractErrorMessage(error: unknown, fallback: string): string {
     return extractBackendErrorMessage(error, fallback);
   }

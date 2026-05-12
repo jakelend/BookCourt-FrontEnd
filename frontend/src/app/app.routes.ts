@@ -36,7 +36,20 @@ import { PendingFeedbackBookingsComponent } from './components/feedback/pending-
 import { CompletedFeedbackBookingsComponent } from './components/feedback/completed-feedback-bookings/completed-feedback-bookings.component';
 import { CancelBookingsComponent } from './components/booking/cancel-bookings/cancel-bookings.component';
 
+/**
+ * Configurazione delle rotte principali dell'applicazione BookCourt.
+ *
+ * Le rotte sono organizzate in tre macro-aree:
+ * - pagine pubbliche, accessibili prima dell'autenticazione;
+ * - area dashboard, protetta da AuthGuard e ulteriormente filtrata da RoleGuard;
+ * - redirect di compatibilità, utili per mantenere URL brevi o vecchi collegamenti.
+ */
 export const routes: Routes = [
+  /*
+   * Pagine pubbliche iniziali.
+   * Non richiedono autenticazione, oppure usano GuestGuard per impedire
+   * l'accesso agli utenti già autenticati.
+   */
   {
     path: '',
     component: IntroComponent,
@@ -74,15 +87,26 @@ export const routes: Routes = [
     component: ResetPasswordComponent,
     canActivate: [GuestGuard],
   },
+
+  /*
+   * Area privata dell'applicazione.
+   * SidebarHeaderComponent funge da layout contenitore e mostra i componenti figli
+   * tramite il router-outlet interno della dashboard.
+   */
   {
     path: 'dashboard',
     component: SidebarHeaderComponent,
     canActivate: [AuthGuard],
     children: [
+      /**
+       * Home interna della dashboard dopo il login.
+       */
       {
         path: '',
         component: DashboardComponent,
       },
+
+      /* Gestione istruttori, accessibile principalmente al manager. */
       {
         path: 'instructors',
         component: InstructorsPageComponent,
@@ -95,6 +119,8 @@ export const routes: Routes = [
         path: 'instructors/modify/:id',
         component: ModifyInstructorComponent,
       },
+
+      /* Gestione segretarie, accessibile principalmente al manager. */
       {
         path: 'secretaries',
         component: SecretariesPageComponent,
@@ -107,6 +133,8 @@ export const routes: Routes = [
         path: 'secretaries/modify/:id',
         component: ModifySecretaryComponent,
       },
+
+      /* Gestione campi sportivi e relative modifiche. */
       {
         path: 'fields',
         component: FieldsPageComponent,
@@ -119,16 +147,22 @@ export const routes: Routes = [
         path: 'fields/modify/:id',
         component: ModifyFieldComponent,
       },
+
+      /* Funzioni comuni dell'utente autenticato. */
       {
         path: 'change-password',
         component: ChangePasswordComponent,
       },
+
+      /* Funzioni operative della segretaria: manutenzioni ed eccezioni. */
       {
         path: 'maintenance',
         component: FieldMaintenanceComponent,
         canActivate: [RoleGuard],
         data: { roles: [Role.SEGRETARIA] },
       },
+
+      /* Calendari: vista istruttore e gestione indisponibilità lato segreteria. */
       {
         path: 'instructor-calendar',
         component: InstructorCalendarComponent,
@@ -147,12 +181,16 @@ export const routes: Routes = [
         canActivate: [RoleGuard],
         data: { roles: [Role.SEGRETARIA] },
       },
+
+      /* Chat condivisa tra cliente, segreteria e manager. */
       {
         path: 'chat',
         component: ChatPageComponent,
         canActivate: [RoleGuard],
         data: { roles: [Role.CLIENTE, Role.SEGRETARIA, Role.MANAGER] },
       },
+
+      /* Flusso cliente per la prenotazione: sport, campo, orario, extra, riepilogo e conferma. */
       {
         path: 'prenotazioni',
         component: BookingSportSelectionComponent,
@@ -195,6 +233,8 @@ export const routes: Routes = [
         canActivate: [RoleGuard],
         data: { roles: [Role.CLIENTE] },
       },
+
+      /* Feedback sulle prenotazioni concluse. */
       {
         path: 'feedback/da-recensire',
         component: PendingFeedbackBookingsComponent,
@@ -207,6 +247,8 @@ export const routes: Routes = [
         canActivate: [RoleGuard],
         data: { roles: [Role.CLIENTE] },
       },
+
+      /* Gestione dati account del cliente. */
       {
         path: 'account-management',
         component: EditAccountComponent,
@@ -215,6 +257,12 @@ export const routes: Routes = [
       },
     ],
   },
+
+  /*
+   * Redirect verso le rotte interne della dashboard.
+   * Servono a mantenere coerente la navigazione anche se l'utente usa URL brevi
+   * senza il prefisso /dashboard.
+   */
   {
     path: 'instructors',
     redirectTo: 'dashboard/instructors',
@@ -315,6 +363,10 @@ export const routes: Routes = [
     path: 'account-management',
     redirectTo: 'dashboard/account-management',
   },
+
+  /**
+   * Rotta di fallback: qualunque URL non riconosciuto riporta alla pagina iniziale.
+   */
   {
     path: '**',
     redirectTo: '',

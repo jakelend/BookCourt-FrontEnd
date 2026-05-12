@@ -6,6 +6,13 @@ import { finalize, map, switchMap } from 'rxjs/operators';
 import { AuthService, ProfileResponseDto } from '../../../services/auth.service';
 import { extractBackendErrorMessage } from '../../../util/error-message.util';
 
+/**
+ * Componente per la modifica dei dati personali dell'account cliente.
+ *
+ * Carica il profilo dell'utente autenticato, popola il form e permette
+ * di aggiornare nome, cognome, email e telefono mantenendo sincronizzati
+ * backend, AuthService, localStorage e intestazione della dashboard.
+ */
 @Component({
   selector: 'app-edit-account',
   imports: [CommonModule, ReactiveFormsModule],
@@ -13,14 +20,25 @@ import { extractBackendErrorMessage } from '../../../util/error-message.util';
   styleUrl: './edit-account.component.css',
 })
 export class EditAccountComponent implements OnInit {
+  /** Indica se è in corso il caricamento del profilo corrente. */
   readonly isLoadingProfile = signal(false);
+
+  /** Indica se è in corso il salvataggio delle modifiche. */
   readonly isSaving = signal(false);
+
+  /** Messaggio di errore mostrato nel template. */
   readonly errorMessage = signal('');
+
+  /** Messaggio di successo mostrato nel template. */
   readonly successMessage = signal('');
 
+  /** Indica se l'utente ha già provato a salvare il form. */
   submitted = false;
+
+  /** Profilo correntemente caricato dal backend. */
   currentProfile: ProfileResponseDto | null = null;
 
+  /** Form reattivo con i dati modificabili dell'account. */
   readonly accountForm: FormGroup;
 
   constructor(
@@ -36,26 +54,37 @@ export class EditAccountComponent implements OnInit {
     });
   }
 
+  /** All'avvio della pagina carica i dati dell'utente autenticato. */
   ngOnInit(): void {
     this.loadProfile();
   }
 
+  /** Restituisce il controllo del nome. */
   get nome() {
     return this.accountForm.get('nome');
   }
 
+  /** Restituisce il controllo del cognome. */
   get cognome() {
     return this.accountForm.get('cognome');
   }
 
+  /** Restituisce il controllo dell'email. */
   get email() {
     return this.accountForm.get('email');
   }
 
+  /** Restituisce il controllo del telefono. */
   get telefono() {
     return this.accountForm.get('telefono');
   }
 
+  /**
+   * Carica dal backend il profilo dell'utente corrente.
+   *
+   * Dopo il caricamento aggiorna anche AuthService, così i dati salvati
+   * localmente restano allineati con quelli restituiti dal backend.
+   */
   loadProfile(): void {
     this.isLoadingProfile.set(true);
     this.errorMessage.set('');
@@ -81,6 +110,12 @@ export class EditAccountComponent implements OnInit {
       });
   }
 
+  /**
+   * Gestisce il salvataggio dei dati personali.
+   *
+   * La sequenza è importante: prima aggiorna i dati personali, poi richiama
+   * /api/auth/me tramite AuthService per rigenerare lo stato locale aggiornato.
+   */
   onSubmit(): void {
     this.submitted = true;
     this.errorMessage.set('');
@@ -133,6 +168,7 @@ export class EditAccountComponent implements OnInit {
       });
   }
 
+  /** Torna alla dashboard principale dell'utente. */
   goBackToDashboard(): void {
     void this.router.navigate(['/dashboard']);
   }

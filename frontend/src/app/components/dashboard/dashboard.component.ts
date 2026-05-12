@@ -2,6 +2,12 @@ import { Component } from '@angular/core';
 import { AuthService } from '../../services/auth.service';
 import { Role } from '../../enumeration/role.enum';
 
+/**
+ * Componente della pagina iniziale della dashboard autenticata.
+ *
+ * Mostra un messaggio di benvenuto personalizzato in base all'utente
+ * autenticato e al suo ruolo applicativo.
+ */
 @Component({
   selector: 'app-dashboard',
   templateUrl: './dashboard.component.html',
@@ -10,6 +16,12 @@ import { Role } from '../../enumeration/role.enum';
 export class DashboardComponent {
   constructor(private readonly authService: AuthService) {}
 
+  /**
+   * Titolo di benvenuto mostrato nella dashboard.
+   *
+   * Usa nome e cognome dell'utente salvato in AuthService; se non disponibile,
+   * usa una dicitura generica per evitare valori vuoti nel template.
+   */
   get welcomeTitle(): string {
     const user = this.authService.getCurrentUser();
     const fullName = user ? `${user.nome} ${user.cognome}` : 'Utente';
@@ -17,6 +29,12 @@ export class DashboardComponent {
     return `Ciao ${fullName}`;
   }
 
+  /**
+   * Messaggio descrittivo sotto al titolo.
+   *
+   * Cambia in base al ruolo per spiegare all'utente cosa può fare
+   * dalla propria area riservata.
+   */
   get welcomeMessage(): string {
     switch (this.authService.getCurrentUserRole()) {
       case Role.ISTRUTTORE:
@@ -32,6 +50,11 @@ export class DashboardComponent {
     }
   }
 
+  /**
+   * Icona mostrata nella card di benvenuto.
+   *
+   * Serve solo per differenziare visivamente la dashboard dei vari ruoli.
+   */
   get welcomeIcon(): string {
     switch (this.authService.getCurrentUserRole()) {
       case Role.MANAGER:

@@ -14,11 +14,17 @@ import { SecretaryInstructorResponseDto } from '../../../dto/response/secretary/
 import { SecretaryInstructorCalendarService } from '../../../services/secretary-instructor-calendar.service';
 import { extractBackendErrorMessage } from '../../../util/error-message.util';
 
+/**
+ * Singola tacca oraria mostrata nella griglia del calendario istruttore.
+ */
 interface CalendarHourSlot {
   label: string;
   topPct: number;
 }
 
+/**
+ * Evento calendario convertito in coordinate grafiche per la vista giornaliera.
+ */
 interface CalendarEventView {
   id: string;
   source: SecretaryInstructorCalendarEventResponseDto;
@@ -36,6 +42,9 @@ interface CalendarEventView {
   icon: string;
 }
 
+/**
+ * Dati normalizzati del form usati per creare un'indisponibilità istruttore.
+ */
 interface CreateUnavailabilityForm {
   startDate: string;
   startTime: string;
@@ -58,51 +67,100 @@ interface CreateUnavailabilityForm {
   templateUrl: './instructor-calendar-exceptions.component.html',
   styleUrl: './instructor-calendar-exceptions.component.css',
 })
+/**
+ * Pagina segretaria per gestire le eccezioni/indisponibilità degli istruttori.
+ * Permette di scegliere un istruttore, visualizzare il suo calendario e creare o cancellare indisponibilità.
+ */
 export class InstructorCalendarExceptionsComponent implements OnInit {
+  /**
+   * Margine verticale usato per distanziare gli eventi dai bordi del calendario.
+   */
   private readonly calendarVerticalInsetPct = 2.4;
 
+  /**
+   * Data attualmente visualizzata nel calendario.
+   */
   selectedDate = new Date();
+  /**
+   * Id dell'istruttore selezionato dalla segretaria.
+   */
   selectedInstructorId: number | null = null;
 
+  /**
+   * Stati di caricamento della lista istruttori e dell'agenda.
+   */
   loadingInstructors = false;
   loadingAgenda = false;
 
+  /**
+   * Stati reattivi di salvataggio, eliminazione e messaggi della pagina.
+   */
   readonly isSaving = signal(false);
   readonly deleting = signal(false);
   readonly errorMessage = signal('');
   readonly successMessage = signal('');
   readonly formErrorMessage = signal('');
 
+  /**
+   * Form locale per la creazione di una nuova indisponibilità dell'istruttore.
+   */
   createForm: CreateUnavailabilityForm = this.buildCreateForm();
+  /**
+   * Evento calendario selezionato per visualizzare dettagli o avviare l'eliminazione.
+   */
   selectedEvent: CalendarEventView | null = null;
 
+  /**
+   * Stati reattivi interni per istruttori, agenda, eventi e griglia oraria.
+   */
   private readonly instructorsSignal = signal<SecretaryInstructorResponseDto[]>([]);
   private readonly agendaSignal = signal<SecretaryInstructorCalendarDayResponseDto | null>(null);
   private readonly eventsSignal = signal<CalendarEventView[]>([]);
   private readonly hourSlotsSignal = signal<CalendarHourSlot[]>([]);
 
+  /**
+   * Inietta il servizio che espone le API calendario istruttori lato segretaria.
+   */
   constructor(private readonly calendarService: SecretaryInstructorCalendarService) {}
 
+  /**
+   * Carica la lista istruttori all'apertura della pagina.
+   */
   ngOnInit(): void {
     this.loadInstructors();
   }
 
+  /**
+   * Lista istruttori disponibili per la selezione.
+   */
   get instructors(): SecretaryInstructorResponseDto[] {
     return this.instructorsSignal();
   }
 
+  /**
+   * Agenda giornaliera dell'istruttore selezionato.
+   */
   get agenda(): SecretaryInstructorCalendarDayResponseDto | null {
     return this.agendaSignal();
   }
 
+  /**
+   * Eventi convertiti per la visualizzazione grafica nel calendario.
+   */
   get events(): CalendarEventView[] {
     return this.eventsSignal();
   }
 
+  /**
+   * Slot orari della griglia giornaliera.
+   */
   get hourSlots(): CalendarHourSlot[] {
     return this.hourSlotsSignal();
   }
 
+  /**
+   * Titolo leggibile della data selezionata.
+   */
   get selectedDateTitle(): string {
     return this.selectedDate.toLocaleDateString('it-IT', {
       weekday: 'long',
@@ -112,19 +170,31 @@ export class InstructorCalendarExceptionsComponent implements OnInit {
     });
   }
 
+  /**
+   * Oggetto istruttore selezionato, ricavato dall'id corrente.
+   */
   get selectedInstructor(): SecretaryInstructorResponseDto | null {
     return this.instructors.find((instructor) => instructor.id === this.selectedInstructorId) ?? null;
   }
 
+  /**
+   * Nome completo dell'istruttore selezionato.
+   */
   get selectedInstructorName(): string {
     const instructor = this.selectedInstructor;
     return instructor ? `${instructor.nome} ${instructor.cognome}` : 'Seleziona un istruttore';
   }
 
+  /**
+   * Indica se la segretaria ha selezionato un istruttore.
+   */
   get hasInstructorSelected(): boolean {
     return this.selectedInstructorId !== null;
   }
 
+  /**
+   * Gestisce il cambio istruttore dalla select e ricarica l'agenda.
+   */
   onInstructorSelected(value: string | number | null): void {
     const numericValue = Number(value);
     this.selectedInstructorId = Number.isFinite(numericValue) && numericValue > 0 ? numericValue : null;
@@ -133,6 +203,9 @@ export class InstructorCalendarExceptionsComponent implements OnInit {
     this.loadAgenda();
   }
 
+  /**
+   * Gestisce la selezione di una data dal datepicker.
+   */
   onDateSelected(date: Date | null): void {
     if (!date) {
       return;
@@ -144,6 +217,9 @@ export class InstructorCalendarExceptionsComponent implements OnInit {
     this.loadAgenda();
   }
 
+  /**
+   * Mostra il calendario della data odierna.
+   */
   goToToday(): void {
     this.selectedDate = this.cloneDateOnly(new Date());
     this.selectedEvent = null;
@@ -151,6 +227,9 @@ export class InstructorCalendarExceptionsComponent implements OnInit {
     this.loadAgenda();
   }
 
+  /**
+   * Mostra il giorno precedente.
+   */
   goToPreviousDay(): void {
     this.selectedDate = this.addDays(this.selectedDate, -1);
     this.selectedEvent = null;
@@ -158,6 +237,9 @@ export class InstructorCalendarExceptionsComponent implements OnInit {
     this.loadAgenda();
   }
 
+  /**
+   * Mostra il giorno successivo.
+   */
   goToNextDay(): void {
     this.selectedDate = this.addDays(this.selectedDate, 1);
     this.selectedEvent = null;
@@ -165,6 +247,9 @@ export class InstructorCalendarExceptionsComponent implements OnInit {
     this.loadAgenda();
   }
 
+  /**
+   * Riprova il caricamento dell'agenda o degli istruttori in base allo stato corrente.
+   */
   retry(): void {
     if (!this.instructors.length) {
       this.loadInstructors();
@@ -174,6 +259,9 @@ export class InstructorCalendarExceptionsComponent implements OnInit {
     this.loadAgenda();
   }
 
+  /**
+   * Crea una nuova indisponibilità per l'istruttore selezionato.
+   */
   submitCreate(): void {
     if (!this.selectedInstructorId) {
       this.formErrorMessage.set('Seleziona un istruttore prima di inserire l’indisponibilità.');
@@ -210,6 +298,9 @@ export class InstructorCalendarExceptionsComponent implements OnInit {
       });
   }
 
+  /**
+   * Apre il pannello dettagli dell'evento selezionato.
+   */
   openEventDetails(event: CalendarEventView, domEvent?: Event): void {
     domEvent?.stopPropagation();
     this.selectedEvent = event;
@@ -217,10 +308,16 @@ export class InstructorCalendarExceptionsComponent implements OnInit {
     this.successMessage.set('');
   }
 
+  /**
+   * Chiude il pannello dettagli evento.
+   */
   closeEventDetails(): void {
     this.selectedEvent = null;
   }
 
+  /**
+   * Elimina l'indisponibilità selezionata se l'evento è cancellabile dalla segretaria.
+   */
   deleteSelectedEvent(): void {
     const exceptionId = this.selectedEvent?.source.eccezioneIstruttoreId;
 
@@ -250,22 +347,37 @@ export class InstructorCalendarExceptionsComponent implements OnInit {
       });
   }
 
+  /**
+   * Verifica se l'evento selezionato rappresenta un'indisponibilità eliminabile.
+   */
   isDeletableInstructorException(event: CalendarEventView | null): boolean {
     return event?.source.tipo === 'ECCEZIONE_ISTRUTTORE' && !!event.source.eccezioneIstruttoreId;
   }
 
+  /**
+   * Funzione trackBy per la lista istruttori.
+   */
   trackByInstructor(_: number, instructor: SecretaryInstructorResponseDto): number {
     return instructor.id;
   }
 
+  /**
+   * Funzione trackBy per la griglia oraria.
+   */
   trackByHour(_: number, slot: CalendarHourSlot): string {
     return slot.label;
   }
 
+  /**
+   * Funzione trackBy per gli eventi calendario.
+   */
   trackByEvent(_: number, event: CalendarEventView): string {
     return event.id;
   }
 
+  /**
+   * Carica dal backend gli istruttori selezionabili dalla segretaria.
+   */
   private loadInstructors(): void {
     this.loadingInstructors = true;
     this.errorMessage.set('');
@@ -296,6 +408,9 @@ export class InstructorCalendarExceptionsComponent implements OnInit {
       });
   }
 
+  /**
+   * Carica l'agenda giornaliera dell'istruttore selezionato.
+   */
   private loadAgenda(): void {
     if (!this.selectedInstructorId) {
       this.clearAgenda();
@@ -323,12 +438,18 @@ export class InstructorCalendarExceptionsComponent implements OnInit {
       });
   }
 
+  /**
+   * Svuota agenda, eventi e griglia quando non c'è un istruttore selezionato.
+   */
   private clearAgenda(): void {
     this.agendaSignal.set(null);
     this.eventsSignal.set([]);
     this.hourSlotsSignal.set([]);
   }
 
+  /**
+   * Ricostruisce calendario e layout eventi a partire dall'agenda backend.
+   */
   private rebuildCalendar(agenda: SecretaryInstructorCalendarDayResponseDto): void {
     const range = this.resolveCalendarRange();
     const totalMinutes = Math.max(60, this.minutesBetween(range.start, range.end));
@@ -341,6 +462,9 @@ export class InstructorCalendarExceptionsComponent implements OnInit {
     this.eventsSignal.set(this.layoutEvents(visibleEvents, range.start, range.end, totalMinutes));
   }
 
+  /**
+   * Calcola l'intervallo orario visibile nel calendario.
+   */
   private resolveCalendarRange(): { start: Date; end: Date } {
     const start = this.cloneDateOnly(this.selectedDate);
     start.setHours(8, 0, 0, 0);
@@ -352,6 +476,9 @@ export class InstructorCalendarExceptionsComponent implements OnInit {
     return { start, end };
   }
 
+  /**
+   * Genera le tacche orarie della griglia.
+   */
   private buildHourSlots(start: Date, end: Date, totalMinutes: number): CalendarHourSlot[] {
     const slots: CalendarHourSlot[] = [];
     const cursor = new Date(start);
@@ -368,6 +495,9 @@ export class InstructorCalendarExceptionsComponent implements OnInit {
     return slots;
   }
 
+  /**
+   * Posiziona gli eventi e gestisce sovrapposizioni nello stesso intervallo orario.
+   */
   private layoutEvents(
     events: SecretaryInstructorCalendarEventResponseDto[],
     dayStart: Date,
@@ -406,6 +536,9 @@ export class InstructorCalendarExceptionsComponent implements OnInit {
     return views;
   }
 
+  /**
+   * Converte un evento dell'agenda backend in evento grafico del calendario.
+   */
   private toCalendarEventView(
     event: SecretaryInstructorCalendarEventResponseDto,
     dayStart: Date,
@@ -445,6 +578,9 @@ export class InstructorCalendarExceptionsComponent implements OnInit {
     };
   }
 
+  /**
+   * Distribuisce in colonne gli eventi sovrapposti.
+   */
   private positionOverlappingGroup(group: CalendarEventView[]): void {
     const columnEndTimes: number[] = [];
     const columnsByEvent = new Map<string, number>();
@@ -468,6 +604,9 @@ export class InstructorCalendarExceptionsComponent implements OnInit {
     }
   }
 
+  /**
+   * Costruisce la request backend per creare l'indisponibilità, validando il form.
+   */
   private buildCreateRequest(instructorId: number): SecretaryInstructorUnavailabilityRequestDto | null {
     const motivo = this.createForm.motivo.trim() || 'Indisponibilità istruttore';
     let inizio = '';
@@ -501,6 +640,9 @@ export class InstructorCalendarExceptionsComponent implements OnInit {
     };
   }
 
+  /**
+   * Crea il valore iniziale del form di indisponibilità per la data selezionata.
+   */
   private buildCreateForm(): CreateUnavailabilityForm {
     const selectedDay = this.formatLocalDate(this.selectedDate);
 
@@ -513,11 +655,17 @@ export class InstructorCalendarExceptionsComponent implements OnInit {
     };
   }
 
+  /**
+   * Costruisce un id stabile per eventi che possono avere origini diverse.
+   */
   private buildEventId(event: SecretaryInstructorCalendarEventResponseDto): string {
     const realId = event.prenotazioneId ?? event.eccezioneIstruttoreId ?? event.eccezioneCentroId;
     return `${event.tipo}-${realId ?? event.inizio}-${event.fine}`;
   }
 
+  /**
+   * Costruisce il sottotitolo mostrato nella card evento.
+   */
   private buildSubtitle(event: SecretaryInstructorCalendarEventResponseDto): string {
     switch (event.tipo) {
       case 'LEZIONE':
@@ -531,6 +679,9 @@ export class InstructorCalendarExceptionsComponent implements OnInit {
     }
   }
 
+  /**
+   * Costruisce il testo dettagliato dell'evento.
+   */
   private buildDetails(event: SecretaryInstructorCalendarEventResponseDto): string {
     if (event.tipo === 'LEZIONE') {
       const cliente = [event.nomeCliente, event.cognomeCliente].filter(Boolean).join(' ');
@@ -540,6 +691,9 @@ export class InstructorCalendarExceptionsComponent implements OnInit {
     return event.motivo || event.titolo || '';
   }
 
+  /**
+   * Associa ogni tipo evento a una classe CSS.
+   */
   private getEventCssClass(tipo: string): string {
     switch (tipo) {
       case 'LEZIONE':
@@ -553,6 +707,9 @@ export class InstructorCalendarExceptionsComponent implements OnInit {
     }
   }
 
+  /**
+   * Associa ogni tipo evento a un'icona Material.
+   */
   private getEventIcon(tipo: string): string {
     switch (tipo) {
       case 'LEZIONE':
@@ -566,19 +723,31 @@ export class InstructorCalendarExceptionsComponent implements OnInit {
     }
   }
 
+  /**
+   * Converte una data/ora backend in Date.
+   */
   private parseDateTime(value: string): Date {
     return new Date(value);
   }
 
+  /**
+   * Converte yyyy-MM-dd in Date locale.
+   */
   private parseLocalDate(value: string): Date {
     const [year, month, day] = value.split('-').map(Number);
     return new Date(year, month - 1, day);
   }
 
+  /**
+   * Combina data e ora nel formato richiesto dal backend.
+   */
   private combineDateAndTime(date: string, time: string): string {
     return `${date}T${time}:00`;
   }
 
+  /**
+   * Formatta una Date locale in yyyy-MM-dd.
+   */
   private formatLocalDate(date: Date): string {
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -587,6 +756,9 @@ export class InstructorCalendarExceptionsComponent implements OnInit {
     return `${year}-${month}-${day}`;
   }
 
+  /**
+   * Formatta un orario in HH:mm.
+   */
   private formatTime(date: Date): string {
     return date.toLocaleTimeString('it-IT', {
       hour: '2-digit',
@@ -594,6 +766,9 @@ export class InstructorCalendarExceptionsComponent implements OnInit {
     });
   }
 
+  /**
+   * Formatta una durata in modo leggibile.
+   */
   private formatDuration(minutes: number): string {
     const hours = Math.floor(minutes / 60);
     const remainingMinutes = minutes % 60;
@@ -609,26 +784,41 @@ export class InstructorCalendarExceptionsComponent implements OnInit {
     return `${remainingMinutes}m`;
   }
 
+  /**
+   * Calcola la differenza in minuti tra due date.
+   */
   private minutesBetween(start: Date, end: Date): number {
     return Math.round((end.getTime() - start.getTime()) / 60000);
   }
 
+  /**
+   * Calcola la posizione verticale percentuale di un evento.
+   */
   private getCalendarTopPct(dayStart: Date, value: Date, totalMinutes: number): number {
     const usablePct = 100 - this.calendarVerticalInsetPct * 2;
     return this.calendarVerticalInsetPct + (this.minutesBetween(dayStart, value) / totalMinutes) * usablePct;
   }
 
+  /**
+   * Calcola l'altezza percentuale dell'evento.
+   */
   private getCalendarHeightPct(durationMinutes: number, totalMinutes: number): number {
     const usablePct = 100 - this.calendarVerticalInsetPct * 2;
     return (durationMinutes / totalMinutes) * usablePct;
   }
 
+  /**
+   * Restituisce una nuova data spostata di un certo numero di giorni.
+   */
   private addDays(date: Date, days: number): Date {
     const next = this.cloneDateOnly(date);
     next.setDate(next.getDate() + days);
     return next;
   }
 
+  /**
+   * Copia la data mantenendo solo anno, mese e giorno.
+   */
   private cloneDateOnly(date: Date): Date {
     const clone = new Date(date);
     clone.setHours(0, 0, 0, 0);

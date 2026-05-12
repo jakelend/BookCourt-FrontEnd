@@ -15,17 +15,26 @@ import {
 import { SecretaryMaintenanceService } from '../../../services/secretary-maintenance.service';
 import { extractBackendErrorMessage } from '../../../util/error-message.util';
 
+/**
+ * Opzione sport mostrata nella prima fase della gestione manutenzioni.
+ */
 interface SportOption {
   value: MaintenanceSport;
   label: string;
   icon: string;
 }
 
+/**
+ * Singola tacca oraria mostrata nel calendario giornaliero manutenzioni.
+ */
 interface CalendarHourSlot {
   label: string;
   topPct: number;
 }
 
+/**
+ * Vista grafica di una manutenzione, già trasformata in posizione e altezza percentuale.
+ */
 interface MaintenanceEventView {
   id: number;
   source: MaintenanceResponseDto;
@@ -35,6 +44,9 @@ interface MaintenanceEventView {
   title: string;
 }
 
+/**
+ * Tipo di feedback visivo mostrato dopo creazione o cancellazione manutenzione.
+ */
 type FeedbackType = 'success' | 'error' | '';
 
 @Component({
@@ -43,7 +55,14 @@ type FeedbackType = 'success' | 'error' | '';
   templateUrl: './field-maintenance.component.html',
   styleUrl: './field-maintenance.component.css',
 })
+/**
+ * Pagina segretaria per la gestione delle manutenzioni dei campi.
+ * Il flusso è: scelta sport, scelta campo, selezione data/orario e creazione o cancellazione manutenzione.
+ */
 export class FieldMaintenanceComponent implements OnInit {
+  /**
+   * Elenco degli sport disponibili nella prima scelta del flusso.
+   */
   readonly sports: SportOption[] = [
     {
       value: 'CALCETTO',
@@ -62,6 +81,9 @@ export class FieldMaintenanceComponent implements OnInit {
     },
   ];
 
+  /**
+   * Stato reattivo della selezione sport/campo/data e del form manutenzione.
+   */
   readonly selectedSport = signal<MaintenanceSport | null>(null);
   readonly fields = signal<MaintenanceFieldOptionDto[]>([]);
   readonly selectedFieldId = signal<number | null>(null);
@@ -73,10 +95,16 @@ export class FieldMaintenanceComponent implements OnInit {
   readonly endTime = signal('09:00');
   readonly reason = signal('');
 
+  /**
+   * Manutenzioni caricate per il campo e il giorno selezionati.
+   */
   readonly maintenances = signal<MaintenanceResponseDto[]>([]);
   readonly hourSlots = signal<CalendarHourSlot[]>([]);
   readonly eventViews = signal<MaintenanceEventView[]>([]);
 
+  /**
+   * Stati di caricamento, salvataggio, cancellazione e messaggi della pagina.
+   */
   readonly loadingFields = signal(false);
   readonly loadingMaintenances = signal(false);
   readonly saving = signal(false);
@@ -88,14 +116,23 @@ export class FieldMaintenanceComponent implements OnInit {
   readonly feedbackMessage = signal('');
   readonly feedbackType = signal<FeedbackType>('');
 
+  /**
+   * Etichetta leggibile dello sport selezionato.
+   */
   readonly selectedSportLabel = computed(() => {
     return this.sports.find((sport) => sport.value === this.selectedSport())?.label ?? 'Sport non selezionato';
   });
 
+  /**
+   * Campo attualmente selezionato, ricavato dall'id salvato nel signal.
+   */
   readonly selectedField = computed(() => {
     return this.fields().find((field) => field.idCampo === this.selectedFieldId()) ?? null;
   });
 
+  /**
+   * Titolo leggibile della data selezionata nel calendario.
+   */
   readonly selectedDateTitle = computed(() => {
     return this.toDateOnly(this.selectedDate()).toLocaleDateString('it-IT', {
       weekday: 'long',
@@ -105,20 +142,38 @@ export class FieldMaintenanceComponent implements OnInit {
     });
   });
 
+  /**
+   * Data selezionata convertita in oggetto Date per il datepicker.
+   */
   readonly selectedDateValue = computed(() => this.toDateOnly(this.selectedDate()));
 
+  /**
+   * Indica se il form può creare una manutenzione nello stato corrente della pagina.
+   */
   readonly canCreateMaintenance = computed(() => {
     return !!this.selectedSport() && !!this.selectedFieldId() && !this.saving() && !this.loadingFields();
   });
 
+  /**
+   * Margine verticale usato per posizionare meglio gli eventi nel calendario.
+   */
   private readonly calendarVerticalInsetPct = 2.4;
 
+  /**
+   * Inietta il servizio segretaria dedicato a campi e manutenzioni.
+   */
   constructor(private readonly maintenanceService: SecretaryMaintenanceService) {}
 
+  /**
+   * Inizializza la griglia del calendario appena il componente viene aperto.
+   */
   ngOnInit(): void {
     this.rebuildCalendar();
   }
 
+  /**
+   * Imposta lo sport selezionato e carica i campi disponibili per quello sport.
+   */
   selectSport(sport: MaintenanceSport): void {
     if (this.selectedSport() === sport) {
       return;
@@ -135,12 +190,18 @@ export class FieldMaintenanceComponent implements OnInit {
     this.loadFieldsBySport(sport);
   }
 
+  /**
+   * Imposta il campo selezionato e carica le manutenzioni del giorno.
+   */
   selectField(field: MaintenanceFieldOptionDto): void {
     this.selectedFieldId.set(field.idCampo);
     this.clearFeedback();
     this.loadMaintenances();
   }
 
+  /**
+   * Aggiorna form e calendario quando cambia la data selezionata.
+   */
   onSelectedDateChange(): void {
     this.startDate.set(this.selectedDate());
     this.endDate.set(this.selectedDate());
@@ -152,6 +213,9 @@ export class FieldMaintenanceComponent implements OnInit {
     }
   }
 
+  /**
+   * Gestisce la selezione della data dal datepicker.
+   */
   onDateSelected(date: Date | null): void {
     if (!date) {
       return;
@@ -161,21 +225,33 @@ export class FieldMaintenanceComponent implements OnInit {
     this.onSelectedDateChange();
   }
 
+  /**
+   * Porta il calendario alla data odierna.
+   */
   goToToday(): void {
     this.selectedDate.set(this.formatLocalDate(new Date()));
     this.onSelectedDateChange();
   }
 
+  /**
+   * Mostra il giorno precedente.
+   */
   goToPreviousDay(): void {
     this.selectedDate.set(this.formatLocalDate(this.addDays(this.toDateOnly(this.selectedDate()), -1)));
     this.onSelectedDateChange();
   }
 
+  /**
+   * Mostra il giorno successivo.
+   */
   goToNextDay(): void {
     this.selectedDate.set(this.formatLocalDate(this.addDays(this.toDateOnly(this.selectedDate()), 1)));
     this.onSelectedDateChange();
   }
 
+  /**
+   * Precompila il form per creare una manutenzione su tutta la giornata selezionata.
+   */
   setFullDayMaintenance(): void {
     this.startDate.set(this.selectedDate());
     this.startTime.set('08:00');
@@ -183,6 +259,9 @@ export class FieldMaintenanceComponent implements OnInit {
     this.endTime.set('00:00');
   }
 
+  /**
+   * Ripristina il form manutenzione ai valori iniziali della data selezionata.
+   */
   resetForm(): void {
     this.startDate.set(this.selectedDate());
     this.startTime.set('08:00');
@@ -193,6 +272,10 @@ export class FieldMaintenanceComponent implements OnInit {
     this.clearFeedback();
   }
 
+  /**
+   * Crea una manutenzione per il campo selezionato.
+   * Il backend si occupa dell'annullamento automatico delle prenotazioni impattate.
+   */
   createMaintenance(): void {
     this.formErrorMessage.set('');
     this.clearFeedback();
@@ -229,6 +312,9 @@ export class FieldMaintenanceComponent implements OnInit {
       });
   }
 
+  /**
+   * Elimina una manutenzione esistente e ricarica il calendario del campo.
+   */
   deleteMaintenance(maintenance: MaintenanceResponseDto): void {
     this.clearFeedback();
     this.deletingId.set(maintenance.id);
@@ -249,6 +335,9 @@ export class FieldMaintenanceComponent implements OnInit {
       });
   }
 
+  /**
+   * Riprova il caricamento dei campi per lo sport selezionato.
+   */
   retryFields(): void {
     const sport = this.selectedSport();
     if (sport) {
@@ -256,42 +345,72 @@ export class FieldMaintenanceComponent implements OnInit {
     }
   }
 
+  /**
+   * Riprova il caricamento delle manutenzioni per campo e data correnti.
+   */
   retryMaintenances(): void {
     this.loadMaintenances();
   }
 
+  /**
+   * Indica se uno sport è quello attualmente selezionato.
+   */
   isSportSelected(sport: MaintenanceSport): boolean {
     return this.selectedSport() === sport;
   }
 
+  /**
+   * Indica se una card campo rappresenta il campo selezionato.
+   */
   isFieldSelected(field: MaintenanceFieldOptionDto): boolean {
     return this.selectedFieldId() === field.idCampo;
   }
 
+  /**
+   * Indica se la manutenzione specificata è in fase di eliminazione.
+   */
   isDeleting(maintenanceId: number): boolean {
     return this.deletingId() === maintenanceId;
   }
 
+  /**
+   * Funzione trackBy per la lista sport.
+   */
   trackBySport(_: number, sport: SportOption): string {
     return sport.value;
   }
 
+  /**
+   * Funzione trackBy per la lista campi.
+   */
   trackByField(_: number, field: MaintenanceFieldOptionDto): number {
     return field.idCampo;
   }
 
+  /**
+   * Funzione trackBy per la lista manutenzioni.
+   */
   trackByMaintenance(_: number, maintenance: MaintenanceResponseDto): number {
     return maintenance.id;
   }
 
+  /**
+   * Funzione trackBy per la griglia oraria.
+   */
   trackByHour(_: number, slot: CalendarHourSlot): string {
     return slot.label;
   }
 
+  /**
+   * Funzione trackBy per gli eventi del calendario.
+   */
   trackByEvent(_: number, event: MaintenanceEventView): number {
     return event.id;
   }
 
+  /**
+   * Formatta un valore numerico come importo in euro.
+   */
   formatCurrency(value: number): string {
     return new Intl.NumberFormat('it-IT', {
       style: 'currency',
@@ -299,6 +418,9 @@ export class FieldMaintenanceComponent implements OnInit {
     }).format(value);
   }
 
+  /**
+   * Formatta una data/ora backend in forma italiana leggibile.
+   */
   formatDateTime(value: string): string {
     const date = new Date(value);
 
@@ -315,30 +437,51 @@ export class FieldMaintenanceComponent implements OnInit {
     });
   }
 
+  /**
+   * Formatta l'intervallo temporale di una manutenzione.
+   */
   formatMaintenanceRange(maintenance: MaintenanceResponseDto): string {
     return `${this.formatDateTime(maintenance.inizio)} → ${this.formatDateTime(maintenance.fine)}`;
   }
 
+  /**
+   * Aggiorna la data di inizio della manutenzione nel form.
+   */
   setStartDate(value: string): void {
     this.startDate.set(value);
   }
 
+  /**
+   * Aggiorna l'ora di inizio della manutenzione nel form.
+   */
   setStartTime(value: string): void {
     this.startTime.set(value);
   }
 
+  /**
+   * Aggiorna la data di fine della manutenzione nel form.
+   */
   setEndDate(value: string): void {
     this.endDate.set(value);
   }
 
+  /**
+   * Aggiorna l'ora di fine della manutenzione nel form.
+   */
   setEndTime(value: string): void {
     this.endTime.set(value);
   }
 
+  /**
+   * Aggiorna il motivo della manutenzione.
+   */
   setReason(value: string): void {
     this.reason.set(value);
   }
 
+  /**
+   * Carica i campi associati allo sport scelto.
+   */
   private loadFieldsBySport(sport: MaintenanceSport): void {
     this.loadingFields.set(true);
     this.fieldsErrorMessage.set('');
@@ -357,6 +500,9 @@ export class FieldMaintenanceComponent implements OnInit {
       });
   }
 
+  /**
+   * Carica le manutenzioni del campo selezionato per il giorno corrente.
+   */
   private loadMaintenances(): void {
     const selectedFieldId = this.selectedFieldId();
     if (!selectedFieldId) {
@@ -384,6 +530,9 @@ export class FieldMaintenanceComponent implements OnInit {
       });
   }
 
+  /**
+   * Valida presenza del campo e correttezza dell'intervallo temporale.
+   */
   private validateMaintenanceForm(): string {
     if (!this.selectedSport()) {
       return 'Seleziona prima lo sport.';
@@ -411,6 +560,9 @@ export class FieldMaintenanceComponent implements OnInit {
     return '';
   }
 
+  /**
+   * Ricostruisce griglia oraria ed eventi manutenzione del calendario.
+   */
   private rebuildCalendar(): void {
     const dayStart = new Date(this.buildHtmlDateTime(this.selectedDate(), '08:00'));
     const dayEnd = new Date(this.buildHtmlDateTime(this.formatLocalDate(this.addDays(dayStart, 1)), '00:00'));
@@ -422,6 +574,9 @@ export class FieldMaintenanceComponent implements OnInit {
       .filter((event): event is MaintenanceEventView => !!event));
   }
 
+  /**
+   * Genera gli slot orari del calendario giornaliero.
+   */
   private buildHourSlots(start: Date, end: Date, totalMinutes: number): CalendarHourSlot[] {
     const slots: CalendarHourSlot[] = [];
     const cursor = new Date(start);
@@ -437,6 +592,9 @@ export class FieldMaintenanceComponent implements OnInit {
     return slots;
   }
 
+  /**
+   * Converte una manutenzione backend in blocco grafico del calendario.
+   */
   private toMaintenanceEventView(
     maintenance: MaintenanceResponseDto,
     dayStart: Date,
@@ -468,6 +626,9 @@ export class FieldMaintenanceComponent implements OnInit {
     };
   }
 
+  /**
+   * Calcola il range di ricerca backend relativo al giorno selezionato.
+   */
   private getSelectedDaySearchRange(): { inizio: string; fine: string } {
     const start = this.buildBackendDateTime(this.selectedDate(), '00:00');
     const endDate = this.formatLocalDate(this.addDays(this.toDateOnly(this.selectedDate()), 1));
@@ -476,22 +637,37 @@ export class FieldMaintenanceComponent implements OnInit {
     return { inizio: start, fine: end };
   }
 
+  /**
+   * Costruisce la data/ora nel formato atteso dal backend.
+   */
   private buildBackendDateTime(date: string, time: string): string {
     return `${date}T${this.normalizeTime(time)}:00`;
   }
 
+  /**
+   * Costruisce una data/ora locale per i controlli HTML e i calcoli UI.
+   */
   private buildHtmlDateTime(date: string, time: string): string {
     return `${date}T${this.normalizeTime(time)}`;
   }
 
+  /**
+   * Normalizza un orario in formato HH:mm:ss.
+   */
   private normalizeTime(time: string): string {
     return time.length === 5 ? time : time.slice(0, 5);
   }
 
+  /**
+   * Converte una stringa yyyy-MM-dd in Date locale senza shift di timezone.
+   */
   private toDateOnly(value: string): Date {
     return new Date(`${value}T00:00:00`);
   }
 
+  /**
+   * Formatta una Date locale in yyyy-MM-dd.
+   */
   private formatLocalDate(date: Date): string {
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -500,26 +676,41 @@ export class FieldMaintenanceComponent implements OnInit {
     return `${year}-${month}-${day}`;
   }
 
+  /**
+   * Restituisce una nuova data spostata di un certo numero di giorni.
+   */
   private addDays(date: Date, days: number): Date {
     const next = new Date(date);
     next.setDate(next.getDate() + days);
     return next;
   }
 
+  /**
+   * Calcola i minuti tra due date.
+   */
   private minutesBetween(start: Date, end: Date): number {
     return Math.round((end.getTime() - start.getTime()) / 60000);
   }
 
+  /**
+   * Calcola la posizione verticale percentuale nel calendario.
+   */
   private getCalendarTopPct(dayStart: Date, value: Date, totalMinutes: number): number {
     const usablePct = 100 - this.calendarVerticalInsetPct * 2;
     return this.calendarVerticalInsetPct + (this.minutesBetween(dayStart, value) / totalMinutes) * usablePct;
   }
 
+  /**
+   * Calcola l'altezza percentuale di un evento manutenzione.
+   */
   private getCalendarHeightPct(durationMinutes: number, totalMinutes: number): number {
     const usablePct = 100 - this.calendarVerticalInsetPct * 2;
     return (durationMinutes / totalMinutes) * usablePct;
   }
 
+  /**
+   * Formatta l'orario in HH:mm.
+   */
   private formatTime(date: Date): string {
     return date.toLocaleTimeString('it-IT', {
       hour: '2-digit',
@@ -527,6 +718,9 @@ export class FieldMaintenanceComponent implements OnInit {
     });
   }
 
+  /**
+   * Pulisce messaggio e tipo di feedback mostrati nella UI.
+   */
   private clearFeedback(): void {
     this.feedbackMessage.set('');
     this.feedbackType.set('');

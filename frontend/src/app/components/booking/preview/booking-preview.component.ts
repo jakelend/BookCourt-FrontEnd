@@ -16,10 +16,19 @@ import {
   CreateBookingLockRequestDto,
 } from '../../../services/booking.service';
 
+/**
+ * Singolo step mostrato nella timeline del flusso di prenotazione.
+ */
 interface BookingStep {
   label: string;
 }
 
+/**
+ * Step di riepilogo e conferma della prenotazione.
+ *
+ * Crea o riutilizza il lock dello slot, richiede al backend il preventivo
+ * economico e, alla conferma, trasforma il lock in prenotazione definitiva.
+ */
 @Component({
   selector: 'app-booking-preview',
   imports: [CommonModule],
@@ -28,6 +37,7 @@ interface BookingStep {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BookingPreviewComponent implements OnInit {
+  /** Step corrente nella timeline del wizard. */
   readonly currentStep = 5;
 
   readonly steps: BookingStep[] = [
@@ -39,6 +49,7 @@ export class BookingPreviewComponent implements OnInit {
     { label: 'Pagamento' },
   ];
 
+  /** Dati principali della prenotazione ricostruiti da sessionStorage. */
   readonly selectedSport = signal<BookingSport | null>(null);
   readonly selectedFieldId = signal<number | null>(null);
   readonly selectedFieldName = signal('');
@@ -47,16 +58,20 @@ export class BookingPreviewComponent implements OnInit {
   readonly selectedEndTime = signal('');
   readonly durationMinutes = signal(0);
 
+  /** Dati relativi all'eventuale istruttore scelto nello step extra. */
   readonly conIstruttore = signal(false);
   readonly selectedInstructorId = signal<number | null>(null);
   readonly selectedInstructorName = signal('Nessun istruttore');
   readonly selectedInstructorHourlyRate = signal(0);
 
+  /** Dati relativi ai partecipanti e alle racchette scelti dal cliente. */
   readonly participantsCount = signal(1);
   readonly racketsCount = signal(0);
   readonly racketUnitPrice = signal(4);
 
+  /** Lock corrente sullo slot selezionato, necessario per calcolare e confermare la prenotazione. */
   readonly lock = signal<BookingLockResponseDto | null>(null);
+  /** Preventivo economico restituito dal backend prima della conferma. */
   readonly preview = signal<BookingPreviewResponseDto | null>(null);
 
   readonly isLoading = signal(false);
@@ -141,6 +156,7 @@ export class BookingPreviewComponent implements OnInit {
     return `${count} racchette`;
   });
 
+  /** Abilita il pulsante di conferma solo quando preview e stati asincroni sono coerenti. */
   readonly canConfirm = computed(() => {
     return (
       !!this.preview() &&
@@ -150,11 +166,18 @@ export class BookingPreviewComponent implements OnInit {
       !this.errorMessage()
     );
   });
+  /** Inietta Router e BookingService per gestire preview, lock e conferma. */
   constructor(
     private readonly router: Router,
     private readonly bookingService: BookingService,
   ) {}
 
+  /**
+   * Inizializza la preview.
+   *
+   * Ricostruisce il contesto, verifica validità e scadenza del lock, normalizza
+   * gli extra per il calcetto e carica il preventivo dal backend.
+   */
   ngOnInit(): void {
     this.loadBookingContext();
 
@@ -176,10 +199,12 @@ export class BookingPreviewComponent implements OnInit {
     this.loadPreview();
   }
 
+  /** Numero totale di step del wizard. */
   get totalSteps(): number {
     return this.steps.length;
   }
 
+  /** Rilascia il lock corrente e torna allo step precedente corretto per lo sport selezionato. */
   goBack(): void {
     const targetRoute =
       this.selectedSport() === 'CALCETTO'
@@ -190,6 +215,13 @@ export class BookingPreviewComponent implements OnInit {
 
     this.releaseCurrentLockAndNavigate(targetRoute, keepTimerActive);
   }
+
+  /**
+   * Conferma definitivamente la prenotazione usando il lock salvato.
+   *
+   * In caso di successo salva i dati necessari alla pagina di conferma e pulisce
+   * i dati del lock per evitare conferme duplicate.
+   */
 
   confirmBooking(): void {
     const lockId = this.getStoredLockId();
@@ -253,14 +285,17 @@ export class BookingPreviewComponent implements OnInit {
       });
   }
 
+  /** TrackBy usato per la timeline degli step. */
   trackByStepLabel(_: number, step: BookingStep): string {
     return step.label;
   }
 
+  /** Determina se uno step precedente deve risultare completato nella timeline. */
   isStepCompleted(index: number): boolean {
     return index + 1 <= this.currentStep;
   }
 
+  /** Format di un importo in euro. */
   formatCurrency(value: number | null | undefined): string {
     const amount = Number(value ?? 0);
 
@@ -270,6 +305,7 @@ export class BookingPreviewComponent implements OnInit {
     }).format(amount);
   }
 
+  /** Legge da sessionStorage tutti i dati raccolti negli step precedenti. */
   private loadBookingContext(): void {
     const sport = sessionStorage.getItem('booking.selectedSport');
     const fieldId = Number(sessionStorage.getItem('booking.selectedFieldId'));
@@ -320,6 +356,7 @@ export class BookingPreviewComponent implements OnInit {
     this.conIstruttore.set(sessionStorage.getItem('booking.conIstruttore') === 'true');
   }
 
+  /** Verifica che il contesto minimo per calcolare la preview sia completo. */
   private hasRequiredBookingContext(): boolean {
     return Boolean(
       this.selectedSport() &&
@@ -331,6 +368,7 @@ export class BookingPreviewComponent implements OnInit {
     );
   }
 
+  /** Rimuove istruttore e racchette per il calcetto, perché non prevede extra. */
   private normalizeCalcettoExtras(): void {
     this.conIstruttore.set(false);
     this.selectedInstructorId.set(null);
@@ -348,6 +386,7 @@ export class BookingPreviewComponent implements OnInit {
     sessionStorage.removeItem('booking.selectedInstructorHourlyRate');
   }
 
+  /** Decide se usare un lock esistente o crearne uno nuovo prima di chiedere il preventivo. */
   private loadPreview(): void {
     this.errorMessage.set('');
     this.feedbackMessage.set('');
@@ -375,6 +414,7 @@ export class BookingPreviewComponent implements OnInit {
     this.createLockAndLoadPreview();
   }
 
+  /** Crea un nuovo lock coerente con il contesto corrente e poi carica la preview. */
   private createLockAndLoadPreview(): void {
     const campoId = this.selectedFieldId();
 
@@ -416,6 +456,12 @@ export class BookingPreviewComponent implements OnInit {
       });
   }
 
+  /**
+   * Richiede al backend il preventivo economico associato al lock.
+   *
+   * @param lockId id del lock da usare.
+   * @param retryWithNewLock se true, in caso di errore riprova creando un nuovo lock.
+   */
   private loadPreviewFromLock(lockId: number, retryWithNewLock: boolean): void {
     this.isLoading.set(true);
 
@@ -454,6 +500,7 @@ export class BookingPreviewComponent implements OnInit {
       });
   }
 
+  /** Salva nel browser id, scadenza e firma del lock corrente. */
   private persistLock(lock: BookingLockResponseDto): void {
     sessionStorage.setItem('booking.lockId', String(lock.lockId));
     sessionStorage.setItem('booking.lockSignature', this.buildLockSignature());
@@ -461,6 +508,7 @@ export class BookingPreviewComponent implements OnInit {
     this.notifyBookingLockChanged();
   }
 
+  /** Rimuove i dati del lock e, opzionalmente, il timer condiviso. */
   private clearLockStorage(clearTimer = true): void {
     this.lock.set(null);
     sessionStorage.removeItem('booking.lockId');
@@ -473,6 +521,7 @@ export class BookingPreviewComponent implements OnInit {
     this.notifyBookingLockChanged();
   }
 
+  /** Mantiene la scadenza timer esistente se ancora valida, altrimenti usa quella del nuovo lock. */
   private resolveLockTimerExpiration(newExpiration: string): string {
     const currentExpiration = sessionStorage.getItem('booking.lockExpiresAt');
 
@@ -483,10 +532,12 @@ export class BookingPreviewComponent implements OnInit {
     return newExpiration;
   }
 
+  /** Indica se il timer del lock salvato è scaduto. */
   private isStoredLockTimerExpired(): boolean {
     return this.isLockExpirationExpired(sessionStorage.getItem('booking.lockExpiresAt'));
   }
 
+  /** Controlla se una specifica data di scadenza lock è già passata. */
   private isLockExpirationExpired(expiration: string | null): boolean {
     if (!expiration) {
       return true;
@@ -501,12 +552,18 @@ export class BookingPreviewComponent implements OnInit {
     return expirationDate.getTime() <= Date.now();
   }
 
+  /** Rilascia il lock attuale e poi naviga alla route indicata. */
   private releaseCurrentLockAndNavigate(targetRoute: string[], keepTimerActive = false): void {
     this.releaseCurrentLockThenRun(() => {
       void this.router.navigate(targetRoute);
     }, !keepTimerActive);
   }
 
+  /**
+   * Rilascia il lock corrente e poi invoca una callback.
+   *
+   * Se non esiste un lock valido, esegue comunque la callback.
+   */
   private releaseCurrentLockThenRun(afterRelease: () => void, clearTimer = true): void {
     const lockId = this.getStoredLockId();
 
@@ -541,6 +598,7 @@ export class BookingPreviewComponent implements OnInit {
       });
   }
 
+  /** Legge e valida l'id del lock salvato in sessionStorage. */
   private getStoredLockId(): number | null {
     const lockId = Number(sessionStorage.getItem('booking.lockId'));
 
@@ -551,6 +609,7 @@ export class BookingPreviewComponent implements OnInit {
     return lockId;
   }
 
+  /** Costruisce una firma dello slot e degli extra per capire se il lock salvato è ancora coerente. */
   private buildLockSignature(): string {
     return [
       this.selectedFieldId() ?? '',
@@ -563,10 +622,12 @@ export class BookingPreviewComponent implements OnInit {
     ].join('|');
   }
 
+  /** Notifica ai componenti interessati che il timer lock è stato aggiornato o rimosso. */
   private notifyBookingLockChanged(): void {
     window.dispatchEvent(new Event('booking-lock-updated'));
   }
 
+  /** Costruisce una data ISO locale combinando giorno e orario selezionati. */
   private buildDateTimeParam(date: string, time: string): string {
     const normalizedTime = time.length === 5 ? `${time}:00` : time;
     return `${date}T${normalizedTime}`;

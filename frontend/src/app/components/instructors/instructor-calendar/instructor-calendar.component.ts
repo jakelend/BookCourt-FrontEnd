@@ -12,11 +12,17 @@ import { InstructorCalendarDayResponseDto } from '../../../dto/response/instruct
 import { InstructorCalendarEventResponseDto } from '../../../dto/response/instructor/instructor-calendar-event-response.dto';
 import { InstructorCalendarService } from '../../../services/instructor-calendar.service';
 
+/**
+ * Singola riga oraria visualizzata nel calendario giornaliero dell'istruttore.
+ */
 interface CalendarHourSlot {
   label: string;
   topPct: number;
 }
 
+/**
+ * Evento già convertito in coordinate grafiche percentuali per il calendario.
+ */
 interface CalendarEventView {
   id: string;
   source: InstructorCalendarEventResponseDto;
@@ -49,40 +55,77 @@ interface CalendarEventView {
   templateUrl: './instructor-calendar.component.html',
   styleUrl: './instructor-calendar.component.css',
 })
+/**
+ * Calendario personale dell'istruttore.
+ * Mostra lezioni, indisponibilità e altri eventi del giorno convertendoli in blocchi grafici.
+ */
 export class InstructorCalendarComponent implements OnInit {
+  /**
+   * Margine verticale usato per evitare che gli eventi tocchino i bordi del calendario.
+   */
   private readonly calendarVerticalInsetPct = 2.4;
 
+  /**
+   * Data correntemente visualizzata nel calendario.
+   */
   selectedDate = new Date();
+  /**
+   * Stati di caricamento ed errore della pagina calendario.
+   */
   loading = false;
   errorMessage = '';
 
+  /**
+   * Stato reattivo dell'agenda giornaliera ricevuta dal backend e delle sue viste grafiche.
+   */
   private readonly agendaSignal = signal<InstructorCalendarDayResponseDto | null>(null);
   private readonly eventsSignal = signal<CalendarEventView[]>([]);
   private readonly hourSlotsSignal = signal<CalendarHourSlot[]>([]);
   private readonly calendarHeightSignal = signal(0);
 
+  /**
+   * Inietta il servizio che espone le API calendario dell'istruttore.
+   */
   constructor(private readonly instructorCalendarService: InstructorCalendarService) {}
 
+  /**
+   * Carica l'agenda del giorno corrente all'apertura del componente.
+   */
   ngOnInit(): void {
     this.loadAgenda();
   }
 
+  /**
+   * Agenda giornaliera corrente.
+   */
   get agenda(): InstructorCalendarDayResponseDto | null {
     return this.agendaSignal();
   }
 
+  /**
+   * Eventi già pronti per essere disegnati nel calendario.
+   */
   get events(): CalendarEventView[] {
     return this.eventsSignal();
   }
 
+  /**
+   * Slot orari visualizzati come griglia laterale del calendario.
+   */
   get hourSlots(): CalendarHourSlot[] {
     return this.hourSlotsSignal();
   }
 
+  /**
+   * Altezza calcolata del calendario in base al range orario visualizzato.
+   */
   get calendarHeight(): number {
     return this.calendarHeightSignal();
   }
 
+  /**
+   * Titolo leggibile della data selezionata.
+   */
   get selectedDateTitle(): string {
     return this.selectedDate.toLocaleDateString('it-IT', {
       weekday: 'long',
@@ -92,11 +135,17 @@ export class InstructorCalendarComponent implements OnInit {
     });
   }
 
+  /**
+   * Nome dell'istruttore restituito dall'agenda, se disponibile.
+   */
   get instructorName(): string {
     const agenda = this.agenda;
     return agenda ? `${agenda.nomeIstruttore} ${agenda.cognomeIstruttore}` : 'Istruttore';
   }
 
+  /**
+   * Gestisce la selezione di una data dal datepicker.
+   */
   onDateSelected(date: Date | null): void {
     if (!date) {
       return;
@@ -106,33 +155,54 @@ export class InstructorCalendarComponent implements OnInit {
     this.loadAgenda();
   }
 
+  /**
+   * Riporta il calendario alla data odierna.
+   */
   goToToday(): void {
     this.selectedDate = this.cloneDateOnly(new Date());
     this.loadAgenda();
   }
 
+  /**
+   * Mostra l'agenda del giorno precedente.
+   */
   goToPreviousDay(): void {
     this.selectedDate = this.addDays(this.selectedDate, -1);
     this.loadAgenda();
   }
 
+  /**
+   * Mostra l'agenda del giorno successivo.
+   */
   goToNextDay(): void {
     this.selectedDate = this.addDays(this.selectedDate, 1);
     this.loadAgenda();
   }
 
+  /**
+   * Ricarica l'agenda dopo un errore.
+   */
   retry(): void {
     this.loadAgenda();
   }
 
+  /**
+   * Funzione trackBy per la griglia oraria.
+   */
   trackByHour(_: number, slot: CalendarHourSlot): string {
     return slot.label;
   }
 
+  /**
+   * Funzione trackBy per gli eventi del calendario.
+   */
   trackByEvent(_: number, event: CalendarEventView): string {
     return event.id;
   }
 
+  /**
+   * Carica dal backend l'agenda dell'istruttore per la data selezionata.
+   */
   private loadAgenda(): void {
     this.loading = true;
     this.errorMessage = '';
@@ -155,6 +225,9 @@ export class InstructorCalendarComponent implements OnInit {
       });
   }
 
+  /**
+   * Ricostruisce griglia oraria e blocchi evento a partire dall'agenda ricevuta.
+   */
   private rebuildCalendar(agenda: InstructorCalendarDayResponseDto): void {
     const range = this.resolveCalendarRange();
     const totalMinutes = Math.max(60, this.minutesBetween(range.start, range.end));
@@ -168,6 +241,9 @@ export class InstructorCalendarComponent implements OnInit {
     this.eventsSignal.set(this.layoutEvents(visibleEvents, range.start, range.end, totalMinutes));
   }
 
+  /**
+   * Calcola intervallo orario visibile nel calendario giornaliero.
+   */
   private resolveCalendarRange(): { start: Date; end: Date } {
     const start = this.cloneDateOnly(this.selectedDate);
     start.setHours(8, 0, 0, 0);
@@ -179,6 +255,9 @@ export class InstructorCalendarComponent implements OnInit {
     return { start, end };
   }
 
+  /**
+   * Genera le tacche orarie da visualizzare nel calendario.
+   */
   private buildHourSlots(start: Date, end: Date, totalMinutes: number): CalendarHourSlot[] {
     const slots: CalendarHourSlot[] = [];
     const cursor = new Date(start);
@@ -199,6 +278,9 @@ export class InstructorCalendarComponent implements OnInit {
     return slots;
   }
 
+  /**
+   * Posiziona gli eventi nel calendario e gestisce eventuali sovrapposizioni.
+   */
   private layoutEvents(
     events: InstructorCalendarEventResponseDto[],
     dayStart: Date,
@@ -237,6 +319,9 @@ export class InstructorCalendarComponent implements OnInit {
     return views;
   }
 
+  /**
+   * Converte un evento backend in una vista grafica con posizione, durata, classe CSS e descrizioni.
+   */
   private toCalendarEventView(
     event: InstructorCalendarEventResponseDto,
     dayStart: Date,
@@ -276,6 +361,9 @@ export class InstructorCalendarComponent implements OnInit {
     };
   }
 
+  /**
+   * Distribuisce orizzontalmente eventi sovrapposti per renderli tutti visibili.
+   */
   private positionOverlappingGroup(group: CalendarEventView[]): void {
     const columnEndTimes: number[] = [];
     const columnsByEvent = new Map<string, number>();
@@ -299,11 +387,17 @@ export class InstructorCalendarComponent implements OnInit {
     }
   }
 
+  /**
+   * Costruisce un identificativo stabile per il trackBy degli eventi.
+   */
   private buildEventId(event: InstructorCalendarEventResponseDto): string {
     const realId = event.prenotazioneId ?? event.eccezioneIstruttoreId ?? event.eccezioneCentroId;
     return `${event.tipo}-${realId ?? event.inizio}-${event.fine}`;
   }
 
+  /**
+   * Costruisce il sottotitolo descrittivo dell'evento.
+   */
   private buildSubtitle(event: InstructorCalendarEventResponseDto): string {
     switch (event.tipo) {
       case 'LEZIONE':
@@ -317,6 +411,9 @@ export class InstructorCalendarComponent implements OnInit {
     }
   }
 
+  /**
+   * Costruisce il testo di dettaglio mostrato nella card evento.
+   */
   private buildDetails(event: InstructorCalendarEventResponseDto): string {
     if (event.tipo === 'LEZIONE') {
       const cliente = [event.nomeCliente, event.cognomeCliente].filter(Boolean).join(' ');
@@ -326,6 +423,9 @@ export class InstructorCalendarComponent implements OnInit {
     return event.motivo || event.titolo || '';
   }
 
+  /**
+   * Associa a ogni tipo di evento una classe CSS grafica.
+   */
   private getEventCssClass(event: InstructorCalendarEventResponseDto): string {
     switch (event.tipo) {
       case 'LEZIONE':
@@ -341,6 +441,9 @@ export class InstructorCalendarComponent implements OnInit {
     }
   }
 
+  /**
+   * Associa a ogni tipo di evento un'icona Material.
+   */
   private getEventIcon(event: InstructorCalendarEventResponseDto): string {
     switch (event.tipo) {
       case 'LEZIONE':
@@ -356,10 +459,16 @@ export class InstructorCalendarComponent implements OnInit {
     }
   }
 
+  /**
+   * Converte una stringa data/ora backend in oggetto Date.
+   */
   private parseDateTime(value: string): Date {
     return new Date(value);
   }
 
+  /**
+   * Formatta un orario in formato HH:mm italiano.
+   */
   private formatTime(date: Date): string {
     return date.toLocaleTimeString('it-IT', {
       hour: '2-digit',
@@ -367,6 +476,9 @@ export class InstructorCalendarComponent implements OnInit {
     });
   }
 
+  /**
+   * Formatta una durata in minuti in forma leggibile.
+   */
   private formatDuration(minutes: number): string {
     const hours = Math.floor(minutes / 60);
     const remainingMinutes = minutes % 60;
@@ -382,32 +494,50 @@ export class InstructorCalendarComponent implements OnInit {
     return `${remainingMinutes}m`;
   }
 
+  /**
+   * Calcola la distanza in minuti tra due date.
+   */
   private minutesBetween(start: Date, end: Date): number {
     return Math.round((end.getTime() - start.getTime()) / 60000);
   }
 
+  /**
+   * Calcola la posizione verticale percentuale di un evento o slot.
+   */
   private getCalendarTopPct(dayStart: Date, value: Date, totalMinutes: number): number {
     const usablePct = 100 - this.calendarVerticalInsetPct * 2;
     return this.calendarVerticalInsetPct + (this.minutesBetween(dayStart, value) / totalMinutes) * usablePct;
   }
 
+  /**
+   * Calcola l'altezza percentuale di un evento in base alla durata.
+   */
   private getCalendarHeightPct(durationMinutes: number, totalMinutes: number): number {
     const usablePct = 100 - this.calendarVerticalInsetPct * 2;
     return (durationMinutes / totalMinutes) * usablePct;
   }
 
+  /**
+   * Restituisce una nuova data spostata di un certo numero di giorni.
+   */
   private addDays(date: Date, days: number): Date {
     const next = this.cloneDateOnly(date);
     next.setDate(next.getDate() + days);
     return next;
   }
 
+  /**
+   * Crea una copia della data mantenendo solo giorno, mese e anno.
+   */
   private cloneDateOnly(date: Date): Date {
     const clone = new Date(date);
     clone.setHours(0, 0, 0, 0);
     return clone;
   }
 
+  /**
+   * Estrae un messaggio di errore leggibile dal backend.
+   */
   private extractErrorMessage(error: unknown, fallback: string): string {
     const maybeError = error as { error?: { message?: string; fields?: Record<string, string> }; status?: number };
 

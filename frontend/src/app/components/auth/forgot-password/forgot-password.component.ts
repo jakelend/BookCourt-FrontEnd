@@ -5,6 +5,13 @@ import { Router } from '@angular/router';
 import { finalize } from 'rxjs/operators';
 import { AuthService, ForgotPasswordRequestDto } from '../../../services/auth.service';
 
+/**
+ * Componente della pagina "password dimenticata".
+ *
+ * Permette all'utente di inserire la propria email per richiedere
+ * l'invio del link di recupero password. La generazione del token
+ * e l'invio dell'email sono gestiti dal backend.
+ */
 @Component({
   selector: 'app-forgot-password',
   imports: [CommonModule, ReactiveFormsModule],
@@ -12,11 +19,19 @@ import { AuthService, ForgotPasswordRequestDto } from '../../../services/auth.se
   styleUrl: './forgot-password.component.css',
 })
 export class ForgotPasswordComponent {
+  /** Indica se l'utente ha provato a inviare il form. */
   submitted = false;
+
+  /** Indica se è in corso la chiamata HTTP di recupero password. */
   isLoading = false;
+
+  /** Messaggio di errore mostrato quando la richiesta fallisce. */
   recoveryError = '';
+
+  /** Messaggio di conferma mostrato quando la richiesta viene accettata. */
   recoverySuccess = '';
 
+  /** Form reattivo contenente solo l'email dell'utente. */
   forgotPasswordForm: FormGroup;
 
   constructor(
@@ -24,17 +39,26 @@ export class ForgotPasswordComponent {
     private readonly authService: AuthService,
     private readonly router: Router,
   ) {
-    // In questa pagina serve solo l'email.
-    // Il backend poi genera il token e manda il link per cambiare la password.
+    /*
+      In questa pagina serve solo l'email.
+      Il backend poi genera il token e invia il link per cambiare la password.
+    */
     this.forgotPasswordForm = this.fb.group({
       email: ['', [Validators.required, Validators.email]],
     });
   }
 
+  /** Restituisce il controllo del form relativo all'email. */
   get email() {
     return this.forgotPasswordForm.get('email');
   }
 
+  /**
+   * Gestisce l'invio della richiesta di recupero password.
+   *
+   * Se l'email è formalmente valida, invia il DTO al backend e mostra
+   * un messaggio di conferma o di errore in base alla risposta ricevuta.
+   */
   onSubmit(): void {
     this.submitted = true;
     this.recoveryError = '';
@@ -70,10 +94,17 @@ export class ForgotPasswordComponent {
       });
   }
 
+  /** Porta l'utente alla pagina di login. */
   onLogin(): void {
     void this.router.navigate(['/login']);
   }
 
+  /**
+   * Estrae un messaggio leggibile dagli errori della richiesta di recupero.
+   *
+   * @param error Errore HTTP o generico restituito dal backend.
+   * @returns Messaggio da mostrare nella pagina.
+   */
   private extractRecoveryErrorMessage(error: any): string {
     if (error?.error?.message) {
       return error.error.message;

@@ -14,12 +14,21 @@ import {
 } from '../../../dto/response/booking/booking-field-response.dto';
 import { BookingService } from '../../../services/booking.service';
 
+/**
+ * Singolo step mostrato nella timeline del flusso di prenotazione.
+ */
 interface BookingStep {
   label: string;
 }
 
 type FieldImageState = 'loading' | 'loaded' | 'error';
 
+/**
+ * Secondo step della prenotazione: scelta del campo sportivo.
+ *
+ * Carica dal backend i campi compatibili con lo sport scelto, gestisce lo
+ * stato delle immagini e salva il campo selezionato per gli step successivi.
+ */
 @Component({
   selector: 'app-booking-field-selection',
   imports: [CommonModule],
@@ -39,15 +48,19 @@ export class BookingFieldSelectionComponent implements OnInit {
     { label: 'Pagamento' },
   ];
 
+  /** Sport scelto nello step precedente, letto da query param o sessionStorage. */
   readonly selectedSport = signal<BookingSport | null>(null);
+  /** Lista reattiva dei campi caricati per lo sport selezionato. */
   readonly fields = signal<BookingFieldResponseDto[]>([]);
   readonly selectedFieldId = signal<number | null>(null);
 
   readonly isLoading = signal(false);
   readonly errorMessage = signal('');
 
+  /** Mappa degli stati di caricamento immagine, indicizzata per id campo. */
   private readonly fieldImageStates = signal<Record<number, FieldImageState>>({});
 
+  /** Computed usato dal template per sapere se ci sono campi disponibili. */
   readonly hasFields = computed(() => this.fields().length > 0);
 
   readonly showLoading = computed(
@@ -77,12 +90,19 @@ export class BookingFieldSelectionComponent implements OnInit {
     }
   });
 
+  /** Inietta route, router e service di prenotazione usati per caricare e selezionare i campi. */
   constructor(
     private readonly router: Router,
     private readonly route: ActivatedRoute,
     private readonly bookingService: BookingService,
   ) {}
 
+  /**
+   * Inizializza lo step campo.
+   *
+   * Se lo sport non è presente o non è valido, riporta l'utente allo step precedente;
+   * altrimenti carica i campi dal backend.
+   */
   ngOnInit(): void {
     const sport = this.readSelectedSport();
     this.selectedSport.set(sport);
@@ -96,10 +116,16 @@ export class BookingFieldSelectionComponent implements OnInit {
     this.loadFields();
   }
 
+  /** Numero totale di step del wizard. */
   get totalSteps(): number {
     return this.steps.length;
   }
 
+  /**
+   * Carica i campi disponibili per lo sport selezionato.
+   *
+   * Gestisce loading, messaggi di errore e stato iniziale delle immagini delle card.
+   */
   loadFields(): void {
     const sport = this.selectedSport();
 
@@ -143,6 +169,11 @@ export class BookingFieldSelectionComponent implements OnInit {
       });
   }
 
+  /**
+   * Salva il campo selezionato e passa allo step data/ora.
+   *
+   * @param field campo scelto dal cliente.
+   */
   selectField(field: BookingFieldResponseDto): void {
     if (!field.attivo) {
       return;
@@ -156,11 +187,13 @@ export class BookingFieldSelectionComponent implements OnInit {
     void this.router.navigate(['/dashboard/prenotazioni/orario']);
   }
 
+  /** Gestisce il click sul pulsante interno alla card evitando la propagazione del click alla card stessa. */
   selectFieldFromButton(field: BookingFieldResponseDto, event: MouseEvent): void {
     event.stopPropagation();
     this.selectField(field);
   }
 
+  /** Permette la selezione della card tramite tastiera, con Enter o Spazio. */
   onFieldCardKeydown(event: KeyboardEvent, field: BookingFieldResponseDto): void {
     if (event.key !== 'Enter' && event.key !== ' ') {
       return;
@@ -170,22 +203,27 @@ export class BookingFieldSelectionComponent implements OnInit {
     this.selectField(field);
   }
 
+  /** Torna allo step di scelta sport. */
   goBack(): void {
     void this.router.navigate(['/dashboard/prenotazioni']);
   }
 
+  /** Verifica se la card campo è quella attualmente selezionata. */
   isSelected(field: BookingFieldResponseDto): boolean {
     return this.selectedFieldId() === field.id;
   }
 
+  /** Indica se l'immagine del campo è ancora in caricamento. */
   isFieldImageLoading(field: BookingFieldResponseDto): boolean {
     return this.fieldImageStates()[field.id] === 'loading';
   }
 
+  /** Indica se l'immagine del campo è stata caricata correttamente. */
   isFieldImageLoaded(field: BookingFieldResponseDto): boolean {
     return this.fieldImageStates()[field.id] === 'loaded';
   }
 
+  /** Indica se l'immagine del campo ha generato errore di caricamento. */
   isFieldImageError(field: BookingFieldResponseDto): boolean {
     return (
       !field.urlImmaginePrincipale ||
@@ -193,10 +231,12 @@ export class BookingFieldSelectionComponent implements OnInit {
     );
   }
 
+  /** Aggiorna lo stato immagine quando il browser completa il caricamento. */
   onFieldImageLoad(field: BookingFieldResponseDto): void {
     this.setFieldImageState(field.id, 'loaded');
   }
 
+  /** Aggiorna lo stato immagine in caso di errore e permette di mostrare il fallback. */
   onFieldImageError(field: BookingFieldResponseDto): void {
     console.warn(
       'Immagine campo non caricata:',
@@ -207,26 +247,32 @@ export class BookingFieldSelectionComponent implements OnInit {
     this.setFieldImageState(field.id, 'error');
   }
 
+  /** Costruisce il sottotitolo della card campo con sport e numero giocatori. */
   getFieldSubtitle(field: BookingFieldResponseDto): string {
     return this.getSportLabel(field.sport);
   }
 
+  /** Format della tariffa oraria del campo. */
   getHourlyRateLabel(field: BookingFieldResponseDto): string {
     return `€${field.costoOrario}/h`;
   }
 
+  /** TrackBy usato per ottimizzare il rendering della lista campi. */
   trackByFieldId(_: number, field: BookingFieldResponseDto): number {
     return field.id;
   }
 
+  /** TrackBy usato per la timeline degli step. */
   trackByStepLabel(_: number, step: BookingStep): string {
     return step.label;
   }
 
+  /** Determina se uno step precedente deve risultare completato nella timeline. */
   isStepCompleted(index: number): boolean {
     return index + 1 <= this.currentStep;
   }
 
+  /** Aggiorna in modo immutabile lo stato immagine di un singolo campo. */
   private setFieldImageState(fieldId: number, state: FieldImageState): void {
     this.fieldImageStates.update((currentStates) => ({
       ...currentStates,
@@ -234,6 +280,7 @@ export class BookingFieldSelectionComponent implements OnInit {
     }));
   }
 
+  /** Crea la mappa iniziale degli stati immagine per i campi appena caricati. */
   private buildInitialImageStates(
     fields: BookingFieldResponseDto[],
   ): Record<number, FieldImageState> {
@@ -243,6 +290,7 @@ export class BookingFieldSelectionComponent implements OnInit {
     }, {});
   }
 
+  /** Traduce l'errore di caricamento campi in un messaggio comprensibile per l'utente. */
   private buildLoadFieldsErrorMessage(error: any, sport: BookingSport): string {
     if (error?.name === 'TimeoutError') {
       return 'La richiesta dei campi sta impiegando troppo tempo. Controlla il backend e riprova.';
@@ -263,6 +311,7 @@ export class BookingFieldSelectionComponent implements OnInit {
     return 'Non è stato possibile caricare i campi disponibili. Controlla la console del browser e del backend.';
   }
 
+  /** Converte il codice sport backend in etichetta leggibile. */
   private getSportLabel(sport: BookingSport): string {
     switch (sport) {
       case 'CALCETTO':
@@ -274,6 +323,11 @@ export class BookingFieldSelectionComponent implements OnInit {
     }
   }
 
+  /**
+   * Recupera lo sport da query param o sessionStorage.
+   *
+   * Accetta solo valori supportati dal flusso di prenotazione.
+   */
   private readSelectedSport(): BookingSport | null {
     const sportFromQuery = this.route.snapshot.queryParamMap.get('sport');
     const sportFromSession = sessionStorage.getItem('booking.selectedSport');
@@ -286,6 +340,7 @@ export class BookingFieldSelectionComponent implements OnInit {
     return null;
   }
 
+  /** Legge l'eventuale campo precedentemente selezionato da sessionStorage. */
   private readSavedFieldId(): number | null {
     const savedFieldId = sessionStorage.getItem('booking.selectedFieldId');
 
@@ -297,6 +352,7 @@ export class BookingFieldSelectionComponent implements OnInit {
     return Number.isFinite(parsedId) ? parsedId : null;
   }
 
+  /** Rimuove la selezione salvata se il campo non è più presente nella lista caricata. */
   private cleanSavedFieldIfNotPresent(): void {
     const selectedFieldId = this.selectedFieldId();
 

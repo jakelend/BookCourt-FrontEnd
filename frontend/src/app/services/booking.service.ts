@@ -1,3 +1,11 @@
+/**
+ * Servizio dedicato al flusso di prenotazione lato cliente.
+ *
+ * Contiene le chiamate HTTP necessarie per visualizzare i campi disponibili,
+ * leggere il calendario di un campo, cercare eventuali istruttori disponibili,
+ * creare il lock temporaneo sullo slot, calcolare la preview del costo,
+ * confermare o annullare la prenotazione.
+ */
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { map, Observable, take, timeout } from 'rxjs';
@@ -7,6 +15,9 @@ import {
   CampiPerSportApiResponseDto,
 } from '../dto/response/booking/booking-field-response.dto';
 
+/**
+ * Tipi di evento che il calendario campo può ricevere dal backend.
+ */
 export type BookingCalendarEventType =
   | 'PRENOTAZIONE'
   | 'MANUTENZIONE'
@@ -16,6 +27,9 @@ export type BookingCalendarEventType =
   | 'ECCEZIONE_ORARI_CENTRO'
   | string;
 
+/**
+ * Singolo evento del calendario campo, ad esempio prenotazione, manutenzione, lock o eccezione.
+ */
 export interface BookingCalendarEventResponseDto {
   tipo: BookingCalendarEventType;
   titolo: string;
@@ -27,6 +41,9 @@ export interface BookingCalendarEventResponseDto {
   istruttoreId: number | null;
 }
 
+/**
+ * Risposta del calendario giornaliero di un campo sportivo.
+ */
 export interface BookingFieldCalendarResponseDto {
   apertura: string;
   campoId: number;
@@ -38,6 +55,9 @@ export interface BookingFieldCalendarResponseDto {
   sport: BookingSport;
 }
 
+/**
+ * DTO che rappresenta un istruttore disponibile nello slot selezionato.
+ */
 export interface BookingAvailableInstructorResponseDto {
   istruttoreId: number;
   nome: string;
@@ -46,6 +66,9 @@ export interface BookingAvailableInstructorResponseDto {
   fotoProfiloUrl?: string | null;
 }
 
+/**
+ * Payload usato per creare un lock temporaneo sullo slot scelto dal cliente.
+ */
 export interface CreateBookingLockRequestDto {
   campoId: number;
   inizio: string;
@@ -54,6 +77,9 @@ export interface CreateBookingLockRequestDto {
   istruttoreId?: number | null;
 }
 
+/**
+ * Risposta della creazione lock, con intervallo bloccato e scadenza.
+ */
 export interface BookingLockResponseDto {
   lockId: number;
   campoId: number;
@@ -64,12 +90,18 @@ export interface BookingLockResponseDto {
   scadeIl: string;
 }
 
+/**
+ * Payload usato per calcolare il costo prima della conferma della prenotazione.
+ */
 export interface BookingPreviewRequestDto {
   lockId: number;
   numeroPartecipanti: number;
   numeroRacchette: number;
 }
 
+/**
+ * Dettaglio dei costi mostrati nella preview della prenotazione.
+ */
 export interface BookingPreviewResponseDto {
   costoCampo: number;
   costoIstruttore: number;
@@ -77,12 +109,18 @@ export interface BookingPreviewResponseDto {
   totale: number;
 }
 
+/**
+ * Payload usato per trasformare il lock in una prenotazione confermata.
+ */
 export interface ConfermaPrenotazioneRequestDto {
   lockId: number;
   numeroPartecipanti: number;
   numeroRacchette: number;
 }
 
+/**
+ * DTO della prenotazione restituito dopo conferma, lettura storico o annullamento.
+ */
 export interface PrenotazioneConfermataResponseDto {
   id: number;
   campoId: number;
@@ -101,6 +139,9 @@ export interface PrenotazioneConfermataResponseDto {
   recensibile: boolean;
 }
 
+/**
+ * Service Angular singleton che coordina il flusso frontend di prenotazione.
+ */
 @Injectable({
   providedIn: 'root',
 })
@@ -118,6 +159,11 @@ export class BookingService {
 
   constructor(private readonly http: HttpClient) {}
 
+  /**
+   * Recupera i campi disponibili per lo sport selezionato e normalizza la risposta per la UI.
+   * @param sport Sport scelto dall'utente nel flusso di prenotazione.
+   * @returns Observable con i campi mostrabili nella selezione.
+   */
   getCampiDisponibiliPerSport(sport: BookingSport): Observable<BookingFieldResponseDto[]> {
     const encodedSport = encodeURIComponent(sport);
 
@@ -141,6 +187,12 @@ export class BookingService {
       );
   }
 
+  /**
+   * Recupera il calendario giornaliero di un campo.
+   * @param campoId Identificativo del campo.
+   * @param data Data nel formato YYYY-MM-DD.
+   * @returns Observable con apertura, chiusura ed eventi del campo.
+   */
   getCalendarioCampo(
     campoId: number,
     data: string,
@@ -162,6 +214,13 @@ export class BookingService {
       );
   }
 
+  /**
+   * Recupera gli istruttori disponibili nello stesso intervallo della prenotazione.
+   * @param campoId Campo scelto per la prenotazione.
+   * @param inizio Data e ora di inizio slot in formato ISO.
+   * @param fine Data e ora di fine slot in formato ISO.
+   * @returns Observable con gli istruttori selezionabili.
+   */
   getIstruttoriDisponibili(
     campoId: number,
     inizio: string,
@@ -184,6 +243,11 @@ export class BookingService {
       );
   }
 
+  /**
+   * Crea il lock temporaneo sullo slot scelto prima della conferma definitiva.
+   * @param request Dati dello slot da bloccare.
+   * @returns Observable con le informazioni del lock creato.
+   */
   creaLockPrenotazione(request: CreateBookingLockRequestDto): Observable<BookingLockResponseDto> {
     return this.http
       .post<BookingLockResponseDto>(
@@ -200,6 +264,11 @@ export class BookingService {
       );
   }
 
+  /**
+   * Calcola il riepilogo economico della prenotazione prima della conferma.
+   * @param request Lock e opzioni selezionate dal cliente.
+   * @returns Observable con costo campo, istruttore, racchette e totale.
+   */
   getPreviewPrenotazione(request: BookingPreviewRequestDto): Observable<BookingPreviewResponseDto> {
     return this.http
       .post<BookingPreviewResponseDto>(
@@ -218,6 +287,11 @@ export class BookingService {
       );
   }
 
+  /**
+   * Conferma definitivamente la prenotazione partendo da un lock valido.
+   * @param request Dati finali della prenotazione.
+   * @returns Observable con la prenotazione confermata.
+   */
   confermaPrenotazione(
     request: ConfermaPrenotazioneRequestDto,
   ): Observable<PrenotazioneConfermataResponseDto> {
@@ -236,6 +310,11 @@ export class BookingService {
       );
   }
 
+  /**
+   * Elimina un lock quando l'utente abbandona o annulla il flusso prima della conferma.
+   * @param lockId Identificativo del lock da rilasciare.
+   * @returns Observable vuoto al completamento dell'eliminazione.
+   */
   eliminaLockPrenotazione(lockId: number): Observable<void> {
     return this.http
       .delete<void>(`${this.prenotazioniApiUrl}/eliminazione-lock/${lockId}`)
@@ -245,6 +324,10 @@ export class BookingService {
       );
   }
 
+  /**
+   * Recupera le prenotazioni future del cliente autenticato.
+   * @returns Observable con l'elenco delle prenotazioni future.
+   */
   getMiePrenotazioniFuture(): Observable<PrenotazioneConfermataResponseDto[]> {
     return this.http
       .get<PrenotazioneConfermataResponseDto[]>(`${this.prenotazioniApiUrl}/mie`)
@@ -260,6 +343,11 @@ export class BookingService {
       );
   }
 
+  /**
+   * Annulla una prenotazione del cliente secondo le regole consentite dal backend.
+   * @param prenotazioneId Identificativo della prenotazione da annullare.
+   * @returns Observable con la prenotazione aggiornata.
+   */
   annullaPrenotazione(prenotazioneId: number): Observable<PrenotazioneConfermataResponseDto> {
     return this.http
       .delete<PrenotazioneConfermataResponseDto>(
@@ -276,6 +364,10 @@ export class BookingService {
   }
 
 
+  /**
+   * Calcola la scadenza frontend del countdown del lock.
+   * @returns Timestamp ISO della scadenza usata dal timer dell'interfaccia.
+   */
   private buildFrontendLockExpirationIso(): string {
     const expirationDate = new Date(
       Date.now() + this.frontendLockDurationSeconds * 1000,
@@ -284,6 +376,11 @@ export class BookingService {
     return expirationDate.toISOString();
   }
 
+  /**
+   * Normalizza l'URL immagine restituito dal backend.
+   * @param urlImmagine URL o path dell'immagine principale del campo.
+   * @returns URL assoluto utilizzabile dal browser oppure null.
+   */
   private buildImageUrl(urlImmagine: string | null): string | null {
     const url = urlImmagine?.trim();
 

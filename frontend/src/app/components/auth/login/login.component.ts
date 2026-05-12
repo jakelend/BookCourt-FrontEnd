@@ -6,6 +6,13 @@ import { of } from 'rxjs';
 import { catchError, finalize, switchMap } from 'rxjs/operators';
 import { AuthService, LoginRequestDto } from '../../../services/auth.service';
 
+/**
+ * Componente della pagina di login.
+ *
+ * Gestisce l'autenticazione dell'utente tramite email e password,
+ * mostra eventuali errori di validazione o di risposta del backend
+ * e, dopo il login, reindirizza l'utente alla pagina corretta in base al ruolo.
+ */
 @Component({
   selector: 'app-login',
   imports: [CommonModule, ReactiveFormsModule],
@@ -13,11 +20,19 @@ import { AuthService, LoginRequestDto } from '../../../services/auth.service';
   styleUrl: './login.component.css',
 })
 export class LoginComponent {
+  /** Indica se l'utente ha provato a inviare il form almeno una volta. */
   readonly submitted = signal(false);
+
+  /** Indica se è in corso la chiamata HTTP di login. */
   readonly isLoading = signal(false);
+
+  /** Messaggio di errore mostrato nella pagina in caso di login fallito. */
   readonly loginError = signal('');
+
+  /** Controlla la visibilità della password nel campo input. */
   showPassword = false;
 
+  /** Form reattivo contenente email e password dell'utente. */
   loginForm: FormGroup;
 
   constructor(
@@ -26,22 +41,34 @@ export class LoginComponent {
     private readonly router: Router,
     private readonly route: ActivatedRoute,
   ) {
-    // Creo il form di login con i controlli principali.
-    // Le validazioni base vengono fatte già lato frontend per migliorare l'esperienza utente.
+    /*
+      Creo il form di login con validazioni lato frontend.
+      Questi controlli non sostituiscono quelli del backend, ma evitano
+      chiamate inutili quando i dati sono già chiaramente non validi.
+    */
     this.loginForm = this.fb.group({
       email: ['', [Validators.required, Validators.email]],
       password: ['', [Validators.required, Validators.minLength(6)]],
     });
   }
 
+  /** Restituisce il controllo del form relativo all'email. */
   get email() {
     return this.loginForm.get('email');
   }
 
+  /** Restituisce il controllo del form relativo alla password. */
   get password() {
     return this.loginForm.get('password');
   }
 
+  /**
+   * Gestisce l'invio del form di login.
+   *
+   * Se il form è valido, costruisce il payload, invia le credenziali
+   * al backend e aggiorna il profilo utente corrente. Alla fine della procedura
+   * porta l'utente alla pagina richiesta dalla guard oppure alla dashboard del ruolo.
+   */
   onSubmit(): void {
     this.submitted.set(true);
     this.loginError.set('');
@@ -62,6 +89,11 @@ export class LoginComponent {
     this.authService
       .login(payload)
       .pipe(
+        /*
+          Dopo il login provo a caricare il profilo completo.
+          Se questa seconda chiamata fallisce, il login resta comunque valido:
+          per questo motivo intercetto l'errore e restituisco null.
+        */
         switchMap(() =>
           this.authService.getCurrentProfile().pipe(
             catchError(() => of(null)),
@@ -93,23 +125,32 @@ export class LoginComponent {
       });
   }
 
+  /** Porta l'utente alla pagina di recupero password. */
   onForgotPassword(): void {
-    // Collegamento alla pagina dove l'utente inserisce l'email per il recupero password.
     void this.router.navigate(['/forgot-password']);
   }
 
+  /** Alterna la visualizzazione della password in chiaro/nascosta. */
   togglePasswordVisibility(): void {
     this.showPassword = !this.showPassword;
   }
 
+  /** Porta l'utente alla pagina di registrazione cliente. */
   onRegister(): void {
     void this.router.navigate(['/register']);
   }
 
+  /** Porta l'utente alla pagina pubblica di preview. */
   onPreview(): void {
     void this.router.navigate(['/preview']);
   }
 
+  /**
+   * Estrae un messaggio leggibile dagli errori restituiti dal backend.
+   *
+   * @param error Errore HTTP o errore generico ricevuto durante il login.
+   * @returns Messaggio da mostrare all'utente nella pagina di login.
+   */
   private extractLoginErrorMessage(error: any): string {
     if (error?.error?.message) {
       return error.error.message;

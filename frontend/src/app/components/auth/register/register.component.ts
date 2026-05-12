@@ -12,6 +12,13 @@ import { Router } from '@angular/router';
 import { finalize } from 'rxjs/operators';
 import { AuthService, RegisterClienteRequestDto } from '../../../services/auth.service';
 
+/**
+ * Componente della pagina di registrazione cliente.
+ *
+ * Gestisce il form di creazione account, valida i dati inseriti,
+ * controlla che password e conferma password coincidano e invia
+ * la richiesta di registrazione al backend tramite AuthService.
+ */
 @Component({
   selector: 'app-register',
   imports: [CommonModule, ReactiveFormsModule],
@@ -19,12 +26,22 @@ import { AuthService, RegisterClienteRequestDto } from '../../../services/auth.s
   styleUrl: './register.component.css',
 })
 export class RegisterComponent {
+  /** Indica se l'utente ha provato a inviare il form. */
   submitted = false;
+
+  /** Indica se è in corso la chiamata HTTP di registrazione. */
   isLoading = false;
+
+  /** Messaggio di errore mostrato quando la registrazione fallisce. */
   registerError = '';
+
+  /** Controlla la visibilità della password principale. */
   showPassword = false;
+
+  /** Controlla la visibilità della password di conferma. */
   showConfirmPassword = false;
 
+  /** Form reattivo con i dati necessari alla registrazione del cliente. */
   registerForm: FormGroup;
 
   constructor(
@@ -32,8 +49,11 @@ export class RegisterComponent {
     private readonly authService: AuthService,
     private readonly router: Router,
   ) {
-    // Form di registrazione cliente.
-    // Qui faccio i controlli principali prima di inviare i dati al backend.
+    /*
+      Form di registrazione cliente.
+      I validatori controllano campi obbligatori, formato email, telefono
+      e lunghezza password prima di inviare i dati al backend.
+    */
     this.registerForm = this.fb.group(
       {
         nome: ['', [Validators.required]],
@@ -47,30 +67,43 @@ export class RegisterComponent {
     );
   }
 
+  /** Restituisce il controllo del nome. */
   get nome() {
     return this.registerForm.get('nome');
   }
 
+  /** Restituisce il controllo del cognome. */
   get cognome() {
     return this.registerForm.get('cognome');
   }
 
+  /** Restituisce il controllo dell'email. */
   get email() {
     return this.registerForm.get('email');
   }
 
+  /** Restituisce il controllo del telefono. */
   get telefono() {
     return this.registerForm.get('telefono');
   }
 
+  /** Restituisce il controllo della password. */
   get password() {
     return this.registerForm.get('password');
   }
 
+  /** Restituisce il controllo della conferma password. */
   get confirmPassword() {
     return this.registerForm.get('confirmPassword');
   }
 
+  /**
+   * Gestisce l'invio del form di registrazione.
+   *
+   * Se il form è valido, costruisce il DTO richiesto dal backend e crea
+   * un nuovo account cliente. Dopo la registrazione, l'utente viene portato
+   * direttamente alla dashboard coerente con il ruolo salvato in sessione.
+   */
   onSubmit(): void {
     this.submitted = true;
     this.registerError = '';
@@ -107,22 +140,32 @@ export class RegisterComponent {
       });
   }
 
+  /** Porta l'utente alla pagina di login. */
   onLogin(): void {
     void this.router.navigate(['/login']);
   }
 
+  /** Alterna la visualizzazione della password principale. */
   togglePasswordVisibility(): void {
     this.showPassword = !this.showPassword;
   }
 
+  /** Alterna la visualizzazione della conferma password. */
   toggleConfirmPasswordVisibility(): void {
     this.showConfirmPassword = !this.showConfirmPassword;
   }
 
+  /** Porta l'utente alla pagina pubblica di preview. */
   onPreview(): void {
     void this.router.navigate(['/preview']);
   }
 
+  /**
+   * Validatore custom applicato all'intero form.
+   *
+   * @param control FormGroup contenente password e conferma password.
+   * @returns null se le password coincidono, altrimenti errore passwordsMismatch.
+   */
   private passwordsMatchValidator(control: AbstractControl): ValidationErrors | null {
     const password = control.get('password')?.value;
     const confirmPassword = control.get('confirmPassword')?.value;
@@ -134,6 +177,12 @@ export class RegisterComponent {
     return password === confirmPassword ? null : { passwordsMismatch: true };
   }
 
+  /**
+   * Estrae dal backend un messaggio di errore comprensibile per la registrazione.
+   *
+   * @param error Errore HTTP ricevuto dalla chiamata di registrazione.
+   * @returns Messaggio da visualizzare all'utente.
+   */
   private extractRegisterErrorMessage(error: any): string {
     if (error?.error?.message) {
       return error.error.message;

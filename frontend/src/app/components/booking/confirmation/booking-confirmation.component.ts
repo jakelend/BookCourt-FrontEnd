@@ -10,6 +10,12 @@ import { Router } from '@angular/router';
 import { BookingSport } from '../../../dto/response/booking/booking-field-response.dto';
 import { PrenotazioneConfermataResponseDto } from '../../../services/booking.service';
 
+/**
+ * Pagina finale del flusso di prenotazione.
+ *
+ * Recupera da sessionStorage i dati salvati al momento della conferma e
+ * mostra al cliente il riepilogo conclusivo della prenotazione appena creata.
+ */
 @Component({
   selector: 'app-booking-confirmation',
   imports: [CommonModule],
@@ -18,7 +24,9 @@ import { PrenotazioneConfermataResponseDto } from '../../../services/booking.ser
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BookingConfirmationComponent implements OnInit {
+  /** Prenotazione confermata restituita dal backend e salvata temporaneamente in sessionStorage. */
   readonly prenotazione = signal<PrenotazioneConfermataResponseDto | null>(null);
+  /** Dati descrittivi della prenotazione usati per il riepilogo visuale. */
   readonly selectedFieldName = signal('');
   readonly selectedSport = signal<BookingSport | null>(null);
   readonly selectedInstructorName = signal('Nessun istruttore');
@@ -26,12 +34,14 @@ export class BookingConfirmationComponent implements OnInit {
   readonly selectedTimeLabel = signal('');
   readonly selectedDurationLabel = signal('');
   readonly selectedRacketsLabel = signal('Nessuna racchetta');
+  /** Costi calcolati nella preview, usati come fallback se la risposta finale non contiene tutti i dettagli. */
   readonly previewCostoCampo = signal(0);
   readonly previewCostoIstruttore = signal(0);
   readonly previewCostoRacchette = signal(0);
   readonly previewTotale = signal(0);
 
 
+  /** Etichetta leggibile dello sport selezionato. */
   readonly selectedSportLabel = computed(() => {
     switch (this.selectedSport()) {
       case 'CALCETTO':
@@ -45,6 +55,7 @@ export class BookingConfirmationComponent implements OnInit {
     }
   });
 
+  /** Totale pagato: privilegia il totale della prenotazione confermata e usa la preview come fallback. */
   readonly totalPaid = computed(() => {
     const responseTotal = Number(this.prenotazione()?.costoTotale ?? 0);
 
@@ -64,8 +75,15 @@ export class BookingConfirmationComponent implements OnInit {
     return sport === 'TENNIS' || sport === 'PADEL';
   });
 
+  /** Inietta il Router per gestire le azioni di uscita dalla pagina di conferma. */
   constructor(private readonly router: Router) {}
 
+  /**
+   * Inizializza il riepilogo di conferma.
+   *
+   * Se non trova una prenotazione confermata in sessionStorage, riporta il
+   * cliente all'inizio del flusso di prenotazione.
+   */
   ngOnInit(): void {
     this.loadConfirmationContext();
 
@@ -74,21 +92,25 @@ export class BookingConfirmationComponent implements OnInit {
     }
   }
 
+  /** Pulisce i dati temporanei del flusso e torna alla dashboard principale. */
   goToDashboard(): void {
     this.clearBookingFlowData();
     void this.router.navigate(['/dashboard']);
   }
 
+  /** Pulisce i dati temporanei e avvia una nuova prenotazione. */
   startNewBooking(): void {
     this.clearBookingFlowData();
     void this.router.navigate(['/dashboard/prenotazioni']);
   }
 
+  /** Pulisce i dati temporanei e porta il cliente alla sezione delle proprie prenotazioni. */
   goToMyBookings(): void {
     this.clearBookingFlowData();
     void this.router.navigate(['/dashboard/profile/bookings']);
   }
 
+  /** Format di un importo in euro per il riepilogo finale. */
   formatCurrency(value: number | null | undefined): string {
     const amount = Number(value ?? 0);
 
@@ -98,6 +120,7 @@ export class BookingConfirmationComponent implements OnInit {
     }).format(amount);
   }
 
+  /** Format completo di data e ora in italiano. */
   formatDateTime(value: string | null | undefined): string {
     if (!value) {
       return '-';
@@ -113,6 +136,12 @@ export class BookingConfirmationComponent implements OnInit {
     });
   }
 
+  /**
+   * Ricostruisce il contesto della schermata di conferma leggendo sessionStorage.
+   *
+   * I dati vengono salvati nella preview subito dopo la conferma, così questa
+   * pagina può mostrare un riepilogo completo anche dopo il redirect.
+   */
   private loadConfirmationContext(): void {
     const rawReservation = sessionStorage.getItem('booking.confirmedReservation');
 
@@ -165,6 +194,7 @@ export class BookingConfirmationComponent implements OnInit {
     this.previewTotale.set(Number(sessionStorage.getItem('booking.previewTotale') ?? 0));
   }
 
+  /** Ricava il titolo della data dalla prenotazione confermata, se non già salvato. */
   private buildDateTitleFromReservation(): string {
     const inizio = this.prenotazione()?.inizio;
 
@@ -180,6 +210,7 @@ export class BookingConfirmationComponent implements OnInit {
     });
   }
 
+  /** Ricava l'intervallo orario dalla prenotazione confermata. */
   private buildTimeLabelFromReservation(): string {
     const prenotazione = this.prenotazione();
 
@@ -190,6 +221,7 @@ export class BookingConfirmationComponent implements OnInit {
     return `${this.extractTime(prenotazione.inizio)} - ${this.extractTime(prenotazione.fine)}`;
   }
 
+  /** Calcola la durata leggibile partendo da inizio e fine prenotazione. */
   private buildDurationLabelFromReservation(): string {
     const prenotazione = this.prenotazione();
 
@@ -219,6 +251,7 @@ export class BookingConfirmationComponent implements OnInit {
     return `${remainingMinutes}min`;
   }
 
+  /** Costruisce l'etichetta relativa al numero di racchette selezionate. */
   private buildRacketsLabelFromReservation(): string {
     const count = Number(this.prenotazione()?.numeroRacchette ?? 0);
 
@@ -233,6 +266,7 @@ export class BookingConfirmationComponent implements OnInit {
     return `${count} racchette`;
   }
 
+  /** Estrae solo l'orario HH:mm da una data ISO. */
   private extractTime(value: string): string {
     const date = new Date(value);
 
@@ -242,6 +276,11 @@ export class BookingConfirmationComponent implements OnInit {
     });
   }
 
+  /**
+   * Rimuove da sessionStorage tutte le chiavi temporanee usate dal flusso di prenotazione.
+   *
+   * Serve a evitare che una prenotazione successiva erediti dati vecchi.
+   */
   private clearBookingFlowData(): void {
     const keysToRemove = [
       'booking.selectedSport',

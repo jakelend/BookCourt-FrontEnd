@@ -9,6 +9,9 @@ import { ManagerSecretaryResponseDto } from '../../../dto/response/manager/manag
 import { ManagerService } from '../../../services/manager.service';
 import { extractBackendErrorMessage, extractBackendFieldErrors, FieldErrors } from '../../../util/error-message.util';
 
+/**
+ * Modello locale con i dati modificabili della segretaria.
+ */
 interface EditableSecretary {
   id: number;
   nome: string;
@@ -18,6 +21,9 @@ interface EditableSecretary {
   fotoProfiloUrl: string | null;
 }
 
+/**
+ * Chiavi degli errori di validazione gestiti nel form di modifica segretaria.
+ */
 type FieldErrorKey =
   | 'profilePhoto'
   | 'nome'
@@ -26,6 +32,9 @@ type FieldErrorKey =
   | 'telefono'
   | 'fotoProfiloUrl';
 
+/**
+ * Elenco dei campi backend riconosciuti e mappabili sugli errori del form.
+ */
 const KNOWN_BACKEND_FIELDS: readonly FieldErrorKey[] = [
   'profilePhoto',
   'nome',
@@ -41,18 +50,34 @@ const KNOWN_BACKEND_FIELDS: readonly FieldErrorKey[] = [
   templateUrl: './modify-secretary.component.html',
   styleUrl: './modify-secretary.component.css',
 })
+/**
+ * Componente manager per modificare una segretaria esistente.
+ * Gestisce dati anagrafici, email, telefono, stato attivo e foto profilo opzionale.
+ */
 export class ModifySecretaryComponent implements OnInit, OnDestroy {
+  /**
+   * Input file nascosto usato per selezionare una nuova foto profilo.
+   */
   @ViewChild('profilePhotoInput') private readonly profilePhotoInput?: ElementRef<HTMLInputElement>;
 
+  /**
+   * Nuova foto selezionata e URL temporaneo per l'anteprima.
+   */
   readonly profilePhotoFile = signal<File | null>(null);
   readonly profilePhotoPreviewUrl = signal('');
 
+  /**
+   * Stati reattivi di caricamento, salvataggio, messaggi ed errori del form.
+   */
   readonly loading = signal(true);
   readonly isSaving = signal(false);
   readonly submitError = signal('');
   readonly submitSuccess = signal('');
   readonly fieldErrors = signal<FieldErrors<FieldErrorKey>>({});
 
+  /**
+   * Dati editabili della segretaria caricati dal backend e collegati al form.
+   */
   secretary: EditableSecretary = {
     id: 0,
     nome: '',
@@ -62,12 +87,18 @@ export class ModifySecretaryComponent implements OnInit, OnDestroy {
     fotoProfiloUrl: '',
   };
 
+  /**
+   * Inietta route, router e ManagerService per leggere l'id e salvare le modifiche.
+   */
   constructor(
     private readonly route: ActivatedRoute,
     private readonly router: Router,
     private readonly managerService: ManagerService,
   ) {}
 
+  /**
+   * Legge l'id dalla route e carica la segretaria da modificare.
+   */
   ngOnInit(): void {
     const secretaryId = Number(this.route.snapshot.paramMap.get('id'));
 
@@ -95,6 +126,9 @@ export class ModifySecretaryComponent implements OnInit, OnDestroy {
       });
   }
 
+  /**
+   * Valida il form e invia al backend le modifiche della segretaria.
+   */
   modifySecretary(event: SubmitEvent): void {
     event.preventDefault();
 
@@ -156,10 +190,16 @@ export class ModifySecretaryComponent implements OnInit, OnDestroy {
       });
   }
 
+  /**
+   * Restituisce l'errore associato a un campo del form.
+   */
   fieldError(fieldName: FieldErrorKey): string {
     return this.fieldErrors()[fieldName] ?? '';
   }
 
+  /**
+   * Cancella l'errore del campo modificato dall'utente.
+   */
   clearFieldError(fieldName: FieldErrorKey): void {
     const currentErrors = { ...this.fieldErrors() };
 
@@ -176,10 +216,16 @@ export class ModifySecretaryComponent implements OnInit, OnDestroy {
     }
   }
 
+  /**
+   * Apre il selettore file per la foto profilo.
+   */
   openProfilePhotoPicker(): void {
     this.profilePhotoInput?.nativeElement.click();
   }
 
+  /**
+   * Valida il file immagine selezionato e crea la preview locale.
+   */
   onProfilePhotoSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0] ?? null;
@@ -210,6 +256,9 @@ export class ModifySecretaryComponent implements OnInit, OnDestroy {
     this.profilePhotoPreviewUrl.set(URL.createObjectURL(file));
   }
 
+  /**
+   * Rimuove la nuova foto caricata e ripristina l'immagine precedente se presente.
+   */
   clearProfilePhoto(): void {
     this.profilePhotoFile.set(null);
     this.revokeUploadedProfilePhotoPreview();
@@ -221,15 +270,24 @@ export class ModifySecretaryComponent implements OnInit, OnDestroy {
     }
   }
 
+  /**
+   * Annulla la modifica e torna alla lista segretarie.
+   */
   cancel(): void {
     this.clearProfilePhoto();
     void this.router.navigate(['/dashboard/secretaries']);
   }
 
+  /**
+   * Revoca eventuali URL temporanei quando il componente viene distrutto.
+   */
   ngOnDestroy(): void {
     this.revokeUploadedProfilePhotoPreview();
   }
 
+  /**
+   * Valida dati anagrafici, email e telefono prima del salvataggio.
+   */
   private validateForm(data: {
     nome: string;
     cognome: string;
@@ -269,6 +327,9 @@ export class ModifySecretaryComponent implements OnInit, OnDestroy {
     return Object.keys(errors).length === 0;
   }
 
+  /**
+   * Imposta un errore puntuale su un campo del form.
+   */
   private setFieldError(fieldName: FieldErrorKey, message: string): void {
     this.fieldErrors.update((currentErrors) => ({
       ...currentErrors,
@@ -276,6 +337,9 @@ export class ModifySecretaryComponent implements OnInit, OnDestroy {
     }));
   }
 
+  /**
+   * Mappa gli errori backend sui campi del form segretaria.
+   */
   private applyBackendFieldErrors(error: unknown, fallbackMessage: string): boolean {
     const mappedErrors = extractBackendFieldErrors(error, KNOWN_BACKEND_FIELDS);
     let hasFieldErrors = false;
@@ -308,10 +372,16 @@ export class ModifySecretaryComponent implements OnInit, OnDestroy {
     return hasFieldErrors;
   }
 
+  /**
+   * Verifica il formato base dell'indirizzo email.
+   */
   private isValidEmail(email: string): boolean {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   }
 
+  /**
+   * Popola lo stato locale con i dati della segretaria ricevuti dal backend.
+   */
   private hydrateSecretary(secretary: ManagerSecretaryResponseDto): void {
     this.secretary = {
       id: secretary.id,
@@ -327,6 +397,9 @@ export class ModifySecretaryComponent implements OnInit, OnDestroy {
     }
   }
 
+  /**
+   * Costruisce l'URL della foto profilo partendo dal path backend.
+   */
   private buildImageUrl(path: string | null): string {
     if (!path) {
       return '';
@@ -339,6 +412,9 @@ export class ModifySecretaryComponent implements OnInit, OnDestroy {
     return path.startsWith('/') ? `http://localhost:8080${path}` : `http://localhost:8080/${path}`;
   }
 
+  /**
+   * Revoca l'URL temporaneo della nuova foto caricata.
+   */
   private revokeUploadedProfilePhotoPreview(): void {
     const previewUrl = this.profilePhotoPreviewUrl();
 
@@ -350,6 +426,9 @@ export class ModifySecretaryComponent implements OnInit, OnDestroy {
     this.profilePhotoPreviewUrl.set('');
   }
 
+  /**
+   * Estrae un messaggio di errore leggibile dalla risposta backend.
+   */
   private extractErrorMessage(error: unknown, fallback: string): string {
     return extractBackendErrorMessage(error, fallback);
   }

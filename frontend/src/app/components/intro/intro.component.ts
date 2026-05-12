@@ -2,20 +2,46 @@ import { CommonModule } from '@angular/common';
 import { Component } from '@angular/core';
 import { Router } from '@angular/router';
 
+/**
+ * Modello usato per stampare le card degli sport nella pagina introduttiva.
+ */
 interface SportPreviewCard {
+  /** Etichetta opzionale mostrata sopra la card, ad esempio "In Tendenza". */
   label?: string;
+
+  /** Titolo principale della card. */
   title: string;
+
+  /** Descrizione breve dello sport o del tipo di campo. */
   description: string;
+
+  /** URL dell'immagine usata come anteprima. */
   imageUrl: string;
+
+  /** Classe CSS che determina dimensione e disposizione della card. */
   layoutClass: string;
 }
 
+/**
+ * Modello usato per descrivere una funzionalità gestionale del centro.
+ */
 interface ManagementFeature {
+  /** Nome dell'icona Material mostrata nella card. */
   icon: string;
+
+  /** Titolo della funzionalità o del ruolo gestionale. */
   title: string;
+
+  /** Descrizione testuale mostrata all'utente. */
   description: string;
 }
 
+/**
+ * Componente della pagina introduttiva pubblica.
+ *
+ * Presenta il servizio BookCourt, mostra gli sport disponibili e permette
+ * all'utente di andare alla login o alla registrazione.
+ */
 @Component({
   selector: 'app-intro',
   imports: [CommonModule],
@@ -23,10 +49,16 @@ interface ManagementFeature {
   styleUrl: './intro.component.css',
 })
 export class IntroComponent {
+  /** Anno corrente mostrato nel footer della pagina. */
   readonly currentYear = new Date().getFullYear();
 
-  // Uso un array per evitare di ripetere tre blocchi HTML quasi uguali.
-  // In questo modo, se domani aggiungiamo un nuovo sport, basta aggiungere un oggetto qui.
+  /**
+   * Card degli sport visualizzate nella pagina pubblica.
+   *
+   * Uso un array per evitare di ripetere tre blocchi HTML quasi uguali.
+   * In questo modo, se domani aggiungiamo un nuovo sport, basta aggiungere
+   * un nuovo oggetto senza cambiare la struttura del template.
+   */
   readonly sportCards: SportPreviewCard[] = [
     {
       label: 'Calcetto',
@@ -54,6 +86,7 @@ export class IntroComponent {
     },
   ];
 
+  /** Card che descrivono le principali aree gestionali dell'applicazione. */
   readonly managementFeatures: ManagementFeature[] = [
     {
       icon: 'admin_panel_settings',
@@ -77,18 +110,24 @@ export class IntroComponent {
 
   constructor(private readonly router: Router) {}
 
+  /** Naviga verso la pagina di login. */
   goToLogin(): void {
-    // Navigazione semplice verso la pagina di login.
     void this.router.navigate(['/login']);
   }
 
+  /** Naviga verso la pagina di registrazione cliente. */
   goToRegister(): void {
-    // Navigazione semplice verso la pagina di registrazione.
     void this.router.navigate(['/register']);
   }
 
+  /**
+   * Funzione trackBy usata negli ngFor del template.
+   *
+   * @param _ Indice dell'elemento, non necessario in questa logica.
+   * @param item Elemento della lista che contiene almeno il titolo.
+   * @returns Titolo dell'elemento, usato da Angular come chiave stabile.
+   */
   trackByTitle(_: number, item: { title: string }): string {
-    // trackBy utile per far lavorare meglio Angular quando stampa liste con ngFor.
     return item.title;
   }
 }

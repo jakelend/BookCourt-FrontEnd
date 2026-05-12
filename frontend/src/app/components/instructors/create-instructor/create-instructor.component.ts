@@ -8,6 +8,9 @@ import { ManagerCreateInstructorRequestDto } from '../../../dto/request/manager/
 import { ManagerService } from '../../../services/manager.service';
 import { extractBackendErrorMessage, extractBackendFieldErrors, FieldErrors } from '../../../util/error-message.util';
 
+/**
+ * Chiavi degli errori di validazione gestiti nel form di creazione istruttore.
+ */
 type FieldErrorKey =
   | 'profilePhoto'
   | 'nome'
@@ -19,6 +22,9 @@ type FieldErrorKey =
   | 'costoOrarioPadel'
   | 'tariffe';
 
+/**
+ * Elenco dei campi backend riconosciuti e mostrabili come errori puntuali nel form.
+ */
 const KNOWN_BACKEND_FIELDS: readonly FieldErrorKey[] = [
   'profilePhoto',
   'nome',
@@ -37,24 +43,46 @@ const KNOWN_BACKEND_FIELDS: readonly FieldErrorKey[] = [
   templateUrl: './create-instructor.component.html',
   styleUrl: './create-instructor.component.css',
 })
+/**
+ * Componente usato dal manager per creare un nuovo istruttore.
+ * Gestisce dati anagrafici, credenziali, tariffe orarie e foto profilo obbligatoria.
+ */
 export class CreateInstructorComponent implements OnDestroy {
+  /**
+   * Input file nascosto usato per selezionare la foto profilo dell'istruttore.
+   */
   @ViewChild('profilePhotoInput') private readonly profilePhotoInput?: ElementRef<HTMLInputElement>;
 
+  /**
+   * File immagine selezionato e URL temporaneo usato per mostrarne l'anteprima.
+   */
   readonly profilePhotoFile = signal<File | null>(null);
   readonly profilePhotoPreviewUrl = signal('');
 
+  /**
+   * Stato che controlla la visibilità della password nel form.
+   */
   readonly showPassword = signal(false);
 
+  /**
+   * Stati reattivi di invio, esito e validazione del form.
+   */
   readonly isLoading = signal(false);
   readonly submitError = signal('');
   readonly submitSuccess = signal('');
   readonly fieldErrors = signal<FieldErrors<FieldErrorKey>>({});
 
+  /**
+   * Inietta router e ManagerService per creare l'istruttore e aggiornare la lista.
+   */
   constructor(
     private readonly router: Router,
     private readonly managerService: ManagerService,
   ) {}
 
+  /**
+   * Gestisce il submit del form, valida i dati e invia payload più foto profilo al backend.
+   */
   createInstructor(event: SubmitEvent): void {
     event.preventDefault();
 
@@ -139,10 +167,16 @@ export class CreateInstructorComponent implements OnDestroy {
       });
   }
 
+  /**
+   * Restituisce il messaggio di errore associato a un campo del form.
+   */
   fieldError(fieldName: FieldErrorKey): string {
     return this.fieldErrors()[fieldName] ?? '';
   }
 
+  /**
+   * Rimuove l'errore del campo modificato dall'utente.
+   */
   clearFieldError(fieldName: FieldErrorKey): void {
     const currentErrors = { ...this.fieldErrors() };
 
@@ -159,12 +193,18 @@ export class CreateInstructorComponent implements OnDestroy {
     }
   }
 
+  /**
+   * Impedisce l'inserimento di segni nei campi numerici delle tariffe.
+   */
   preventNegativeValue(event: KeyboardEvent): void {
     if (event.key === '-' || event.key === '+') {
       event.preventDefault();
     }
   }
 
+  /**
+   * Corregge eventuali valori negativi inseriti nelle tariffe orarie.
+   */
   normalizeHourlyRate(event: Event): void {
     const input = event.target as HTMLInputElement;
     const value = Number(input.value);
@@ -174,14 +214,23 @@ export class CreateInstructorComponent implements OnDestroy {
     }
   }
 
+  /**
+   * Mostra o nasconde la password digitata nel form.
+   */
   togglePasswordVisibility(): void {
     this.showPassword.update((currentValue) => !currentValue);
   }
 
+  /**
+   * Apre il selettore file della foto profilo.
+   */
   openProfilePhotoPicker(): void {
     this.profilePhotoInput?.nativeElement.click();
   }
 
+  /**
+   * Valida la foto selezionata e crea l'anteprima locale.
+   */
   onProfilePhotoSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0] ?? null;
@@ -212,6 +261,9 @@ export class CreateInstructorComponent implements OnDestroy {
     this.profilePhotoPreviewUrl.set(URL.createObjectURL(file));
   }
 
+  /**
+   * Rimuove la foto profilo selezionata e libera la preview locale.
+   */
   clearProfilePhoto(): void {
     this.profilePhotoFile.set(null);
     this.revokeProfilePhotoPreview();
@@ -221,15 +273,24 @@ export class CreateInstructorComponent implements OnDestroy {
     }
   }
 
+  /**
+   * Annulla la creazione e torna alla lista istruttori.
+   */
   cancel(): void {
     this.clearProfilePhoto();
     void this.router.navigate(['/dashboard/instructors']);
   }
 
+  /**
+   * Libera l'URL temporaneo della foto profilo quando il componente viene distrutto.
+   */
   ngOnDestroy(): void {
     this.revokeProfilePhotoPreview();
   }
 
+  /**
+   * Valida campi obbligatori, email, password, telefono, tariffe e foto profilo.
+   */
   private validateForm(data: {
     selectedProfilePhoto: File | null;
     nome: string;
@@ -287,6 +348,9 @@ export class CreateInstructorComponent implements OnDestroy {
     return Object.keys(errors).length === 0;
   }
 
+  /**
+   * Imposta un errore puntuale nel form.
+   */
   private setFieldError(fieldName: FieldErrorKey, message: string): void {
     this.fieldErrors.update((currentErrors) => ({
       ...currentErrors,
@@ -294,6 +358,9 @@ export class CreateInstructorComponent implements OnDestroy {
     }));
   }
 
+  /**
+   * Mappa gli errori backend sui campi del form istruttore.
+   */
   private applyBackendFieldErrors(error: unknown, fallbackMessage: string): boolean {
     const mappedErrors = extractBackendFieldErrors(error, KNOWN_BACKEND_FIELDS);
     let hasFieldErrors = false;
@@ -321,6 +388,9 @@ export class CreateInstructorComponent implements OnDestroy {
     return hasFieldErrors;
   }
 
+  /**
+   * Revoca l'URL temporaneo della foto profilo caricata localmente.
+   */
   private revokeProfilePhotoPreview(): void {
     const previewUrl = this.profilePhotoPreviewUrl();
 
@@ -332,10 +402,16 @@ export class CreateInstructorComponent implements OnDestroy {
     this.profilePhotoPreviewUrl.set('');
   }
 
+  /**
+   * Verifica il formato base dell'indirizzo email.
+   */
   private isValidEmail(email: string): boolean {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   }
 
+  /**
+   * Converte una tariffa opzionale in numero oppure null.
+   */
   private toOptionalNumber(value: FormDataEntryValue | null): number | null {
     if (value == null || String(value).trim() === '') {
       return null;
@@ -346,6 +422,9 @@ export class CreateInstructorComponent implements OnDestroy {
     return Number.isFinite(numericValue) && numericValue > 0 ? numericValue : null;
   }
 
+  /**
+   * Estrae un messaggio di errore leggibile da una risposta backend.
+   */
   private extractErrorMessage(error: unknown, fallback: string): string {
     return extractBackendErrorMessage(error, fallback);
   }

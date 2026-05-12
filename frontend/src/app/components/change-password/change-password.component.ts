@@ -11,6 +11,12 @@ import {
 import { finalize } from 'rxjs/operators';
 import { AuthService } from '../../services/auth.service';
 
+/**
+ * Componente per il cambio password da utente autenticato.
+ *
+ * A differenza del reset password, qui l'utente è già loggato e deve
+ * inserire la password corrente insieme alla nuova password.
+ */
 @Component({
   selector: 'app-change-password',
   imports: [CommonModule, ReactiveFormsModule],
@@ -18,14 +24,28 @@ import { AuthService } from '../../services/auth.service';
   styleUrl: './change-password.component.css',
 })
 export class ChangePasswordComponent {
+  /** Indica se l'utente ha provato a inviare il form. */
   submitted = false;
+
+  /** Indica se è in corso la chiamata HTTP di cambio password. */
   isLoading = false;
+
+  /** Messaggio di errore mostrato nella pagina. */
   changePasswordError = '';
+
+  /** Messaggio di successo mostrato dopo il cambio password. */
   changePasswordSuccess = '';
+
+  /** Controlla la visibilità della password corrente. */
   showCurrentPassword = false;
+
+  /** Controlla la visibilità della nuova password. */
   showNewPassword = false;
+
+  /** Controlla la visibilità della conferma nuova password. */
   showConfirmNewPassword = false;
 
+  /** Form reattivo usato per cambiare la password dell'utente autenticato. */
   changePasswordForm: FormGroup;
 
   constructor(
@@ -42,18 +62,27 @@ export class ChangePasswordComponent {
     );
   }
 
+  /** Restituisce il controllo della password corrente. */
   get currentPassword() {
     return this.changePasswordForm.get('currentPassword');
   }
 
+  /** Restituisce il controllo della nuova password. */
   get newPassword() {
     return this.changePasswordForm.get('newPassword');
   }
 
+  /** Restituisce il controllo della conferma nuova password. */
   get confirmNewPassword() {
     return this.changePasswordForm.get('confirmNewPassword');
   }
 
+  /**
+   * Gestisce l'invio del form di cambio password.
+   *
+   * Recupera l'utente corrente dalla sessione locale, costruisce il payload
+   * richiesto dal backend e mostra l'esito della chiamata nella pagina.
+   */
   onSubmit(): void {
     this.submitted = true;
     this.changePasswordError = '';
@@ -93,18 +122,27 @@ export class ChangePasswordComponent {
       });
   }
 
+  /** Alterna la visibilità della password corrente. */
   toggleCurrentPasswordVisibility(): void {
     this.showCurrentPassword = !this.showCurrentPassword;
   }
 
+  /** Alterna la visibilità della nuova password. */
   toggleNewPasswordVisibility(): void {
     this.showNewPassword = !this.showNewPassword;
   }
 
+  /** Alterna la visibilità della conferma nuova password. */
   toggleConfirmNewPasswordVisibility(): void {
     this.showConfirmNewPassword = !this.showConfirmNewPassword;
   }
 
+  /**
+   * Validatore custom che controlla la corrispondenza tra nuova password e conferma.
+   *
+   * @param control FormGroup contenente i campi newPassword e confirmNewPassword.
+   * @returns null se coincidono, altrimenti errore passwordsMismatch.
+   */
   private passwordsMatchValidator(control: AbstractControl): ValidationErrors | null {
     const newPassword = control.get('newPassword')?.value;
     const confirmNewPassword = control.get('confirmNewPassword')?.value;
@@ -116,6 +154,12 @@ export class ChangePasswordComponent {
     return newPassword === confirmNewPassword ? null : { passwordsMismatch: true };
   }
 
+  /**
+   * Estrae un messaggio utente dagli errori della chiamata di cambio password.
+   *
+   * @param error Errore sconosciuto ricevuto dal backend o dal client HTTP.
+   * @returns Messaggio leggibile da mostrare nel template.
+   */
   private extractErrorMessage(error: unknown): string {
     const maybeError = error as { error?: { message?: string; fields?: Record<string, string> }; status?: number };
 

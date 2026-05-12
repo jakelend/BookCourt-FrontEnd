@@ -16,33 +16,67 @@ import { ChatWebsocketService } from '../../../services/chat-websocket.service';
   templateUrl: './chat-page.component.html',
   styleUrl: './chat-page.component.css',
 })
+/**
+ * Pagina principale della chat BookCourt.
+ * Gestisce due modalità di utilizzo: il cliente apre la propria conversazione con il centro,
+ * mentre segretaria e manager visualizzano la lista delle conversazioni dei clienti.
+ * La segretaria può rispondere, il manager può solo consultare.
+ */
 export class ChatPageComponent implements OnInit, OnDestroy {
+  /**
+   * Riferimento al contenitore dei messaggi usato per portare automaticamente lo scroll in fondo
+   * quando arrivano nuovi messaggi o viene aperta una conversazione.
+   */
   @ViewChild('messagesContainer') private messagesContainer?: ElementRef<HTMLDivElement>;
 
+  /**
+   * Stato reattivo delle conversazioni mostrate nella colonna laterale.
+   * L'uso dei signal permette al template di aggiornarsi in tempo reale senza ricaricare la pagina.
+   */
   private readonly conversationsSignal = signal<ConversazioneChatResponseDto[]>([]);
   private readonly selectedConversationSignal = signal<ConversazioneChatResponseDto | null>(null);
   private readonly messagesSignal = signal<MessaggioChatResponseDto[]>([]);
 
+  /**
+   * Testo scritto nella textarea/input prima dell'invio del messaggio.
+   */
   newMessage = '';
 
+  /**
+   * Flag di caricamento e invio usati dal template per mostrare spinner e disabilitare azioni duplicate.
+   */
   loadingConversations = false;
   loadingMessages = false;
   sending = false;
   initializingChat = false;
 
+  /**
+   * Messaggi di errore applicativi o WebSocket mostrati nella UI della chat.
+   */
   errorMessage = '';
   websocketError = '';
 
+  /**
+   * Subscription attive della pagina.
+   * Vengono salvate per poterle chiudere correttamente in ngOnDestroy ed evitare memory leak.
+   */
   private connectionErrorsSubscription?: Subscription;
   private conversationListRealtimeSubscription?: Subscription;
   private readonly realtimeSubscriptions = new Map<number, Subscription>();
 
+  /**
+   * Inietta servizi di autenticazione, API REST della chat e canale WebSocket/STOMP.
+   */
   constructor(
     private readonly authService: AuthService,
     private readonly chatService: ChatService,
     private readonly chatWebsocketService: ChatWebsocketService,
   ) {}
 
+  /**
+   * Inizializza la pagina in base al ruolo dell'utente autenticato.
+   * Il cliente apre direttamente la propria conversazione, mentre centro/manager caricano la lista clienti.
+   */
   ngOnInit(): void {
     this.connectionErrorsSubscription = this.chatWebsocketService.connectionErrors$.subscribe({
       next: (message) => {
@@ -64,6 +98,9 @@ export class ChatPageComponent implements OnInit, OnDestroy {
     this.errorMessage = 'Ruolo utente non abilitato alla chat.';
   }
 
+  /**
+   * Chiude subscription e connessione WebSocket quando il componente viene distrutto.
+   */
   ngOnDestroy(): void {
     this.closeRealtimeSubscriptions();
     this.conversationListRealtimeSubscription?.unsubscribe();
@@ -71,46 +108,79 @@ export class ChatPageComponent implements OnInit, OnDestroy {
     this.chatWebsocketService.disconnect();
   }
 
+  /**
+   * Restituisce al template la lista corrente delle conversazioni.
+   */
   get conversations(): ConversazioneChatResponseDto[] {
     return this.conversationsSignal();
   }
 
+  /**
+   * Restituisce la conversazione attualmente aperta.
+   */
   get selectedConversation(): ConversazioneChatResponseDto | null {
     return this.selectedConversationSignal();
   }
 
+  /**
+   * Restituisce i messaggi della conversazione selezionata.
+   */
   get messages(): MessaggioChatResponseDto[] {
     return this.messagesSignal();
   }
 
+  /**
+   * Ruolo dell'utente corrente letto dal servizio di autenticazione.
+   */
   get currentRole(): Role | null {
     return this.authService.getCurrentUserRole();
   }
 
+  /**
+   * Id dell'utente corrente, usato per capire se un messaggio è stato inviato da lui.
+   */
   get currentUserId(): number | null {
     return this.authService.getCurrentUser()?.id ?? null;
   }
 
+  /**
+   * Indica se l'utente corrente è un cliente.
+   */
   get isCliente(): boolean {
     return this.currentRole === Role.CLIENTE;
   }
 
+  /**
+   * Indica se l'utente corrente è una segretaria.
+   */
   get isSegretaria(): boolean {
     return this.currentRole === Role.SEGRETARIA;
   }
 
+  /**
+   * Indica se l'utente corrente è un manager.
+   */
   get isManager(): boolean {
     return this.currentRole === Role.MANAGER;
   }
 
+  /**
+   * Indica se il ruolo può consultare le conversazioni lato centro sportivo.
+   */
   get isCentroReadRole(): boolean {
     return this.isSegretaria || this.isManager;
   }
 
+  /**
+   * Determina se l'utente può inviare messaggi nella conversazione selezionata.
+   */
   get canWrite(): boolean {
     return !!this.selectedConversation?.scrivibile && !this.isManager;
   }
 
+  /**
+   * Titolo dinamico della pagina in base al ruolo dell'utente.
+   */
   get pageTitle(): string {
     if (this.isCliente) {
       return 'Chat con BookCourt';
@@ -123,6 +193,9 @@ export class ChatPageComponent implements OnInit, OnDestroy {
     return 'Chat clienti';
   }
 
+  /**
+   * Sottotitolo descrittivo mostrato sotto al titolo della pagina.
+   */
   get pageSubtitle(): string {
     if (this.isCliente) {
       return 'Scrivi al centro sportivo. Le segretarie potranno risponderti appena possibile.';
@@ -135,6 +208,10 @@ export class ChatPageComponent implements OnInit, OnDestroy {
     return 'Seleziona un cliente dalla lista e rispondi come centro sportivo BookCourt.';
   }
 
+  /**
+   * Carica o crea la conversazione personale del cliente.
+   * Dopo il caricamento apre subito la conversazione e si iscrive ai relativi aggiornamenti realtime.
+   */
   loadClienteConversation(): void {
     this.errorMessage = '';
     this.websocketError = '';
@@ -157,6 +234,11 @@ export class ChatPageComponent implements OnInit, OnDestroy {
       });
   }
 
+  /**
+   * Carica dal backend la lista delle conversazioni visibili al centro sportivo.
+   * Viene usato un refresh reale per rispettare la regola stile WhatsApp: la conversazione appare
+   * alla segretaria solo dopo il primo messaggio del cliente.
+   */
   loadConversations(): void {
     this.errorMessage = '';
     this.websocketError = '';
@@ -186,6 +268,9 @@ export class ChatPageComponent implements OnInit, OnDestroy {
       });
   }
 
+  /**
+   * Aggiorna silenziosamente la lista conversazioni senza mostrare loader o errori all'utente.
+   */
   refreshConversationsSilently(): void {
     if (!this.isCentroReadRole) {
       return;
@@ -199,6 +284,10 @@ export class ChatPageComponent implements OnInit, OnDestroy {
     });
   }
 
+  /**
+   * Apre una conversazione, svuota temporaneamente i messaggi locali e carica i messaggi dal backend.
+   * In parallelo abilita anche la subscription WebSocket per ricevere nuovi messaggi realtime.
+   */
   openConversation(conversation: ConversazioneChatResponseDto): void {
     this.selectedConversationSignal.set(conversation);
     this.messagesSignal.set([]);
@@ -208,6 +297,10 @@ export class ChatPageComponent implements OnInit, OnDestroy {
     this.loadMessages(conversation.id);
   }
 
+  /**
+   * Invia un messaggio nella conversazione selezionata.
+   * Il metodo blocca invii vuoti, invii duplicati e utenti che non hanno permesso di scrittura.
+   */
   sendMessage(): void {
     const conversation = this.selectedConversation;
     const contenuto = this.newMessage.trim();
@@ -233,6 +326,9 @@ export class ChatPageComponent implements OnInit, OnDestroy {
       });
   }
 
+  /**
+   * Permette l'invio rapido con Enter, lasciando Shift+Enter per andare a capo.
+   */
   onMessageKeydown(event: KeyboardEvent): void {
     if (event.key === 'Enter' && !event.shiftKey) {
       event.preventDefault();
@@ -240,10 +336,16 @@ export class ChatPageComponent implements OnInit, OnDestroy {
     }
   }
 
+  /**
+   * Verifica se il messaggio è stato scritto dall'utente autenticato.
+   */
   isMyMessage(message: MessaggioChatResponseDto): boolean {
     return message.mittenteId === this.currentUserId;
   }
 
+  /**
+   * Stabilisce se il messaggio deve essere visualizzato come messaggio in uscita.
+   */
   isOutgoingMessage(message: MessaggioChatResponseDto): boolean {
     if (this.isCentroReadRole) {
       return message.inviatoDalCentro;
@@ -252,10 +354,16 @@ export class ChatPageComponent implements OnInit, OnDestroy {
     return this.isMyMessage(message);
   }
 
+  /**
+   * Indica se il messaggio deve essere presentato graficamente come risposta del centro sportivo.
+   */
   shouldShowAsCenterMessage(message: MessaggioChatResponseDto): boolean {
     return this.isCliente && message.inviatoDalCentro;
   }
 
+  /**
+   * Restituisce il nome leggibile dell'autore da mostrare sopra o accanto al messaggio.
+   */
   getMessageAuthor(message: MessaggioChatResponseDto): string {
     if (this.shouldShowAsCenterMessage(message)) {
       return 'BookCourt';
@@ -268,6 +376,9 @@ export class ChatPageComponent implements OnInit, OnDestroy {
     return message.autoreDisplay || 'Cliente';
   }
 
+  /**
+   * Formatta data e ora del messaggio in formato italiano leggibile.
+   */
   formatDateTime(value: string | null): string {
     if (!value) {
       return '';
@@ -288,14 +399,23 @@ export class ChatPageComponent implements OnInit, OnDestroy {
     }).format(date);
   }
 
+  /**
+   * Funzione trackBy per ottimizzare il rendering della lista conversazioni.
+   */
   trackByConversationId(_: number, conversation: ConversazioneChatResponseDto): number {
     return conversation.id;
   }
 
+  /**
+   * Funzione trackBy per ottimizzare il rendering della lista messaggi.
+   */
   trackByMessageId(_: number, message: MessaggioChatResponseDto): number {
     return message.id;
   }
 
+  /**
+   * Applica la lista conversazioni ordinandola e mantenendo coerente la conversazione selezionata.
+   */
   private applyConversations(conversations: ConversazioneChatResponseDto[]): void {
     const sortedConversations = this.sortConversations(conversations);
 
@@ -304,6 +424,9 @@ export class ChatPageComponent implements OnInit, OnDestroy {
     this.subscribeRealtimeForConversations(sortedConversations);
   }
 
+  /**
+   * Carica lo storico messaggi di una conversazione tramite API REST.
+   */
   private loadMessages(conversationId: number): void {
     this.loadingMessages = true;
     this.errorMessage = '';
@@ -325,12 +448,18 @@ export class ChatPageComponent implements OnInit, OnDestroy {
       });
   }
 
+  /**
+   * Apre le subscription realtime per tutte le conversazioni attualmente visibili al centro.
+   */
   private subscribeRealtimeForConversations(conversations: ConversazioneChatResponseDto[]): void {
     conversations.forEach((conversation) => {
       this.subscribeRealtimeForConversation(conversation.id);
     });
   }
 
+  /**
+   * Sottoscrive il topic WebSocket di una specifica conversazione, evitando duplicazioni di subscription.
+   */
   private subscribeRealtimeForConversation(conversationId: number): void {
     if (this.realtimeSubscriptions.has(conversationId)) {
       return;
@@ -348,6 +477,9 @@ export class ChatPageComponent implements OnInit, OnDestroy {
     this.realtimeSubscriptions.set(conversationId, subscription);
   }
 
+  /**
+   * Sottoscrive il topic realtime della lista conversazioni, utile quando nasce una nuova chat cliente-centro.
+   */
   private subscribeRealtimeConversationList(): void {
     if (!this.isCentroReadRole) {
       return;
@@ -367,6 +499,9 @@ export class ChatPageComponent implements OnInit, OnDestroy {
       });
   }
 
+  /**
+   * Gestisce l'evento realtime che segnala un nuovo messaggio in una conversazione della lista centro.
+   */
   private handleRealtimeConversationListEvent(message: MessaggioChatResponseDto): void {
     const conversationAlreadyVisible = this.conversations.some(
       (conversation) => conversation.id === message.conversazioneId,
@@ -387,6 +522,9 @@ export class ChatPageComponent implements OnInit, OnDestroy {
     }
   }
 
+  /**
+   * Gestisce un messaggio arrivato in tempo reale sulla conversazione aperta o osservata.
+   */
   private handleRealtimeMessage(message: MessaggioChatResponseDto): void {
     this.websocketError = '';
     this.chatService.addMessageToCache(message);
@@ -399,6 +537,9 @@ export class ChatPageComponent implements OnInit, OnDestroy {
     this.appendMessageIfMissing(message);
   }
 
+  /**
+   * Aggiunge un messaggio allo stato locale solo se non è già presente, evitando duplicati tra REST e WebSocket.
+   */
   private appendMessageIfMissing(message: MessaggioChatResponseDto): void {
     this.messagesSignal.update((currentMessages) => {
       const alreadyExists = currentMessages.some(
@@ -415,6 +556,9 @@ export class ChatPageComponent implements OnInit, OnDestroy {
     this.scrollMessagesToBottom();
   }
 
+  /**
+   * Aggiorna anteprima, data ultimo messaggio e ordinamento della conversazione nella lista laterale.
+   */
   private updateConversationPreview(message: MessaggioChatResponseDto): void {
     let conversationFound = false;
 
@@ -451,6 +595,9 @@ export class ChatPageComponent implements OnInit, OnDestroy {
     }
   }
 
+  /**
+   * Mantiene sincronizzato il riferimento alla conversazione selezionata dopo un refresh della lista.
+   */
   private updateSelectedConversation(conversations: ConversazioneChatResponseDto[]): void {
     const selected = this.selectedConversation;
 
@@ -465,6 +612,9 @@ export class ChatPageComponent implements OnInit, OnDestroy {
     }
   }
 
+  /**
+   * Ordina le conversazioni mettendo in alto quelle con attività più recente.
+   */
   private sortConversations(
     conversations: ConversazioneChatResponseDto[],
   ): ConversazioneChatResponseDto[] {
@@ -473,6 +623,9 @@ export class ChatPageComponent implements OnInit, OnDestroy {
     );
   }
 
+  /**
+   * Calcola il timestamp usato per ordinare le conversazioni.
+   */
   private getConversationTimestamp(conversation: ConversazioneChatResponseDto): number {
     const timestamp = conversation.ultimoMessaggioIl || conversation.creataIl;
     const date = new Date(timestamp);
@@ -480,6 +633,9 @@ export class ChatPageComponent implements OnInit, OnDestroy {
     return Number.isNaN(date.getTime()) ? 0 : date.getTime();
   }
 
+  /**
+   * Sposta lo scroll del contenitore messaggi in fondo dopo l'aggiornamento della UI.
+   */
   private scrollMessagesToBottom(): void {
     setTimeout(() => {
       const container = this.messagesContainer?.nativeElement;
@@ -492,11 +648,17 @@ export class ChatPageComponent implements OnInit, OnDestroy {
     });
   }
 
+  /**
+   * Chiude tutte le subscription realtime aperte per le singole conversazioni.
+   */
   private closeRealtimeSubscriptions(): void {
     this.realtimeSubscriptions.forEach((subscription) => subscription.unsubscribe());
     this.realtimeSubscriptions.clear();
   }
 
+  /**
+   * Estrae un messaggio di errore leggibile dal backend, usando un fallback se non disponibile.
+   */
   private extractErrorMessage(error: any, fallbackMessage: string): string {
     if (error?.error?.message) {
       return error.error.message;
