@@ -35,7 +35,7 @@
   color: #0f172a;
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   font-size: 22px;
   font-weight: 900;
   letter-spacing: -0.04em;
@@ -43,6 +43,16 @@
 
 .navbar-brand .material-symbols-outlined {
   color: #0b4bcc;
+}
+
+.navbar-logo {
+  width: 42px;
+  height: 42px;
+  flex: 0 0 42px;
+  border-radius: 999px;
+  object-fit: contain;
+  background: #ffffff;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.12);
 }
 
 .navbar-actions {

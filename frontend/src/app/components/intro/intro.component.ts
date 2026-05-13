@@ -73,8 +73,7 @@ export class IntroComponent {
       label: 'In Tendenza',
       title: 'Campi da Padel',
       description: 'Scopri lo sport in più rapida crescita con campi moderni e manto perfetto.',
-      imageUrl:
-        'https://images.unsplash.com/photo-1626224583764-f87db24ac4ea?auto=format&fit=crop&w=1000&q=80',
+      imageUrl: '/padel-bookcourt.jpg',
       layoutClass: 'sport-card-small',
     },
     {

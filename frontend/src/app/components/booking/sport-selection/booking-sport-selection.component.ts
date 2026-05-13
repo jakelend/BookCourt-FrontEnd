@@ -62,8 +62,7 @@ export class BookingSportSelectionComponent {
     {
       code: 'PADEL',
       name: 'Padel',
-      imageUrl:
-        'https://images.unsplash.com/photo-1626224583764-f87db24ac4ea?auto=format&fit=crop&w=900&q=80',
+      imageUrl: '/padel-bookcourt.jpg',
       alt: 'Campo da padel con pareti in vetro',
     },
     {
