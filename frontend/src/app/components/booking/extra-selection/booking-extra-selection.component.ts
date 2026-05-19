@@ -71,6 +71,7 @@ export class BookingExtraSelectionComponent implements OnInit {
   readonly isReleasingLock = signal(false);
   readonly errorMessage = signal('');
   readonly feedbackMessage = signal('');
+  readonly failedInstructorImages = signal<Set<number>>(new Set());
 
   private readonly backendBaseUrl = 'http://localhost:8080';
 
@@ -160,7 +161,7 @@ export class BookingExtraSelectionComponent implements OnInit {
     }
 
     if (this.isInstructorSport() && this.canUseInstructorWithSelectedDuration()) {
-      this.reloadInstructorsWithoutBlockingOwnLock();
+      this.loadAvailableInstructors();
       return;
     }
 
@@ -266,12 +267,10 @@ export class BookingExtraSelectionComponent implements OnInit {
     return option;
   }
 
-  /** Determina se uno step precedente deve risultare completato nella timeline. */
   isStepCompleted(index: number): boolean {
     return index + 1 <= this.currentStep;
   }
 
-  /** Restituisce nome e cognome completi dell'istruttore. */
   getInstructorFullName(instructor: BookingAvailableInstructorResponseDto): string {
     return `${instructor.nome} ${instructor.cognome}`.trim();
   }
@@ -283,9 +282,13 @@ export class BookingExtraSelectionComponent implements OnInit {
 
   /** Restituisce l'URL dell'immagine profilo istruttore o null se assente. */
   getInstructorImageUrl(instructor: BookingAvailableInstructorResponseDto): string | null {
+    if (this.failedInstructorImages().has(instructor.istruttoreId)) {
+      return null;
+    }
+
     const path = instructor.fotoProfiloUrl?.trim();
 
-    if (!path) {
+    if (!path || this.isInvalidImagePath(path)) {
       return null;
     }
 
@@ -296,6 +299,32 @@ export class BookingExtraSelectionComponent implements OnInit {
     return path.startsWith('/') ? `${this.backendBaseUrl}${path}` : `${this.backendBaseUrl}/${path}`;
   }
 
+  onInstructorImageError(instructorId: number): void {
+    this.failedInstructorImages.update(set => {
+      const newSet = new Set(set);
+      newSet.add(instructorId);
+      return newSet;
+    });
+  }
+
+  getInstructorInitials(instructor: BookingAvailableInstructorResponseDto): string {
+    const nome = instructor.nome?.trim() ?? '';
+    const cognome = instructor.cognome?.trim() ?? '';
+    return `${nome.charAt(0).toUpperCase()}${cognome.charAt(0).toUpperCase()}` || '?';
+  }
+
+  private isInvalidImagePath(path: string | null | undefined): boolean {
+    const value = path?.trim();
+
+    return (
+      !value ||
+      value.toLowerCase() === 'string' ||
+      value.toLowerCase() === 'undefined' ||
+      value.toLowerCase() === 'null'
+    );
+  }
+
+  private loadAvailableInstructors(): void {
   /**
    * Ricarica gli istruttori rilasciando temporaneamente il lock dello slot.
    *
@@ -384,6 +413,7 @@ export class BookingExtraSelectionComponent implements OnInit {
       )
       .subscribe({
         next: (instructors) => {
+          this.failedInstructorImages.set(new Set());
           this.instructors.set(instructors);
           this.cleanSelectedInstructorIfNotAvailable();
 

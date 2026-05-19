@@ -92,14 +92,15 @@
             >
               <div class="card-media">
                 <img
-                  *ngIf="getInstructorImageUrl(instructor) as imageUrl; else instructorPlaceholder"
+                  *ngIf="getInstructorImageUrl(instructor) as imageUrl; else instructorInitials"
                   [src]="imageUrl"
                   [alt]="getInstructorFullName(instructor)"
+                  (error)="onInstructorImageError(instructor.istruttoreId)"
                 />
 
-                <ng-template #instructorPlaceholder>
-                  <div class="instructor-placeholder">
-                    <span class="material-symbols-outlined">person</span>
+                <ng-template #instructorInitials>
+                  <div class="profile-initials-placeholder" aria-label="Iniziali istruttore">
+                    {{ getInstructorInitials(instructor) }}
                   </div>
                 </ng-template>
 
