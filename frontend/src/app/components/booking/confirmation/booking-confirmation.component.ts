@@ -107,7 +107,7 @@ export class BookingConfirmationComponent implements OnInit {
   /** Pulisce i dati temporanei e porta il cliente alla sezione delle proprie prenotazioni. */
   goToMyBookings(): void {
     this.clearBookingFlowData();
-    void this.router.navigate(['/dashboard/profile/bookings']);
+    void this.router.navigate(['/dashboard/prenotazioni/annulla']);
   }
 
   /** Format di un importo in euro per il riepilogo finale. */

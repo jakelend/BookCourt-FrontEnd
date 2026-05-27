@@ -161,7 +161,7 @@ export class BookingExtraSelectionComponent implements OnInit {
     }
 
     if (this.isInstructorSport() && this.canUseInstructorWithSelectedDuration()) {
-      this.loadAvailableInstructors();
+      this.reloadInstructorsWithoutBlockingOwnLock();
       return;
     }
 
@@ -324,7 +324,6 @@ export class BookingExtraSelectionComponent implements OnInit {
     );
   }
 
-  private loadAvailableInstructors(): void {
   /**
    * Ricarica gli istruttori rilasciando temporaneamente il lock dello slot.
    *
@@ -382,7 +381,7 @@ export class BookingExtraSelectionComponent implements OnInit {
    *
    * @param recreateBaseLockAfterLoad se true ricrea il lock base dopo il caricamento.
    */
-  private loadAvailableInstructors(recreateBaseLockAfterLoad: boolean): void {
+  private loadAvailableInstructors(recreateBaseLockAfterLoad = false): void {
     const campoId = this.selectedFieldId();
 
     if (!this.canUseInstructorWithSelectedDuration()) {

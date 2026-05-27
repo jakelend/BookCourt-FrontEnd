@@ -110,42 +110,60 @@ export const routes: Routes = [
       {
         path: 'instructors',
         component: InstructorsPageComponent,
+        canActivate: [RoleGuard],
+        data: { roles: [Role.MANAGER] },
       },
       {
         path: 'instructors/create',
         component: CreateInstructorComponent,
+        canActivate: [RoleGuard],
+        data: { roles: [Role.MANAGER] },
       },
       {
         path: 'instructors/modify/:id',
         component: ModifyInstructorComponent,
+        canActivate: [RoleGuard],
+        data: { roles: [Role.MANAGER] },
       },
 
       /* Gestione segretarie, accessibile principalmente al manager. */
       {
         path: 'secretaries',
         component: SecretariesPageComponent,
+        canActivate: [RoleGuard],
+        data: { roles: [Role.MANAGER] },
       },
       {
         path: 'secretaries/create',
         component: CreateSecretaryComponent,
+        canActivate: [RoleGuard],
+        data: { roles: [Role.MANAGER] },
       },
       {
         path: 'secretaries/modify/:id',
         component: ModifySecretaryComponent,
+        canActivate: [RoleGuard],
+        data: { roles: [Role.MANAGER] },
       },
 
       /* Gestione campi sportivi e relative modifiche. */
       {
         path: 'fields',
         component: FieldsPageComponent,
+        canActivate: [RoleGuard],
+        data: { roles: [Role.MANAGER] },
       },
       {
         path: 'fields/create',
         component: CreateFieldComponent,
+        canActivate: [RoleGuard],
+        data: { roles: [Role.MANAGER] },
       },
       {
         path: 'fields/modify/:id',
         component: ModifyFieldComponent,
+        canActivate: [RoleGuard],
+        data: { roles: [Role.MANAGER] },
       },
 
       /* Funzioni comuni dell'utente autenticato. */
