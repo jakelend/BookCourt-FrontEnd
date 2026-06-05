@@ -1,4 +1,6 @@
-export type BookingSport = 'CALCETTO' | 'TENNIS' | 'PADEL';
+import type { Sport } from '../../../enumeration/sport.enum';
+
+export type BookingSport = Sport;
 
 export interface CampoCardApiResponseDto {
   idCampo: number;

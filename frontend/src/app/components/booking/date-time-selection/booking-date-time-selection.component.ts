@@ -15,25 +15,21 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { Subscription, finalize, interval } from 'rxjs';
-import { BookingSport } from '../../../dto/response/booking/booking-field-response.dto';
-import {
+import type { CreateBookingLockRequestDto } from '../../../dto/request/booking/create-booking-lock-request.dto';
+import type {
   BookingCalendarEventResponseDto,
   BookingFieldCalendarResponseDto,
-  BookingLockResponseDto,
-  BookingService,
-  CreateBookingLockRequestDto,
-} from '../../../services/booking.service';
+} from '../../../dto/response/booking/booking-calendar-response.dto';
+import type { BookingSport } from '../../../dto/response/booking/booking-field-response.dto';
+import type { BookingLockResponseDto } from '../../../dto/response/booking/booking-lock-response.dto';
+import { isSport } from '../../../enumeration/sport.enum';
+import { BookingService } from '../../../services/booking.service';
 
-/**
- * Singolo step mostrato nella timeline del flusso di prenotazione.
- */
 interface BookingStep {
   label: string;
 }
 
-/**
- * Riga oraria visualizzata nella griglia del calendario giornaliero.
- */
+// Riga oraria visualizzata nella griglia del calendario giornaliero
 interface CalendarHourSlot {
   label: string;
   topPct: number;
@@ -56,9 +52,7 @@ interface CalendarEventView {
   icon: string;
 }
 
-/**
- * Rappresentazione grafica dello slot che il cliente sta selezionando.
- */
+// Rappresentazione grafica dello slot che il cliente sta selezionando
 interface SelectedBookingEventView {
   topPct: number;
   heightPct: number;
@@ -100,35 +94,30 @@ export class BookingDateTimeSelectionComponent implements OnInit, OnDestroy {
     { label: 'Pagamento' },
   ];
 
-  /** Dati principali scelti negli step sport e campo. */
+
   readonly selectedSport = signal<BookingSport | null>(null);
   readonly selectedFieldId = signal<number | null>(null);
   readonly selectedFieldName = signal<string>('');
 
-  /** Data e orari selezionati dal cliente nello step corrente. */
   readonly selectedDate = signal(this.formatLocalDate(new Date()));
   readonly selectedStartTime = signal('08:00');
   readonly selectedEndTime = signal('09:00');
 
-  /**
-   * Ora corrente usata per impedire prenotazioni nello stesso giorno
-   * su orari già passati o sull'ora corrente.
-   */
   readonly currentDateTime = signal(new Date());
 
-  /** Calendario del campo restituito dal backend per la data selezionata. */
+  // Calendario del campo restituito dal backend per la data selezionata
   readonly calendarData = signal<BookingFieldCalendarResponseDto | null>(null);
   readonly hourSlots = computed(() => this.buildHourSlots());
   readonly startTimeOptions = computed(() => this.buildStartTimeOptions());
 
-  /** Stati reattivi di caricamento, errori e messaggi della schermata. */
+  // Stati reattivi di caricamento, errori e messaggi della schermata
   readonly isCalendarLoading = signal(false);
   readonly isReleasingLock = signal(false);
   readonly calendarErrorMessage = signal('');
   readonly formErrorMessage = signal('');
   readonly feedbackMessage = signal('');
 
-  /** Data minima selezionabile nel date picker. */
+  // Data minima selezionabile
   readonly minBookingDate = this.toDateOnly(this.formatLocalDate(new Date()));
 
   private readonly visibleDayStartTime = '08:00';
@@ -145,12 +134,10 @@ export class BookingDateTimeSelectionComponent implements OnInit, OnDestroy {
   private realtimeRefreshInProgress = false;
 
   readonly selectedDateValue = computed(() => this.toDateOnly(this.selectedDate()));
-
   readonly dayStartTime = computed(() => this.visibleDayStartTime);
-
   readonly dayEndTime = computed(() => this.visibleDayEndTime);
 
-  /** Date complete di inizio/fine ricavate da giorno e orari selezionati. */
+  // Date di inizio/fine ricavate da giorno e orari selezionati
   readonly bookingStartTime = computed(() => {
     return (
       this.extractTimeFromDateTime(this.calendarData()?.apertura) ??
@@ -189,6 +176,8 @@ export class BookingDateTimeSelectionComponent implements OnInit, OnDestroy {
     }
   });
 
+  // Il centro potrebbe essere chiuso in una data specifica indipendentemente dagli orari di
+  // apertura generali, quindi mostriamo un messaggio dedicato e disabilitiamo la selezione
   readonly isClosedDay = computed(() => Boolean(this.calendarData()?.chiuso));
 
   readonly calendarStatusLabel = computed(() => {
@@ -212,6 +201,7 @@ export class BookingDateTimeSelectionComponent implements OnInit, OnDestroy {
       return [];
     }
 
+    // Per costruire le opzioni di fine partiamo dall'orario di inizio selezionato
     const start = new Date(
       this.buildHtmlDateTime(this.selectedDate(), this.selectedStartTime()),
     );
@@ -219,6 +209,8 @@ export class BookingDateTimeSelectionComponent implements OnInit, OnDestroy {
     return this.buildEndTimeOptionsForStart(start);
   });
 
+  // La durata totale della prenotazione in minuti, usata per validazioni e per mostrare un
+  // riepilogo chiaro al cliente
   readonly selectedDurationMinutes = computed(() => {
     if (!this.isTimeRangeValid()) {
       return 0;
@@ -234,6 +226,7 @@ export class BookingDateTimeSelectionComponent implements OnInit, OnDestroy {
     return this.minutesBetween(start, end);
   });
 
+  // Rappresentazione testuale della durata selezionata, espressa in ore e minuti
   readonly selectedDurationLabel = computed(() => {
     const minutes = this.selectedDurationMinutes();
 
@@ -257,11 +250,15 @@ export class BookingDateTimeSelectionComponent implements OnInit, OnDestroy {
 
   readonly hasValidTimeRange = computed(() => this.isTimeRangeValid());
 
+  // Solo per tennis e padel mostriamo l'opzione di aggiungere un istruttore,
+  // che richiede durate orarie
   readonly isInstructorSport = computed(() => {
     const sport = this.selectedSport();
     return sport === 'TENNIS' || sport === 'PADEL';
   });
 
+  // L'istruttore è compatibile solo se la durata è un multiplo di 60 minuti,
+  // altrimenti mostriamo un warning ma lasciamo prenotare
   readonly canUseInstructorWithSelectedDuration = computed(() => {
     if (!this.isInstructorSport() || !this.hasValidTimeRange()) {
       return true;
@@ -270,6 +267,8 @@ export class BookingDateTimeSelectionComponent implements OnInit, OnDestroy {
     return this.selectedDurationMinutes() % 60 === 0;
   });
 
+  // Se la durata non è compatibile con l'istruttore mostriamo un messaggio informativo,
+  // ma lasciamo prenotare lo stesso
   readonly instructorDurationWarning = computed(() => {
     if (!this.isInstructorSport() || !this.hasValidTimeRange()) {
       return '';
@@ -282,7 +281,7 @@ export class BookingDateTimeSelectionComponent implements OnInit, OnDestroy {
     return 'Con questa durata puoi prenotare il campo, ma non potrai aggiungere un istruttore: le lezioni con istruttore devono durare 1h, 2h, 3h, ecc.';
   });
 
-  /** Eventi calendario già trasformati in coordinate percentuali per la UI. */
+  // MOstro tutti gli eventi che ci sono nel calendario
   readonly calendarEventViews = computed<CalendarEventView[]>(() => {
     const calendar = this.calendarData();
 
@@ -797,6 +796,7 @@ export class BookingDateTimeSelectionComponent implements OnInit, OnDestroy {
       return;
     }
 
+    // Se stiamo facendo un refresh periodico silenzioso, evitiamo di mostrare lo stato di caricamento
     if (silent) {
       this.realtimeRefreshInProgress = true;
     } else {
@@ -881,7 +881,7 @@ export class BookingDateTimeSelectionComponent implements OnInit, OnDestroy {
     const fieldId = Number(sessionStorage.getItem('booking.selectedFieldId'));
     const fieldName = sessionStorage.getItem('booking.selectedFieldName') ?? '';
 
-    if (sport === 'CALCETTO' || sport === 'PADEL' || sport === 'TENNIS') {
+    if (isSport(sport)) {
       this.selectedSport.set(sport);
     }
 

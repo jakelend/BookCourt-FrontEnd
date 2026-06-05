@@ -9,11 +9,15 @@
   (keydown)="onCardKeydown($event)"
 >
   <div class="card-media">
-    <img *ngIf="coverImageUrl" [src]="coverImageUrl" [alt]="field.nome" />
+    @if (coverImageUrl) {
+      <img [src]="coverImageUrl" [alt]="field.nome" />
+    }
 
-    <div *ngIf="!coverImageUrl" class="field-image-placeholder">
-      <span class="material-symbols-outlined">stadium</span>
-    </div>
+    @if (!coverImageUrl) {
+      <div class="field-image-placeholder">
+        <span class="material-symbols-outlined">stadium</span>
+      </div>
+    }
 
     <div class="media-overlay"></div>
 
@@ -52,38 +56,31 @@
       </div>
     </div>
 
-    <button
-      *ngIf="isSelectionMode"
-      type="button"
-      class="selection-button"
-      [disabled]="!field.attivo"
-      (click)="select()"
-    >
-      Seleziona campo
-    </button>
+    @if (isSelectionMode) {
+      <button type="button" class="selection-button" [disabled]="!field.attivo" (click)="select()">
+        Seleziona campo
+      </button>
+    }
 
-    <div *ngIf="!isSelectionMode" class="active-row">
-      <span>{{ field.attivo ? 'Attivo' : 'Inattivo' }}</span>
-
-      <label class="switch">
-        <input
-          type="checkbox"
-          [checked]="field.attivo"
-          [disabled]="togglePending"
-          (change)="toggleActive($event)"
-        />
-        <span></span>
-      </label>
-    </div>
+    @if (!isSelectionMode) {
+      <div class="active-row">
+        <span>{{ field.attivo ? 'Attivo' : 'Inattivo' }}</span>
+        <label class="switch">
+          <input
+            type="checkbox"
+            [checked]="field.attivo"
+            [disabled]="togglePending"
+            (change)="toggleActive($event)"
+          />
+          <span></span>
+        </label>
+      </div>
+    }
   </div>
 
-  <button
-    *ngIf="!isSelectionMode"
-    type="button"
-    class="edit-button"
-    aria-label="Modifica campo"
-    (click)="edit($event)"
-  >
-    <span class="material-symbols-outlined">edit</span>
-  </button>
+  @if (!isSelectionMode) {
+    <button type="button" class="edit-button" aria-label="Modifica campo" (click)="edit($event)">
+      <span class="material-symbols-outlined">edit</span>
+    </button>
+  }
 </article>

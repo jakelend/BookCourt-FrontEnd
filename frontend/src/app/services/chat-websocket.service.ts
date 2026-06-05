@@ -9,6 +9,7 @@ import { Injectable, NgZone, OnDestroy } from '@angular/core';
 import { Client, IFrame, IMessage, StompSubscription } from '@stomp/stompjs';
 import * as SockJS from 'sockjs-client';
 import { Observable, Subject, filter } from 'rxjs';
+import { environment } from '../../environments/environment';
 import { MessaggioChatResponseDto } from '../dto/response/chat/messaggio-chat-response.dto';
 import { AuthService } from './auth.service';
 
@@ -19,7 +20,7 @@ import { AuthService } from './auth.service';
   providedIn: 'root',
 })
 export class ChatWebsocketService implements OnDestroy {
-  private readonly websocketUrl = 'http://localhost:8080/ws-chat';
+  private readonly websocketUrl = `${environment.backendBaseUrl}/ws-chat`;
   private readonly conversationListDestination = '/topic/chat/conversazioni';
 
   // Client STOMP mantenuto come istanza unica per evitare connessioni duplicate.

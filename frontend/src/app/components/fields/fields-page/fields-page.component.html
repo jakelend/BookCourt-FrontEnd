@@ -11,86 +11,85 @@
     </button>
   </header>
 
-  <section
-    *ngIf="!loading && !errorMessage && fields.length"
-    class="list-controls"
-    aria-label="Filtro disponibilità campi"
-  >
-    <span>Disponibilità</span>
+  @if (!loading && !errorMessage && fields.length) {
+    <section class="list-controls" aria-label="Filtro disponibilità campi">
+      <span>Disponibilità</span>
+      <div class="availability-filter" role="group" aria-label="Filtra campi per disponibilità">
+        <button
+          type="button"
+          [class.active]="availabilityFilter === 'all'"
+          (click)="setAvailabilityFilter('all')"
+        >
+          Tutti
+        </button>
+        <button
+          type="button"
+          [class.active]="availabilityFilter === 'active'"
+          (click)="setAvailabilityFilter('active')"
+        >
+          Attivi
+        </button>
+        <button
+          type="button"
+          [class.active]="availabilityFilter === 'inactive'"
+          (click)="setAvailabilityFilter('inactive')"
+        >
+          Inattivi
+        </button>
+      </div>
+    </section>
+  }
 
-    <div class="availability-filter" role="group" aria-label="Filtra campi per disponibilità">
-      <button
-        type="button"
-        [class.active]="availabilityFilter === 'all'"
-        (click)="setAvailabilityFilter('all')"
-      >
-        Tutti
-      </button>
+  @if (loading) {
+    <section class="feedback-panel" aria-live="polite">
+      <span class="material-symbols-outlined loading-icon">progress_activity</span>
+      <span>Caricamento campi...</span>
+    </section>
+  }
 
-      <button
-        type="button"
-        [class.active]="availabilityFilter === 'active'"
-        (click)="setAvailabilityFilter('active')"
-      >
-        Attivi
-      </button>
+  @if (!loading && errorMessage) {
+    <section class="feedback-panel feedback-panel-error" aria-live="assertive">
+      <div>
+        <strong>Errore caricamento</strong>
+        <p>{{ errorMessage }}</p>
+      </div>
+      <button type="button" class="retry-button" (click)="retry()">Riprova</button>
+    </section>
+  }
 
-      <button
-        type="button"
-        [class.active]="availabilityFilter === 'inactive'"
-        (click)="setAvailabilityFilter('inactive')"
-      >
-        Inattivi
-      </button>
-    </div>
-  </section>
+  @if (!loading && toggleError) {
+    <section class="feedback-panel feedback-panel-error" aria-live="assertive">
+      <div>
+        <strong>Operazione non riuscita</strong>
+        <p>{{ toggleError }}</p>
+      </div>
+    </section>
+  }
 
-  <section *ngIf="loading" class="feedback-panel" aria-live="polite">
-    <span class="material-symbols-outlined loading-icon">progress_activity</span>
-    <span>Caricamento campi...</span>
-  </section>
+  @if (!loading && !errorMessage && !fields.length) {
+    <section class="feedback-panel" aria-live="polite">
+      <span class="material-symbols-outlined">stadium</span>
+      <span>Nessun campo presente.</span>
+    </section>
+  }
 
-  <section *ngIf="!loading && errorMessage" class="feedback-panel feedback-panel-error" aria-live="assertive">
-    <div>
-      <strong>Errore caricamento</strong>
-      <p>{{ errorMessage }}</p>
-    </div>
+  @if (!loading && !errorMessage && fields.length && !filteredFields.length) {
+    <section class="feedback-panel" aria-live="polite">
+      <span class="material-symbols-outlined">filter_alt_off</span>
+      <span>Nessun campo corrisponde al filtro selezionato.</span>
+    </section>
+  }
 
-    <button type="button" class="retry-button" (click)="retry()">Riprova</button>
-  </section>
-
-  <section *ngIf="!loading && toggleError" class="feedback-panel feedback-panel-error" aria-live="assertive">
-    <div>
-      <strong>Operazione non riuscita</strong>
-      <p>{{ toggleError }}</p>
-    </div>
-  </section>
-
-  <section *ngIf="!loading && !errorMessage && !fields.length" class="feedback-panel" aria-live="polite">
-    <span class="material-symbols-outlined">stadium</span>
-    <span>Nessun campo presente.</span>
-  </section>
-
-  <section
-    *ngIf="!loading && !errorMessage && fields.length && !filteredFields.length"
-    class="feedback-panel"
-    aria-live="polite"
-  >
-    <span class="material-symbols-outlined">filter_alt_off</span>
-    <span>Nessun campo corrisponde al filtro selezionato.</span>
-  </section>
-
-  <section
-    *ngIf="!loading && !errorMessage && filteredFields.length"
-    class="fields-grid"
-    aria-label="Lista campi"
-  >
-    <app-field-card
-      *ngFor="let field of filteredFields; trackBy: trackByFieldId"
-      [field]="field"
-      [togglePending]="isToggling(field.id)"
-      (editField)="modifyField($event)"
-      (toggleField)="onToggleField($event)"
-    />
-  </section>
+  @if (!loading && !errorMessage && filteredFields.length) {
+    <section class="fields-grid" aria-label="Lista campi">
+      @for (field of filteredFields; track trackByFieldId($index, field)) {
+        <app-field-card
+          [field]="field"
+          [togglePending]="isToggling(field.id)"
+          (editField)="modifyField($event)"
+          (toggleField)="onToggleField($event)"
+        />
+      }
+    </section>
+  }
 </main>

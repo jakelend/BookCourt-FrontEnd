@@ -9,6 +9,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { catchError, map, Observable, of, shareReplay, tap, throwError } from 'rxjs';
+import { environment } from '../../environments/environment';
 import { ManagerCreateFieldRequestDto, ManagerUpdateFieldRequestDto } from '../dto/request/manager/manager-create-field-request.dto';
 import { ManagerCreateInstructorRequestDto, ManagerUpdateInstructorRequestDto } from '../dto/request/manager/manager-create-instructor-request.dto';
 import { ManagerCreateSecretaryRequestDto, ManagerUpdateSecretaryRequestDto } from '../dto/request/manager/manager-create-secretary-request.dto';
@@ -48,8 +49,8 @@ interface WrappedSecretaryUpdateResponse {
   providedIn: 'root',
 })
 export class ManagerService {
-  private readonly managerApiUrl = 'http://localhost:8080/api/manager';
-  private readonly campiApiUrl = 'http://localhost:8080/api/campi';
+  private readonly managerApiUrl = `${environment.backendBaseUrl}/api/manager`;
+  private readonly campiApiUrl = `${environment.backendBaseUrl}/api/campi`;
   private readonly instructorsStorageKey = 'bookcourt_manager_instructors';
   private readonly secretariesStorageKey = 'bookcourt_manager_secretaries';
   private readonly fieldsStorageKey = 'bookcourt_manager_fields';

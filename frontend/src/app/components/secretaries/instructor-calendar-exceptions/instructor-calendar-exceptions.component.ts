@@ -14,6 +14,12 @@ import { SecretaryInstructorResponseDto } from '../../../dto/response/secretary/
 import { SecretaryInstructorCalendarService } from '../../../services/secretary-instructor-calendar.service';
 import { extractBackendErrorMessage } from '../../../util/error-message.util';
 
+const INSTRUCTOR_UNAVAILABILITY_ERROR_OPTIONS = {
+  statusMessages: {
+    409: 'Esiste già una eccezione calendario per questo istruttore nell\'intervallo selezionato.',
+  },
+};
+
 /**
  * Singola tacca oraria mostrata nella griglia del calendario istruttore.
  */
@@ -292,6 +298,7 @@ export class InstructorCalendarExceptionsComponent implements OnInit {
           const message = extractBackendErrorMessage(
             error,
             'Impossibile inserire l’indisponibilità istruttore.',
+            INSTRUCTOR_UNAVAILABILITY_ERROR_OPTIONS,
           );
           this.formErrorMessage.set(message);
         },

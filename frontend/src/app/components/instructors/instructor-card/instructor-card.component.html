@@ -1,17 +1,13 @@
 <article class="instructor-card">
   <div class="card-media">
-    <img
-      *ngIf="imageUrl; else instructorInitials"
-      [src]="imageUrl"
-      [alt]="fullName"
-      (error)="onImageError()"
-    />
-
-    <ng-template #instructorInitials>
+    @if (imageUrl) {
+      <img [src]="imageUrl" [alt]="fullName" (error)="onImageError()" />
+    } @else {
       <div class="profile-initials-placeholder" aria-label="Iniziali istruttore">
         {{ initials }}
       </div>
-    </ng-template>
+    }
+
     <div class="media-overlay"></div>
 
     <div class="media-title">
@@ -49,22 +45,13 @@
     <div class="active-row">
       <span>{{ instructor.attivo ? 'Attivo' : 'Inattivo' }}</span>
       <label class="switch">
-        <input
-          type="checkbox"
-          [checked]="instructor.attivo"
-          (change)="toggleActive($event)"
-        />
+        <input type="checkbox" [checked]="instructor.attivo" (change)="toggleActive($event)" />
         <span></span>
       </label>
     </div>
   </div>
 
-  <button
-    type="button"
-    class="edit-button"
-    aria-label="Modifica istruttore"
-    (click)="edit()"
-  >
+  <button type="button" class="edit-button" aria-label="Modifica istruttore" (click)="edit()">
     <span class="material-symbols-outlined">edit</span>
   </button>
 </article>

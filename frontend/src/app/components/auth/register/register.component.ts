@@ -10,7 +10,9 @@ import {
 } from '@angular/forms';
 import { Router } from '@angular/router';
 import { finalize } from 'rxjs/operators';
-import { AuthService, RegisterClienteRequestDto } from '../../../services/auth.service';
+import type { RegisterClienteRequestDto } from '../../../dto/request/auth/register-cliente-request.dto';
+import { AuthService } from '../../../services/auth.service';
+import { extractBackendErrorMessage } from '../../../util/error-message.util';
 
 /**
  * Componente della pagina di registrazione cliente.
@@ -26,22 +28,11 @@ import { AuthService, RegisterClienteRequestDto } from '../../../services/auth.s
   styleUrl: './register.component.css',
 })
 export class RegisterComponent {
-  /** Indica se l'utente ha provato a inviare il form. */
   submitted = false;
-
-  /** Indica se è in corso la chiamata HTTP di registrazione. */
   isLoading = false;
-
-  /** Messaggio di errore mostrato quando la registrazione fallisce. */
   registerError = '';
-
-  /** Controlla la visibilità della password principale. */
   showPassword = false;
-
-  /** Controlla la visibilità della password di conferma. */
   showConfirmPassword = false;
-
-  /** Form reattivo con i dati necessari alla registrazione del cliente. */
   registerForm: FormGroup;
 
   constructor(
@@ -49,11 +40,6 @@ export class RegisterComponent {
     private readonly authService: AuthService,
     private readonly router: Router,
   ) {
-    /*
-      Form di registrazione cliente.
-      I validatori controllano campi obbligatori, formato email, telefono
-      e lunghezza password prima di inviare i dati al backend.
-    */
     this.registerForm = this.fb.group(
       {
         nome: ['', [Validators.required]],
@@ -67,32 +53,26 @@ export class RegisterComponent {
     );
   }
 
-  /** Restituisce il controllo del nome. */
   get nome() {
     return this.registerForm.get('nome');
   }
 
-  /** Restituisce il controllo del cognome. */
   get cognome() {
     return this.registerForm.get('cognome');
   }
 
-  /** Restituisce il controllo dell'email. */
   get email() {
     return this.registerForm.get('email');
   }
 
-  /** Restituisce il controllo del telefono. */
   get telefono() {
     return this.registerForm.get('telefono');
   }
 
-  /** Restituisce il controllo della password. */
   get password() {
     return this.registerForm.get('password');
   }
 
-  /** Restituisce il controllo della conferma password. */
   get confirmPassword() {
     return this.registerForm.get('confirmPassword');
   }
@@ -108,7 +88,6 @@ export class RegisterComponent {
     this.submitted = true;
     this.registerError = '';
 
-    // Se almeno un campo non rispetta le validazioni, non invio nulla al backend.
     if (this.registerForm.invalid) {
       this.registerForm.markAllAsTouched();
       return;
@@ -129,33 +108,38 @@ export class RegisterComponent {
       .pipe(finalize(() => (this.isLoading = false)))
       .subscribe({
         next: () => {
+
           // Dopo la registrazione il backend restituisce già la sessione.
           // Quindi mando direttamente l'utente nella dashboard.
           const role = this.authService.getCurrentUserRole();
           void this.router.navigateByUrl(this.authService.getRedirectUrlForRole(role));
         },
         error: (error) => {
-          this.registerError = this.extractRegisterErrorMessage(error);
+          this.registerError = extractBackendErrorMessage(
+            error,
+            'Registrazione non riuscita. Controlla i dati inseriti e riprova.',
+            {
+              statusMessages: {
+                409: 'Email o telefono già registrati.',
+              },
+            },
+          );
         },
       });
   }
 
-  /** Porta l'utente alla pagina di login. */
   onLogin(): void {
     void this.router.navigate(['/login']);
   }
 
-  /** Alterna la visualizzazione della password principale. */
   togglePasswordVisibility(): void {
     this.showPassword = !this.showPassword;
   }
 
-  /** Alterna la visualizzazione della conferma password. */
   toggleConfirmPasswordVisibility(): void {
     this.showConfirmPassword = !this.showConfirmPassword;
   }
 
-  /** Porta l'utente alla pagina pubblica di preview. */
   onPreview(): void {
     void this.router.navigate(['/preview']);
   }
@@ -177,30 +161,4 @@ export class RegisterComponent {
     return password === confirmPassword ? null : { passwordsMismatch: true };
   }
 
-  /**
-   * Estrae dal backend un messaggio di errore comprensibile per la registrazione.
-   *
-   * @param error Errore HTTP ricevuto dalla chiamata di registrazione.
-   * @returns Messaggio da visualizzare all'utente.
-   */
-  private extractRegisterErrorMessage(error: any): string {
-    if (error?.error?.message) {
-      return error.error.message;
-    }
-
-    if (error?.error?.fields) {
-      const firstFieldError = Object.values(error.error.fields)[0];
-      return String(firstFieldError);
-    }
-
-    if (error?.status === 0) {
-      return 'Backend non raggiungibile. Controlla che Spring Boot sia avviato sulla porta 8080.';
-    }
-
-    if (error?.status === 409) {
-      return 'Email o telefono già registrati.';
-    }
-
-    return 'Registrazione non riuscita. Controlla i dati inseriti e riprova.';
-  }
 }

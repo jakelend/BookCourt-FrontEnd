@@ -12,7 +12,9 @@ import {
   BookingFieldResponseDto,
   BookingSport,
 } from '../../../dto/response/booking/booking-field-response.dto';
+import { isSport } from '../../../enumeration/sport.enum';
 import { BookingService } from '../../../services/booking.service';
+import { extractBackendErrorMessage } from '../../../util/error-message.util';
 
 /**
  * Singolo step mostrato nella timeline del flusso di prenotazione.
@@ -142,8 +144,6 @@ export class BookingFieldSelectionComponent implements OnInit {
     this.fields.set([]);
     this.fieldImageStates.set({});
 
-    console.log('Sport selezionato nella pagina campi:', sport);
-
     this.bookingService
       .getCampiDisponibiliPerSport(sport)
       .pipe(
@@ -153,8 +153,6 @@ export class BookingFieldSelectionComponent implements OnInit {
       )
       .subscribe({
         next: (fields) => {
-          console.log('Campi ricevuti nel componente:', fields);
-
           this.fields.set(fields);
           this.fieldImageStates.set(this.buildInitialImageStates(fields));
           this.cleanSavedFieldIfNotPresent();
@@ -290,25 +288,20 @@ export class BookingFieldSelectionComponent implements OnInit {
     }, {});
   }
 
-  /** Traduce l'errore di caricamento campi in un messaggio comprensibile per l'utente. */
-  private buildLoadFieldsErrorMessage(error: any, sport: BookingSport): string {
-    if (error?.name === 'TimeoutError') {
-      return 'La richiesta dei campi sta impiegando troppo tempo. Controlla il backend e riprova.';
-    }
-
-    if (error?.status === 0) {
-      return 'Il frontend non riesce a raggiungere il backend. Controlla che Spring Boot sia avviato su porta 8080.';
-    }
-
-    if (error?.status === 400) {
-      return `Sport non valido inviato al backend: ${sport}. Deve essere CALCETTO, PADEL o TENNIS.`;
-    }
-
-    if (error?.status === 401 || error?.status === 403) {
-      return 'Non sei autorizzato a visualizzare i campi. Effettua di nuovo il login come cliente.';
-    }
-
-    return 'Non è stato possibile caricare i campi disponibili. Controlla la console del browser e del backend.';
+  private buildLoadFieldsErrorMessage(error: unknown, sport: BookingSport): string {
+    return extractBackendErrorMessage(
+      error,
+      'Non è stato possibile caricare i campi disponibili. Controlla la console del browser e del backend.',
+      {
+        timeoutMessage: 'La richiesta dei campi sta impiegando troppo tempo. Controlla il backend e riprova.',
+        statusMessages: {
+          0: 'Il frontend non riesce a raggiungere il backend. Controlla che Spring Boot sia avviato su porta 8080.',
+          400: `Sport non valido inviato al backend: ${sport}. Deve essere CALCETTO, PADEL o TENNIS.`,
+          401: 'Non sei autorizzato a visualizzare i campi. Effettua di nuovo il login come cliente.',
+          403: 'Non sei autorizzato a visualizzare i campi. Effettua di nuovo il login come cliente.',
+        },
+      },
+    );
   }
 
   /** Converte il codice sport backend in etichetta leggibile. */
@@ -333,7 +326,7 @@ export class BookingFieldSelectionComponent implements OnInit {
     const sportFromSession = sessionStorage.getItem('booking.selectedSport');
     const sport = sportFromQuery ?? sportFromSession;
 
-    if (sport === 'CALCETTO' || sport === 'PADEL' || sport === 'TENNIS') {
+    if (isSport(sport)) {
       return sport;
     }
 

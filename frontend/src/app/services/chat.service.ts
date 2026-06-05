@@ -8,6 +8,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { catchError, Observable, of, shareReplay, tap, throwError } from 'rxjs';
+import { environment } from '../../environments/environment';
 import { InviaMessaggioChatRequestDto } from '../dto/request/chat/invia-messaggio-chat-request.dto';
 import { ConversazioneChatResponseDto } from '../dto/response/chat/conversazione-chat-response.dto';
 import { MessaggioChatResponseDto } from '../dto/response/chat/messaggio-chat-response.dto';
@@ -20,7 +21,7 @@ import { AuthService } from './auth.service';
   providedIn: 'root',
 })
 export class ChatService {
-  private readonly apiUrl = 'http://localhost:8080/api/chat';
+  private readonly apiUrl = `${environment.backendBaseUrl}/api/chat`;
   private readonly conversationsStorageKeyPrefix = 'bookcourt_chat_conversations';
   private readonly messagesStorageKeyPrefix = 'bookcourt_chat_messages';
   private conversationsCache?: ConversazioneChatResponseDto[];

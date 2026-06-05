@@ -20,13 +20,13 @@
           <span class="material-symbols-outlined input-icon">mail</span>
         </div>
 
-        <p *ngIf="(submitted() || email?.touched) && email?.errors?.['required']" class="field-error">
-          Inserisci l'email.
-        </p>
+        @if ((submitted() || email?.touched) && email?.errors?.['required']) {
+          <p class="field-error">Inserisci l'email.</p>
+        }
 
-        <p *ngIf="(submitted() || email?.touched) && email?.errors?.['email']" class="field-error">
-          Inserisci un'email valida.
-        </p>
+        @if ((submitted() || email?.touched) && email?.errors?.['email']) {
+          <p class="field-error">Inserisci un'email valida.</p>
+        }
       </div>
 
       <div class="form-field">
@@ -53,32 +53,34 @@
             [attr.aria-label]="showPassword ? 'Nascondi password' : 'Mostra password'"
             (click)="togglePasswordVisibility()"
           >
-            <span class="material-symbols-outlined">{{ showPassword ? 'visibility' : 'visibility_off' }}</span>
+            <span class="material-symbols-outlined">{{
+              showPassword ? 'visibility' : 'visibility_off'
+            }}</span>
           </button>
         </div>
 
-        <p
-          *ngIf="(submitted() || password?.touched) && password?.errors?.['required']"
-          class="field-error"
-        >
-          Inserisci la password.
-        </p>
-
-        <p
-          *ngIf="(submitted() || password?.touched) && password?.errors?.['minlength']"
-          class="field-error"
-        >
-          La password deve avere almeno 6 caratteri.
-        </p>
+        <!-- Se i campi sono stati toccati o il form è stato inviato, mostro errori di validazione -->
+        @if ((submitted() || password?.touched) && password?.errors?.['required']) {
+          <p class="field-error">Inserisci la password.</p>
+        }
+        @if ((submitted() || password?.touched) && password?.errors?.['minlength']) {
+          <p class="field-error">La password deve avere almeno 6 caratteri.</p>
+        }
       </div>
 
-      <div *ngIf="loginError()" class="form-message error-message">
-        {{ loginError() }}
-      </div>
+      @if (loginError()) {
+        <div class="form-message error-message">
+          {{ loginError() }}
+        </div>
+      }
 
       <button type="submit" class="primary-button" [disabled]="loginForm.invalid || isLoading()">
-        <span *ngIf="!isLoading()">Login</span>
-        <span *ngIf="isLoading()">Accesso in corso...</span>
+        @if (!isLoading()) {
+          <span>Login</span>
+        }
+        @if (isLoading()) {
+          <span>Accesso in corso...</span>
+        }
       </button>
     </form>
 

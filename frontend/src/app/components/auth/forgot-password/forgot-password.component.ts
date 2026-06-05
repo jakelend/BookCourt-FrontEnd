@@ -3,7 +3,9 @@ import { Component } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { finalize } from 'rxjs/operators';
-import { AuthService, ForgotPasswordRequestDto } from '../../../services/auth.service';
+import type { ForgotPasswordRequestDto } from '../../../dto/request/auth/forgot-password-request.dto';
+import { AuthService } from '../../../services/auth.service';
+import { extractBackendErrorMessage } from '../../../util/error-message.util';
 
 /**
  * Componente della pagina "password dimenticata".
@@ -19,19 +21,10 @@ import { AuthService, ForgotPasswordRequestDto } from '../../../services/auth.se
   styleUrl: './forgot-password.component.css',
 })
 export class ForgotPasswordComponent {
-  /** Indica se l'utente ha provato a inviare il form. */
   submitted = false;
-
-  /** Indica se è in corso la chiamata HTTP di recupero password. */
   isLoading = false;
-
-  /** Messaggio di errore mostrato quando la richiesta fallisce. */
   recoveryError = '';
-
-  /** Messaggio di conferma mostrato quando la richiesta viene accettata. */
   recoverySuccess = '';
-
-  /** Form reattivo contenente solo l'email dell'utente. */
   forgotPasswordForm: FormGroup;
 
   constructor(
@@ -39,16 +32,11 @@ export class ForgotPasswordComponent {
     private readonly authService: AuthService,
     private readonly router: Router,
   ) {
-    /*
-      In questa pagina serve solo l'email.
-      Il backend poi genera il token e invia il link per cambiare la password.
-    */
     this.forgotPasswordForm = this.fb.group({
       email: ['', [Validators.required, Validators.email]],
     });
   }
 
-  /** Restituisce il controllo del form relativo all'email. */
   get email() {
     return this.forgotPasswordForm.get('email');
   }
@@ -80,7 +68,7 @@ export class ForgotPasswordComponent {
       .pipe(finalize(() => (this.isLoading = false)))
       .subscribe({
         next: (response) => {
-          // Messaggio volutamente generico: evita di dire chiaramente se l'email esiste oppure no.
+          // Messaggio volutamente generico: non rivela se l'email esiste.
           this.recoverySuccess =
             response?.message ||
             'Se l’email è registrata, riceverai un link per creare una nuova password.';
@@ -89,36 +77,15 @@ export class ForgotPasswordComponent {
           this.submitted = false;
         },
         error: (error) => {
-          this.recoveryError = this.extractRecoveryErrorMessage(error);
+          this.recoveryError = extractBackendErrorMessage(
+            error,
+            'Non è stato possibile inviare l’email di recupero. Riprova.',
+          );
         },
       });
   }
 
-  /** Porta l'utente alla pagina di login. */
   onLogin(): void {
     void this.router.navigate(['/login']);
-  }
-
-  /**
-   * Estrae un messaggio leggibile dagli errori della richiesta di recupero.
-   *
-   * @param error Errore HTTP o generico restituito dal backend.
-   * @returns Messaggio da mostrare nella pagina.
-   */
-  private extractRecoveryErrorMessage(error: any): string {
-    if (error?.error?.message) {
-      return error.error.message;
-    }
-
-    if (error?.error?.fields) {
-      const firstFieldError = Object.values(error.error.fields)[0];
-      return String(firstFieldError);
-    }
-
-    if (error?.status === 0) {
-      return 'Backend non raggiungibile. Controlla che Spring Boot sia avviato sulla porta 8080.';
-    }
-
-    return 'Non è stato possibile inviare l’email di recupero. Riprova.';
   }
 }

@@ -251,6 +251,7 @@
   transform: scale(0.98);
 }
 
+/* Responsive */
 @media (max-width: 760px) {
   .booking-confirmation-page {
     padding: 32px 18px 52px;

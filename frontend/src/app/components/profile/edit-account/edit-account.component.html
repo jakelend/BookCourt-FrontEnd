@@ -3,22 +3,17 @@
     <header class="form-panel-header">
       <span class="section-eyebrow">Gestione account</span>
       <h1>Modifica dati personali</h1>
-      <p>
-        Aggiorna nome, cognome, email e numero di telefono del tuo account.
-      </p>
+      <p>Aggiorna nome, cognome, email e numero di telefono del tuo account.</p>
     </header>
 
-    <div *ngIf="isLoadingProfile()" class="loading-panel">
-      <div class="loading-spinner" aria-hidden="true"></div>
-      <span>Caricamento dati account...</span>
-    </div>
+    @if (isLoadingProfile()) {
+      <div class="loading-panel">
+        <div class="loading-spinner" aria-hidden="true"></div>
+        <span>Caricamento dati account...</span>
+      </div>
+    }
 
-    <form
-      class="edit-account-form"
-      [formGroup]="accountForm"
-      (ngSubmit)="onSubmit()"
-      novalidate
-    >
+    <form class="edit-account-form" [formGroup]="accountForm" (ngSubmit)="onSubmit()" novalidate>
       <div class="form-grid two-columns">
         <label class="form-field">
           <span>Nome</span>
@@ -29,13 +24,13 @@
             placeholder="Inserisci il nome"
           />
 
-          <small *ngIf="(submitted || nome?.touched) && nome?.errors?.['required']">
-            Il nome è obbligatorio.
-          </small>
+          @if ((submitted || nome?.touched) && nome?.errors?.['required']) {
+            <small> Il nome è obbligatorio. </small>
+          }
 
-          <small *ngIf="(submitted || nome?.touched) && nome?.errors?.['maxlength']">
-            Il nome non può superare 80 caratteri.
-          </small>
+          @if ((submitted || nome?.touched) && nome?.errors?.['maxlength']) {
+            <small> Il nome non può superare 80 caratteri. </small>
+          }
         </label>
 
         <label class="form-field">
@@ -47,13 +42,13 @@
             placeholder="Inserisci il cognome"
           />
 
-          <small *ngIf="(submitted || cognome?.touched) && cognome?.errors?.['required']">
-            Il cognome è obbligatorio.
-          </small>
+          @if ((submitted || cognome?.touched) && cognome?.errors?.['required']) {
+            <small> Il cognome è obbligatorio. </small>
+          }
 
-          <small *ngIf="(submitted || cognome?.touched) && cognome?.errors?.['maxlength']">
-            Il cognome non può superare 80 caratteri.
-          </small>
+          @if ((submitted || cognome?.touched) && cognome?.errors?.['maxlength']) {
+            <small> Il cognome non può superare 80 caratteri. </small>
+          }
         </label>
       </div>
 
@@ -66,17 +61,17 @@
           placeholder="nome@email.it"
         />
 
-        <small *ngIf="(submitted || email?.touched) && email?.errors?.['required']">
-          L'email è obbligatoria.
-        </small>
+        @if ((submitted || email?.touched) && email?.errors?.['required']) {
+          <small> L'email è obbligatoria. </small>
+        }
 
-        <small *ngIf="(submitted || email?.touched) && email?.errors?.['email']">
-          Inserisci un'email valida.
-        </small>
+        @if ((submitted || email?.touched) && email?.errors?.['email']) {
+          <small> Inserisci un'email valida. </small>
+        }
 
-        <small *ngIf="(submitted || email?.touched) && email?.errors?.['maxlength']">
-          L'email non può superare 255 caratteri.
-        </small>
+        @if ((submitted || email?.touched) && email?.errors?.['maxlength']) {
+          <small> L'email non può superare 255 caratteri. </small>
+        }
       </label>
 
       <label class="form-field">
@@ -90,22 +85,26 @@
           placeholder="3331234567"
         />
 
-        <small *ngIf="(submitted || telefono?.touched) && telefono?.errors?.['required']">
-          Il numero di telefono è obbligatorio.
-        </small>
+        @if ((submitted || telefono?.touched) && telefono?.errors?.['required']) {
+          <small> Il numero di telefono è obbligatorio. </small>
+        }
 
-        <small *ngIf="(submitted || telefono?.touched) && telefono?.errors?.['pattern']">
-          Il telefono deve contenere esattamente 10 cifre.
-        </small>
+        @if ((submitted || telefono?.touched) && telefono?.errors?.['pattern']) {
+          <small> Il telefono deve contenere esattamente 10 cifre. </small>
+        }
       </label>
 
-      <div *ngIf="errorMessage()" class="form-message error-message">
-        {{ errorMessage() }}
-      </div>
+      @if (errorMessage()) {
+        <div class="form-message error-message">
+          {{ errorMessage() }}
+        </div>
+      }
 
-      <div *ngIf="successMessage()" class="form-message success-message">
-        {{ successMessage() }}
-      </div>
+      @if (successMessage()) {
+        <div class="form-message success-message">
+          {{ successMessage() }}
+        </div>
+      }
 
       <div class="form-actions">
         <button type="button" class="secondary-action" (click)="goBackToDashboard()">

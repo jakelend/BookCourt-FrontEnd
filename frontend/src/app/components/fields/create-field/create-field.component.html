@@ -11,7 +11,11 @@
         <div class="images-header">
           <div>
             <h2>Immagini campo</h2>
-            <p>Minimo 1, massimo {{ maxImages }} immagini. Caricate: {{ imagePreviews().length }}/{{ maxImages }}</p>
+            <p>
+              Minimo 1, massimo {{ maxImages }} immagini. Caricate: {{ imagePreviews().length }}/{{
+                maxImages
+              }}
+            </p>
           </div>
 
           <button
@@ -33,20 +37,22 @@
           (change)="onImagesSelected($event)"
         />
 
-        <div class="images-grid" *ngIf="imagePreviews().length; else emptyImages">
-          <figure
-            *ngFor="let preview of imagePreviews(); let index = index; trackBy: trackByImageUrl"
-            class="image-preview"
-          >
-            <img [src]="preview.url" [alt]="'Immagine campo ' + (index + 1)" />
-
-            <button type="button" aria-label="Rimuovi immagine" (click)="removeImage(index)">
-              <span class="material-symbols-outlined">close</span>
-            </button>
-          </figure>
-        </div>
-
-        <ng-template #emptyImages>
+        @if (imagePreviews().length) {
+          <div class="images-grid">
+            @for (
+              preview of imagePreviews();
+              track trackByImageUrl(index, preview);
+              let index = $index
+            ) {
+              <figure class="image-preview">
+                <img [src]="preview.url" [alt]="'Immagine campo ' + (index + 1)" />
+                <button type="button" aria-label="Rimuovi immagine" (click)="removeImage(index)">
+                  <span class="material-symbols-outlined">close</span>
+                </button>
+              </figure>
+            }
+          </div>
+        } @else {
           <button
             type="button"
             class="empty-images-button"
@@ -56,11 +62,13 @@
             <span class="material-symbols-outlined">add_photo_alternate</span>
             <span>Carica da 1 a 6 immagini</span>
           </button>
-        </ng-template>
+        }
 
-        <p *ngIf="fieldError('images')" class="upload-error">
-          {{ fieldError('images') }}
-        </p>
+        @if (fieldError('images')) {
+          <p class="upload-error">
+            {{ fieldError('images') }}
+          </p>
+        }
       </section>
 
       <section class="form-grid" aria-label="Dati campo">
@@ -78,9 +86,11 @@
             (input)="clearFieldError('nome')"
           />
 
-          <small *ngIf="fieldError('nome')" class="field-error">
-            {{ fieldError('nome') }}
-          </small>
+          @if (fieldError('nome')) {
+            <small class="field-error">
+              {{ fieldError('nome') }}
+            </small>
+          }
         </label>
 
         <label class="form-field">
@@ -94,14 +104,18 @@
             (change)="clearFieldError('sport')"
           >
             <option value="" selected disabled>Seleziona sport</option>
-            <option *ngFor="let sportType of sportTypes" [value]="sportType">
-              {{ sportType }}
-            </option>
+            @for (sportType of sportTypes; track sportType) {
+              <option [value]="sportType">
+                {{ sportType }}
+              </option>
+            }
           </select>
 
-          <small *ngIf="fieldError('sport')" class="field-error">
-            {{ fieldError('sport') }}
-          </small>
+          @if (fieldError('sport')) {
+            <small class="field-error">
+              {{ fieldError('sport') }}
+            </small>
+          }
         </label>
 
         <label class="form-field">
@@ -120,35 +134,32 @@
             (input)="normalizeHourlyRate($event); clearFieldError('costoOrario')"
           />
 
-          <small *ngIf="fieldError('costoOrario')" class="field-error">
-            {{ fieldError('costoOrario') }}
-          </small>
+          @if (fieldError('costoOrario')) {
+            <small class="field-error">
+              {{ fieldError('costoOrario') }}
+            </small>
+          }
         </label>
       </section>
 
-      <div *ngIf="submitError()" class="form-message error-message">
-        {{ submitError() }}
-      </div>
+      @if (submitError()) {
+        <div class="form-message error-message">
+          {{ submitError() }}
+        </div>
+      }
 
-      <div *ngIf="submitSuccess()" class="form-message success-message">
-        {{ submitSuccess() }}
-      </div>
+      @if (submitSuccess()) {
+        <div class="form-message success-message">
+          {{ submitSuccess() }}
+        </div>
+      }
 
       <div class="form-actions">
-        <button
-          type="button"
-          class="secondary-action"
-          [disabled]="isLoading()"
-          (click)="cancel()"
-        >
+        <button type="button" class="secondary-action" [disabled]="isLoading()" (click)="cancel()">
           Annulla
         </button>
 
-        <button
-          type="submit"
-          class="primary-action"
-          [disabled]="isLoading()"
-        >
+        <button type="submit" class="primary-action" [disabled]="isLoading()">
           {{ isLoading() ? 'Creazione...' : 'Crea campo' }}
         </button>
       </div>

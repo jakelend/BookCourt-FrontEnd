@@ -15,8 +15,6 @@
   margin: 0 auto;
 }
 
-/* STEP BAR */
-
 
 .stepper-current {
   color: #76777d;
@@ -37,8 +35,7 @@
 }
 
 
-/* HEADER PAGINA */
-
+/* Header pagina */
 .page-header {
   margin-bottom: 28px;
 }
@@ -52,8 +49,7 @@
   line-height: 1.5;
 }
 
-/* GRID CAMPI */
-
+/* Grid Campi */
 .fields-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -61,8 +57,7 @@
   margin-bottom: 32px;
 }
 
-/* CARD CAMPO */
-
+/* Card Campo */
 .field-card {
   overflow: hidden;
   border: 1px solid #d7dce2;
@@ -158,11 +153,11 @@
   font-size: 42px;
 }
 
+
 @keyframes field-image-skeleton-loading {
   0% {
     background-position: 100% 0;
   }
-
   100% {
     background-position: -100% 0;
   }
@@ -276,8 +271,7 @@
   cursor: not-allowed;
 }
 
-/* EMPTY */
-
+/* Empty */
 .empty-panel {
   min-height: 120px;
   border: 1px solid #d9dde3;
@@ -290,15 +284,13 @@
   gap: 16px;
 }
 
-
 .empty-panel strong {
   font-size: 16px;
   font-weight: 900;
 }
 
 
-/* BACK */
-
+/* Back */
 .booking-actions {
   margin-top: 28px;
   padding-top: 22px;
@@ -334,14 +326,12 @@
   font-size: 20px;
 }
 
-/* RESPONSIVE */
-
+/* Responsive */
 @media (max-width: 1080px) {
   .fields-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
-
 @media (max-width: 720px) {
   .booking-field-page {
     padding: 24px 18px 44px;

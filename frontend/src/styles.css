@@ -30,6 +30,7 @@ a {
   color: inherit;
 }
 
+/* Imposta peso e riempimento predefiniti delle icone Google Material Symbols */
 .material-symbols-outlined {
   font-variation-settings:
     'FILL' 1,
@@ -38,8 +39,7 @@ a {
     'opsz' 24;
 }
 
-/* Stili comuni per login, registrazione, forgot password e reset password. */
-
+/* Stili comuni per login, registrazione, forgot password e reset password */
 .auth-page {
   min-height: 100vh;
   padding: 24px;
@@ -58,6 +58,7 @@ a {
   box-shadow: 0 24px 70px rgba(15, 23, 42, 0.09);
 }
 
+/* Variante più stretta usata dai form di autenticazione con pochi campi */
 .auth-card-small {
   max-width: 390px;
 }
@@ -67,6 +68,7 @@ a {
   text-align: center;
 }
 
+/* Condivide lo stesso stile tra logo cliccabile e titolo statico della pagina auth */
 .brand-button,
 .auth-header h1 {
   margin: 0;
@@ -117,6 +119,7 @@ a {
   text-transform: uppercase;
 }
 
+/* Tiene label e azione secondaria, ad esempio "password dimenticata", sulla stessa riga */
 .label-row {
   display: flex;
   align-items: center;
@@ -124,6 +127,7 @@ a {
   gap: 12px;
 }
 
+/* Stile testuale comune per link-azione renderizzati come pulsanti */
 .forgot-button,
 .auth-footer button,
 .text-button {
@@ -145,6 +149,7 @@ a {
   opacity: 0.75;
 }
 
+/* Contenitore per posizionare icone e toggle dentro l'input */
 .input-wrapper {
   position: relative;
   width: 100%;
@@ -178,10 +183,12 @@ a {
   box-shadow: 0 0 0 4px rgba(11, 75, 204, 0.1);
 }
 
+/* Aumenta lo spazio interno quando l'input contiene anche il pulsante mostra/nascondi password */
 .input-wrapper.has-password-toggle input {
   padding-right: 76px;
 }
 
+/* Icona decorativa interna al campo: non intercetta click o focus dell'input */
 .input-icon {
   position: absolute;
   top: 50%;
@@ -192,6 +199,7 @@ a {
   pointer-events: none;
 }
 
+/* Sposta l'icona a sinistra del pulsante mostra/nascondi password quando entrambi sono presenti */
 .input-wrapper.has-password-toggle .input-icon {
   right: 50px;
 }
@@ -232,6 +240,7 @@ a {
   font-weight: 800;
 }
 
+/* Base condivisa per messaggi di feedback */
 .form-message {
   border-radius: 9px;
   padding: 10px 12px;
@@ -324,15 +333,14 @@ a {
   color: #0b4bcc;
 }
 
+/* Responsive, compatta le card auth e porta i form a una sola colonna su mobile. */
 @media (max-width: 620px) {
   .auth-page {
     padding: 16px;
   }
-
   .auth-card {
     padding: 30px 22px;
   }
-
   .form-grid {
     grid-template-columns: 1fr;
   }

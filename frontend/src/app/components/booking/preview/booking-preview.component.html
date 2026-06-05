@@ -2,29 +2,23 @@
   <section class="booking-preview-container">
     <section class="booking-stepper" aria-label="Avanzamento prenotazione">
       <div class="stepper-header">
-        <span class="stepper-current">
-          Step {{ currentStep }} di {{ totalSteps }}
-        </span>
+        <span class="stepper-current"> Step {{ currentStep }} di {{ totalSteps }} </span>
 
-        <span class="stepper-title">
-          Riepilogo prenotazione
-        </span>
+        <span class="stepper-title"> Riepilogo prenotazione </span>
       </div>
 
       <div class="stepper-segments" aria-hidden="true">
-        <span
-          *ngFor="let step of steps; let i = index; trackBy: trackByStepLabel"
-          [class.active]="isStepCompleted(i)"
-        ></span>
+        @for (step of steps; track trackByStepLabel(i, step); let i = $index) {
+          <span [class.active]="isStepCompleted(i)"></span>
+        }
       </div>
 
       <div class="step-labels">
-        <span
-          *ngFor="let step of steps; let i = index; trackBy: trackByStepLabel"
-          [class.active]="isStepCompleted(i)"
-        >
-          {{ step.label }}
-        </span>
+        @for (step of steps; track trackByStepLabel(i, step); let i = $index) {
+          <span [class.active]="isStepCompleted(i)">
+            {{ step.label }}
+          </span>
+        }
       </div>
     </section>
 
@@ -32,7 +26,9 @@
       <h1>Controlla la prenotazione</h1>
       <p>
         Verifica campo, data, orario e costi prima di confermare.
-        <strong *ngIf="selectedSportLabel()">{{ selectedSportLabel() }}</strong>
+        @if (selectedSportLabel()) {
+          <strong>{{ selectedSportLabel() }}</strong>
+        }
       </p>
     </header>
 
@@ -46,9 +42,7 @@
           <div class="hero-content">
             <span class="hero-kicker">Prenotazione</span>
             <h2>{{ selectedFieldName() || 'Campo selezionato' }}</h2>
-            <p>
-              {{ selectedDateTitle() }} · {{ timeLabel() }} · {{ durationLabel() }}
-            </p>
+            <p>{{ selectedDateTitle() }} · {{ timeLabel() }} · {{ durationLabel() }}</p>
           </div>
         </section>
 
@@ -89,104 +83,112 @@
           </div>
         </section>
 
-        <section *ngIf="isExtraSport()" class="section-card">
-          <div class="section-heading">
-            <span class="step-badge">2</span>
-
-            <div>
-              <h2>Extra selezionati</h2>
-              <p>Istruttore e racchette scelti per tennis/padel.</p>
+        @if (isExtraSport()) {
+          <section class="section-card">
+            <div class="section-heading">
+              <span class="step-badge">2</span>
+              <div>
+                <h2>Extra selezionati</h2>
+                <p>Istruttore e racchette scelti per tennis/padel.</p>
+              </div>
             </div>
-          </div>
+            <div class="extra-grid">
+              <article class="extra-tile" [class.enabled]="conIstruttore()">
+                <span class="material-symbols-outlined">sports</span>
+                <div>
+                  <small>Istruttore </small>
+                  <strong> {{ selectedInstructorName() }}</strong>
+                  @if (conIstruttore()) {
+                    <p>Tariffa: {{ formatCurrency(selectedInstructorHourlyRate()) }}/h</p>
+                  } @else {
+                    <p>Nessun istruttore selezionato.</p>
+                  }
+                </div>
+              </article>
+              <article class="extra-tile" [class.enabled]="racketsCount() > 0">
+                <span class="material-symbols-outlined">sports_tennis</span>
+                <div>
+                  <small>Racchette </small>
+                  <strong> {{ racketsLabel() }}</strong>
+                  <p>{{ formatCurrency(racketUnitPrice()) }} per racchetta</p>
+                </div>
+              </article>
+            </div>
+          </section>
+        }
 
-          <div class="extra-grid">
-            <article class="extra-tile" [class.enabled]="conIstruttore()">
-              <span class="material-symbols-outlined">sports</span>
-
-              <div>
-                <small>Istruttore </small>
-                <strong> {{ selectedInstructorName() }}</strong>
-                <p *ngIf="conIstruttore(); else noInstructor">
-                  Tariffa: {{ formatCurrency(selectedInstructorHourlyRate()) }}/h
-                </p>
-
-                <ng-template #noInstructor>
-                  <p>Nessun istruttore selezionato.</p>
-                </ng-template>
-              </div>
-            </article>
-
-            <article class="extra-tile" [class.enabled]="racketsCount() > 0">
-              <span class="material-symbols-outlined">sports_tennis</span>
-
-              <div>
-                <small>Racchette </small>
-                <strong> {{ racketsLabel() }}</strong>
-                <p>{{ formatCurrency(racketUnitPrice()) }} per racchetta</p>
-              </div>
-            </article>
-          </div>
-        </section>
-
-        <section *ngIf="selectedSport() === 'CALCETTO'" class="section-card info-card">
-          <span class="material-symbols-outlined">info</span>
-
-          <div>
-            <h2>Nessun extra previsto</h2>
-            <p>
-              Per il calcetto il flusso salta la scheda Extra: il riepilogo include solo campo, data, ora e costo campo.
-            </p>
-          </div>
-        </section>
+        @if (selectedSport() === 'CALCETTO') {
+          <section class="section-card info-card">
+            <span class="material-symbols-outlined">info</span>
+            <div>
+              <h2>Nessun extra previsto</h2>
+              <p>
+                Per il calcetto il flusso salta la scheda Extra: il riepilogo include solo campo,
+                data, ora e costo campo.
+              </p>
+            </div>
+          </section>
+        }
       </div>
 
       <aside class="side-panel">
         <section class="summary-card">
           <h2>Costi</h2>
 
-          <div *ngIf="isLoading()" class="loading-panel">
-            <div class="loading-spinner" aria-hidden="true"></div>
-            <span>Calcolo riepilogo...</span>
-          </div>
-          <div *ngIf="isReleasingLock()" class="loading-panel">
-            <div class="loading-spinner" aria-hidden="true"></div>
-            <span>Libero lo slot temporaneo...</span>
-          </div>
+          @if (isLoading()) {
+            <div class="loading-panel">
+              <div class="loading-spinner" aria-hidden="true"></div>
+              <span>Calcolo riepilogo...</span>
+            </div>
+          }
+          @if (isReleasingLock()) {
+            <div class="loading-panel">
+              <div class="loading-spinner" aria-hidden="true"></div>
+              <span>Libero lo slot temporaneo...</span>
+            </div>
+          }
 
-          <div *ngIf="isConfirming()" class="loading-panel">
-            <div class="loading-spinner" aria-hidden="true"></div>
-            <span>Confermo la prenotazione...</span>
-          </div>
+          @if (isConfirming()) {
+            <div class="loading-panel">
+              <div class="loading-spinner" aria-hidden="true"></div>
+              <span>Confermo la prenotazione...</span>
+            </div>
+          }
 
-          <div *ngIf="errorMessage()" class="form-alert error-feedback">
-            {{ errorMessage() }}
-          </div>
+          @if (errorMessage()) {
+            <div class="form-alert error-feedback">
+              {{ errorMessage() }}
+            </div>
+          }
 
-          <div *ngIf="feedbackMessage()" class="form-alert success-feedback">
-            {{ feedbackMessage() }}
-          </div>
+          @if (feedbackMessage()) {
+            <div class="form-alert success-feedback">
+              {{ feedbackMessage() }}
+            </div>
+          }
 
-          <ng-container *ngIf="preview() as costi">
+          @if (preview(); as costi) {
             <div class="cost-row">
               <span>Costo campo</span>
               <strong>{{ formatCurrency(costi.costoCampo) }}</strong>
             </div>
-
-            <div *ngIf="isExtraSport()" class="cost-row">
-              <span>Costo istruttore</span>
-              <strong>{{ formatCurrency(costi.costoIstruttore) }}</strong>
-            </div>
-
-            <div *ngIf="isExtraSport()" class="cost-row">
-              <span>Costo racchette</span>
-              <strong>{{ formatCurrency(costi.costoRacchette) }}</strong>
-            </div>
-
+            @if (isExtraSport()) {
+              <div class="cost-row">
+                <span>Costo istruttore</span>
+                <strong>{{ formatCurrency(costi.costoIstruttore) }}</strong>
+              </div>
+            }
+            @if (isExtraSport()) {
+              <div class="cost-row">
+                <span>Costo racchette</span>
+                <strong>{{ formatCurrency(costi.costoRacchette) }}</strong>
+              </div>
+            }
             <div class="total-row">
               <span>Totale</span>
               <strong>{{ formatCurrency(costi.totale) }}</strong>
             </div>
-          </ng-container>
+          }
 
           <div class="summary-data">
             <div class="summary-row">
@@ -204,15 +206,19 @@
               <strong>{{ timeLabel() }}</strong>
             </div>
 
-            <div *ngIf="isExtraSport()" class="summary-row">
-              <span>Istruttore </span>
-              <strong>{{ selectedInstructorName() }}</strong>
-            </div>
+            @if (isExtraSport()) {
+              <div class="summary-row">
+                <span>Istruttore </span>
+                <strong>{{ selectedInstructorName() }}</strong>
+              </div>
+            }
 
-            <div *ngIf="isExtraSport()" class="summary-row">
-              <span>Racchette </span>
-              <strong>{{ racketsLabel() }}</strong>
-            </div>
+            @if (isExtraSport()) {
+              <div class="summary-row">
+                <span>Racchette </span>
+                <strong>{{ racketsLabel() }}</strong>
+              </div>
+            }
           </div>
 
           <div class="booking-actions">

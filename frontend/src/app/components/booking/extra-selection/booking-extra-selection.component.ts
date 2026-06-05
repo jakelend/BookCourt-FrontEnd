@@ -9,12 +9,12 @@ import {
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { finalize } from 'rxjs';
-import { BookingSport } from '../../../dto/response/booking/booking-field-response.dto';
-import {
-  BookingAvailableInstructorResponseDto,
-  BookingService,
-  CreateBookingLockRequestDto,
-} from '../../../services/booking.service';
+import type { CreateBookingLockRequestDto } from '../../../dto/request/booking/create-booking-lock-request.dto';
+import type { BookingAvailableInstructorResponseDto } from '../../../dto/response/booking/booking-available-instructor-response.dto';
+import type { BookingSport } from '../../../dto/response/booking/booking-field-response.dto';
+import { isSport } from '../../../enumeration/sport.enum';
+import { BookingService } from '../../../services/booking.service';
+import { ImageUrlUtil } from '../../../util/image-url.util';
 
 /**
  * Singolo step mostrato nella timeline del flusso di prenotazione.
@@ -72,8 +72,6 @@ export class BookingExtraSelectionComponent implements OnInit {
   readonly errorMessage = signal('');
   readonly feedbackMessage = signal('');
   readonly failedInstructorImages = signal<Set<number>>(new Set());
-
-  private readonly backendBaseUrl = 'http://localhost:8080';
 
   /** Indica se lo sport selezionato supporta la scelta dell'istruttore. */
   readonly isInstructorSport = computed(() => {
@@ -286,17 +284,7 @@ export class BookingExtraSelectionComponent implements OnInit {
       return null;
     }
 
-    const path = instructor.fotoProfiloUrl?.trim();
-
-    if (!path || this.isInvalidImagePath(path)) {
-      return null;
-    }
-
-    if (path.startsWith('http://') || path.startsWith('https://')) {
-      return path;
-    }
-
-    return path.startsWith('/') ? `${this.backendBaseUrl}${path}` : `${this.backendBaseUrl}/${path}`;
+    return ImageUrlUtil.normalizeProfileImageUrl(instructor.fotoProfiloUrl);
   }
 
   onInstructorImageError(instructorId: number): void {
@@ -311,17 +299,6 @@ export class BookingExtraSelectionComponent implements OnInit {
     const nome = instructor.nome?.trim() ?? '';
     const cognome = instructor.cognome?.trim() ?? '';
     return `${nome.charAt(0).toUpperCase()}${cognome.charAt(0).toUpperCase()}` || '?';
-  }
-
-  private isInvalidImagePath(path: string | null | undefined): boolean {
-    const value = path?.trim();
-
-    return (
-      !value ||
-      value.toLowerCase() === 'string' ||
-      value.toLowerCase() === 'undefined' ||
-      value.toLowerCase() === 'null'
-    );
   }
 
   /**
@@ -510,7 +487,7 @@ export class BookingExtraSelectionComponent implements OnInit {
     const sport = sessionStorage.getItem('booking.selectedSport');
     const fieldId = Number(sessionStorage.getItem('booking.selectedFieldId'));
 
-    if (sport === 'CALCETTO' || sport === 'PADEL' || sport === 'TENNIS') {
+    if (isSport(sport)) {
       this.selectedSport.set(sport);
     }
 

@@ -8,13 +8,12 @@ import {
 } from '@angular/core';
 import { Router } from '@angular/router';
 import { finalize } from 'rxjs';
-import { BookingSport } from '../../../dto/response/booking/booking-field-response.dto';
-import {
-  BookingLockResponseDto,
-  BookingPreviewResponseDto,
-  BookingService,
-  CreateBookingLockRequestDto,
-} from '../../../services/booking.service';
+import type { CreateBookingLockRequestDto } from '../../../dto/request/booking/create-booking-lock-request.dto';
+import type { BookingSport } from '../../../dto/response/booking/booking-field-response.dto';
+import type { BookingLockResponseDto } from '../../../dto/response/booking/booking-lock-response.dto';
+import type { BookingPreviewResponseDto } from '../../../dto/response/booking/booking-preview-response.dto';
+import { isSport } from '../../../enumeration/sport.enum';
+import { BookingService } from '../../../services/booking.service';
 
 /**
  * Singolo step mostrato nella timeline del flusso di prenotazione.
@@ -316,7 +315,7 @@ export class BookingPreviewComponent implements OnInit {
     const rackets = Number(sessionStorage.getItem('booking.racketsCount') ?? 0);
     const racketPrice = Number(sessionStorage.getItem('booking.racketUnitPrice') ?? 4);
 
-    if (sport === 'CALCETTO' || sport === 'PADEL' || sport === 'TENNIS') {
+    if (isSport(sport)) {
       this.selectedSport.set(sport);
     }
 

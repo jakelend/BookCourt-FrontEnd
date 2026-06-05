@@ -2,29 +2,27 @@
   <section class="booking-time-container">
     <section class="booking-stepper" aria-label="Avanzamento prenotazione">
       <div class="stepper-header">
-        <span class="stepper-current">
-          Step {{ currentStep }} di {{ totalSteps }}
-        </span>
+        <span class="stepper-current"> Step {{ currentStep }} di {{ totalSteps }} </span>
 
-        <span class="stepper-title">
-          Scelta data e ora
-        </span>
+        <span class="stepper-title"> Scelta data e ora </span>
       </div>
 
       <div class="stepper-segments" aria-hidden="true">
-        <span
-          *ngFor="let step of steps; let i = index; trackBy: trackByStepLabel"
-          [class.active]="isStepCompleted(i)"
-        ></span>
+
+        <!-- Il ciclo for qui sotto genera i segmenti della pipeline di prenotazione, evidenziando quelli completati -->
+        @for (step of steps; track trackByStepLabel(i, step); let i = $index) {
+          <span [class.active]="isStepCompleted(i)"></span>
+        }
       </div>
 
       <div class="step-labels">
-        <span
-          *ngFor="let step of steps; let i = index; trackBy: trackByStepLabel"
-          [class.active]="isStepCompleted(i)"
-        >
-          {{ step.label }}
-        </span>
+
+        <!-- Il ciclo for qui sotto genera le etichette dei passaggi, evidenziando quelli completati -->
+        @for (step of steps; track trackByStepLabel(i, step); let i = $index) {
+          <span [class.active]="isStepCompleted(i)">
+            {{ step.label }}
+          </span>
+        }
       </div>
     </section>
 
@@ -33,7 +31,9 @@
       <p>
         Campo selezionato:
         <strong>{{ selectedFieldName() || 'Campo non disponibile' }}</strong>
-        <span *ngIf="selectedSportLabel()"> · {{ selectedSportLabel() }}</span>
+        @if (selectedSportLabel()) {
+          <span> · {{ selectedSportLabel() }}</span>
+        }
       </p>
     </header>
 
@@ -50,9 +50,7 @@
           </div>
 
           <div class="toolbar-actions">
-            <button type="button" class="today-button" (click)="goToToday()">
-              Oggi
-            </button>
+            <button type="button" class="today-button" (click)="goToToday()">Oggi</button>
 
             <button
               type="button"
@@ -114,67 +112,62 @@
         <section class="calendar-shell">
           <div class="calendar-scroll-area">
             <div class="time-column">
-              <div
-                *ngFor="let slot of hourSlots(); trackBy: trackByHour"
-                class="time-label"
-                [style.top.%]="slot.topPct"
-              >
-                {{ slot.label }}
-              </div>
+              @for (slot of hourSlots(); track trackByHour($index, slot)) {
+                <div class="time-label" [style.top.%]="slot.topPct">
+                  {{ slot.label }}
+                </div>
+              }
             </div>
 
             <div class="day-column">
-              <div
-                *ngFor="let slot of hourSlots(); trackBy: trackByHour"
-                class="hour-line"
-                [style.top.%]="slot.topPct"
-              ></div>
+              @for (slot of hourSlots(); track trackByHour($index, slot)) {
+                <div class="hour-line" [style.top.%]="slot.topPct"></div>
+              }
 
-              <article
-                *ngFor="let event of calendarEventViews(); trackBy: trackByCalendarEvent"
-                class="calendar-event field-event"
-                [ngClass]="event.cssClass"
-                [style.top.%]="event.topPct"
-                [style.height.%]="event.heightPct"
-              >
-                <div class="event-main-row">
-                  <span class="material-symbols-outlined event-icon">
-                    {{ event.icon }}
-                  </span>
-
-                  <div class="event-content">
-                    <h3>{{ event.titolo }}</h3>
-                    <p class="event-time">{{ event.timeLabel }}</p>
+              @for (event of calendarEventViews(); track trackByCalendarEvent($index, event)) {
+                <article
+                  class="calendar-event field-event"
+                  [ngClass]="event.cssClass"
+                  [style.top.%]="event.topPct"
+                  [style.height.%]="event.heightPct"
+                >
+                  <div class="event-main-row">
+                    <span class="material-symbols-outlined event-icon">
+                      {{ event.icon }}
+                    </span>
+                    <div class="event-content">
+                      <h3>{{ event.titolo }}</h3>
+                      <p class="event-time">{{ event.timeLabel }}</p>
+                    </div>
                   </div>
-                </div>
-              </article>
+                </article>
+              }
 
-              <article
-                *ngIf="selectedBookingEvent() as event"
-                class="calendar-event selected-event"
-                [style.top.%]="event.topPct"
-                [style.height.%]="event.heightPct"
-              >
-                <div class="event-main-row">
-                  <span class="material-symbols-outlined event-icon">event_available</span>
-
-                  <div class="event-content">
-                    <h3>{{ event.title }}</h3>
-                    <p class="event-time">{{ event.timeLabel }}</p>
+              <!-- Evento evidenziato per la selezione attuale dell'utente -->
+              @if (selectedBookingEvent(); as event) {
+                <article
+                  class="calendar-event selected-event"
+                  [style.top.%]="event.topPct"
+                  [style.height.%]="event.heightPct"
+                >
+                  <div class="event-main-row">
+                    <span class="material-symbols-outlined event-icon">event_available</span>
+                    <div class="event-content">
+                      <h3>{{ event.title }}</h3>
+                      <p class="event-time">{{ event.timeLabel }}</p>
+                    </div>
                   </div>
-                </div>
-              </article>
+                </article>
+              }
 
-              <div
-                *ngIf="!selectedBookingEvent() && calendarEventViews().length === 0"
-                class="empty-day-card"
-              >
-                <span class="material-symbols-outlined">touch_app</span>
-                <strong>Nessun evento in calendario</strong>
-                <p>
-                  Seleziona un intervallo disponibile dalla sezione a destra.
-                </p>
-              </div>
+              <!-- Messaggio mostrato quando non ci sono eventi nel calendario per il giorno selezionato -->
+              @if (!selectedBookingEvent() && calendarEventViews().length === 0) {
+                <div class="empty-day-card">
+                  <span class="material-symbols-outlined">touch_app</span>
+                  <strong>Nessun evento in calendario</strong>
+                  <p>Seleziona un intervallo disponibile dalla sezione a destra.</p>
+                </div>
+              }
             </div>
           </div>
         </section>
@@ -188,47 +181,63 @@
             <div>
               <h2>Scegli orario</h2>
               <p>
-                Gli orari vengono calcolati dal calendario del campo e non si sovrappongono agli eventi occupati.
+                Gli orari vengono calcolati dal calendario del campo e non si sovrappongono agli
+                eventi occupati.
               </p>
             </div>
           </div>
 
-          <div *ngIf="formErrorMessage()" class="form-alert error-feedback">
-            {{ formErrorMessage() }}
-          </div>
+          @if (formErrorMessage()) {
+            <div class="form-alert error-feedback">
+              {{ formErrorMessage() }}
+            </div>
+          }
 
-          <div *ngIf="calendarErrorMessage()" class="form-alert error-feedback">
-            {{ calendarErrorMessage() }}
-          </div>
+          @if (calendarErrorMessage()) {
+            <div class="form-alert error-feedback">
+              {{ calendarErrorMessage() }}
+            </div>
+          }
 
-          <div *ngIf="feedbackMessage()" class="form-alert success-feedback">
-            {{ feedbackMessage() }}
-          </div>
+          @if (feedbackMessage()) {
+            <div class="form-alert success-feedback">
+              {{ feedbackMessage() }}
+            </div>
+          }
 
-          <div *ngIf="isCalendarLoading()" class="form-alert loading-feedback">
-            Caricamento calendario del campo...
-          </div>
+          @if (isCalendarLoading()) {
+            <div class="form-alert loading-feedback">Caricamento calendario del campo...</div>
+          }
 
-          <div *ngIf="isReleasingLock()" class="form-alert loading-feedback">
-            Blocco temporaneamente lo slot selezionato...
-          </div>
+          @if (isReleasingLock()) {
+            <div class="form-alert loading-feedback">
+              Blocco temporaneamente lo slot selezionato...
+            </div>
+          }
 
+          <!-- Il form qui sotto contiene i due select per la scelta dell'ora di inizio e fine prenotazione,
+          disabilitati quando il calendario è in caricamento, quando si sta rilasciando un lock, quando il giorno
+          è chiuso o quando non ci sono opzioni disponibili -->
           <form class="booking-time-form">
             <div class="form-grid two-columns">
               <label>
                 <span>Ora inizio</span>
                 <select
                   name="bookingStartTime"
-                  [disabled]="isCalendarLoading() || isReleasingLock() || isClosedDay() || startTimeOptions().length === 0"
+                  [disabled]="
+                    isCalendarLoading() ||
+                    isReleasingLock() ||
+                    isClosedDay() ||
+                    startTimeOptions().length === 0
+                  "
                   [ngModel]="selectedStartTime()"
                   (ngModelChange)="setStartTime($event)"
                 >
-                  <option
-                    *ngFor="let time of startTimeOptions(); trackBy: trackByTime"
-                    [ngValue]="time"
-                  >
-                    {{ time }}
-                  </option>
+                  @for (time of startTimeOptions(); track trackByTime($index, time)) {
+                    <option [ngValue]="time">
+                      {{ time }}
+                    </option>
+                  }
                 </select>
               </label>
 
@@ -236,16 +245,20 @@
                 <span>Ora fine</span>
                 <select
                   name="bookingEndTime"
-                  [disabled]="isCalendarLoading() || isReleasingLock() || isClosedDay() || endTimeOptions().length === 0"
+                  [disabled]="
+                    isCalendarLoading() ||
+                    isReleasingLock() ||
+                    isClosedDay() ||
+                    endTimeOptions().length === 0
+                  "
                   [ngModel]="selectedEndTime()"
                   (ngModelChange)="setEndTime($event)"
                 >
-                  <option
-                    *ngFor="let time of endTimeOptions(); trackBy: trackByTime"
-                    [ngValue]="time"
-                  >
-                    {{ time }}
-                  </option>
+                  @for (time of endTimeOptions(); track trackByTime($index, time)) {
+                    <option [ngValue]="time">
+                      {{ time }}
+                    </option>
+                  }
                 </select>
               </label>
             </div>
@@ -258,22 +271,24 @@
               <div>
                 <strong>Durata prenotazione</strong>
 
-                <p *ngIf="hasValidTimeRange(); else invalidDuration">
-                  {{ selectedDurationLabel() }}
-                </p>
-
-                <ng-template #invalidDuration>
+                @if (hasValidTimeRange()) {
+                  <p>
+                    {{ selectedDurationLabel() }}
+                  </p>
+                } @else {
                   <p>
                     Seleziona un intervallo libero di almeno 1 ora. Gli orari avanzano di 30 minuti.
                   </p>
-                </ng-template>
+                }
               </div>
             </div>
 
-            <div *ngIf="instructorDurationWarning()" class="instructor-duration-note">
-              <span class="material-symbols-outlined">info</span>
-              <p>{{ instructorDurationWarning() }}</p>
-            </div>
+            @if (instructorDurationWarning()) {
+              <div class="instructor-duration-note">
+                <span class="material-symbols-outlined">info</span>
+                <p>{{ instructorDurationWarning() }}</p>
+              </div>
+            }
           </form>
         </section>
 
@@ -308,11 +323,14 @@
           <div class="summary-row">
             <span>Ora</span>
             <strong>
-              <ng-container *ngIf="hasValidTimeRange(); else noTimeSelected">
-                {{ selectedStartTime() }} - {{ selectedEndTime() }}
-              </ng-container>
 
-              <ng-template #noTimeSelected>-</ng-template>
+              <!-- Se l'intervallo di tempo selezionato è valido, mostra l'ora di inizio e fine prenotazione,
+              altrimenti mostro un trattino -->
+              @if (hasValidTimeRange()) {
+                {{ selectedStartTime() }} - {{ selectedEndTime() }}
+              } @else {
+                -
+              }
             </strong>
           </div>
 
@@ -322,7 +340,12 @@
           </div>
 
           <div class="booking-actions">
-            <button type="button" class="back-button" [disabled]="isReleasingLock()" (click)="goBack()">
+            <button
+              type="button"
+              class="back-button"
+              [disabled]="isReleasingLock()"
+              (click)="goBack()"
+            >
               <span class="material-symbols-outlined">arrow_back</span>
               <span>Indietro</span>
             </button>

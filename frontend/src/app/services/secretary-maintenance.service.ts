@@ -7,6 +7,7 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { map, Observable } from 'rxjs';
+import { environment } from '../../environments/environment';
 import { CreateMaintenanceRequestDto } from '../dto/request/secretary/create-maintenance-request.dto';
 import {
   MaintenanceFieldsBySportResponseDto,
@@ -22,8 +23,8 @@ import {
   providedIn: 'root',
 })
 export class SecretaryMaintenanceService {
-  private readonly campiApiUrl = 'http://localhost:8080/api/campi';
-  private readonly segreteriaApiUrl = 'http://localhost:8080/api/segreteria';
+  private readonly campiApiUrl = `${environment.backendBaseUrl}/api/campi`;
+  private readonly segreteriaApiUrl = `${environment.backendBaseUrl}/api/segreteria`;
 
   constructor(private readonly http: HttpClient) {}
 

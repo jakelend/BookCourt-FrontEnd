@@ -21,9 +21,9 @@
             <span class="material-symbols-outlined input-icon">person</span>
           </div>
 
-          <p *ngIf="(submitted || nome?.touched) && nome?.errors?.['required']" class="field-error">
-            Inserisci il nome.
-          </p>
+          @if ((submitted || nome?.touched) && nome?.errors?.['required']) {
+            <p class="field-error">Inserisci il nome.</p>
+          }
         </div>
 
         <div class="form-field">
@@ -40,12 +40,9 @@
             <span class="material-symbols-outlined input-icon">badge</span>
           </div>
 
-          <p
-            *ngIf="(submitted || cognome?.touched) && cognome?.errors?.['required']"
-            class="field-error"
-          >
-            Inserisci il cognome.
-          </p>
+          @if ((submitted || cognome?.touched) && cognome?.errors?.['required']) {
+            <p class="field-error">Inserisci il cognome.</p>
+          }
         </div>
       </div>
 
@@ -63,13 +60,13 @@
           <span class="material-symbols-outlined input-icon">mail</span>
         </div>
 
-        <p *ngIf="(submitted || email?.touched) && email?.errors?.['required']" class="field-error">
-          Inserisci l'email.
-        </p>
+        @if ((submitted || email?.touched) && email?.errors?.['required']) {
+          <p class="field-error">Inserisci l'email.</p>
+        }
 
-        <p *ngIf="(submitted || email?.touched) && email?.errors?.['email']" class="field-error">
-          Inserisci un'email valida.
-        </p>
+        @if ((submitted || email?.touched) && email?.errors?.['email']) {
+          <p class="field-error">Inserisci un'email valida.</p>
+        }
       </div>
 
       <div class="form-field">
@@ -86,19 +83,13 @@
           <span class="material-symbols-outlined input-icon">call</span>
         </div>
 
-        <p
-          *ngIf="(submitted || telefono?.touched) && telefono?.errors?.['required']"
-          class="field-error"
-        >
-          Inserisci il telefono.
-        </p>
+        @if ((submitted || telefono?.touched) && telefono?.errors?.['required']) {
+          <p class="field-error">Inserisci il telefono.</p>
+        }
 
-        <p
-          *ngIf="(submitted || telefono?.touched) && telefono?.errors?.['pattern']"
-          class="field-error"
-        >
-          Il telefono deve contenere 10 cifre.
-        </p>
+        @if ((submitted || telefono?.touched) && telefono?.errors?.['pattern']) {
+          <p class="field-error">Il telefono deve contenere 10 cifre.</p>
+        }
       </div>
 
       <div class="form-grid">
@@ -120,23 +111,19 @@
               [attr.aria-label]="showPassword ? 'Nascondi password' : 'Mostra password'"
               (click)="togglePasswordVisibility()"
             >
-              <span class="material-symbols-outlined">{{ showPassword ? 'visibility' : 'visibility_off' }}</span>
+              <span class="material-symbols-outlined">{{
+                showPassword ? 'visibility' : 'visibility_off'
+              }}</span>
             </button>
           </div>
 
-          <p
-            *ngIf="(submitted || password?.touched) && password?.errors?.['required']"
-            class="field-error"
-          >
-            Inserisci la password.
-          </p>
+          @if ((submitted || password?.touched) && password?.errors?.['required']) {
+            <p class="field-error">Inserisci la password.</p>
+          }
 
-          <p
-            *ngIf="(submitted || password?.touched) && password?.errors?.['minlength']"
-            class="field-error"
-          >
-            Almeno 6 caratteri.
-          </p>
+          @if ((submitted || password?.touched) && password?.errors?.['minlength']) {
+            <p class="field-error">Almeno 6 caratteri.</p>
+          }
         </div>
 
         <div class="form-field">
@@ -154,36 +141,42 @@
             <button
               type="button"
               class="password-toggle-button"
-              [attr.aria-label]="showConfirmPassword ? 'Nascondi conferma password' : 'Mostra conferma password'"
+              [attr.aria-label]="
+                showConfirmPassword ? 'Nascondi conferma password' : 'Mostra conferma password'
+              "
               (click)="toggleConfirmPasswordVisibility()"
             >
-              <span class="material-symbols-outlined">{{ showConfirmPassword ? 'visibility' : 'visibility_off' }}</span>
+              <span class="material-symbols-outlined">{{
+                showConfirmPassword ? 'visibility' : 'visibility_off'
+              }}</span>
             </button>
           </div>
 
-          <p
-            *ngIf="(submitted || confirmPassword?.touched) && confirmPassword?.errors?.['required']"
-            class="field-error"
-          >
-            Ripeti la password.
-          </p>
+          @if ((submitted || confirmPassword?.touched) && confirmPassword?.errors?.['required']) {
+            <p class="field-error">Ripeti la password.</p>
+          }
 
-          <p
-            *ngIf="(submitted || confirmPassword?.touched) && registerForm.errors?.['passwordsMismatch']"
-            class="field-error"
-          >
-            Le password non coincidono.
-          </p>
+          @if (
+            (submitted || confirmPassword?.touched) && registerForm.errors?.['passwordsMismatch']
+          ) {
+            <p class="field-error">Le password non coincidono.</p>
+          }
         </div>
       </div>
 
-      <div *ngIf="registerError" class="form-message error-message">
-        {{ registerError }}
-      </div>
+      @if (registerError) {
+        <div class="form-message error-message">
+          {{ registerError }}
+        </div>
+      }
 
       <button type="submit" class="primary-button" [disabled]="registerForm.invalid || isLoading">
-        <span *ngIf="!isLoading">Registrati</span>
-        <span *ngIf="isLoading">Registrazione in corso...</span>
+        @if (!isLoading) {
+          <span>Registrati</span>
+        }
+        @if (isLoading) {
+          <span>Registrazione in corso...</span>
+        }
       </button>
     </form>
 

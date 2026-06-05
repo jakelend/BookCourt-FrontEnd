@@ -1,59 +1,155 @@
-# Frontend
+# BookCourt Frontend
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 21.2.8.
+BookCourt Frontend e la single page application che fa da interfaccia alla web
+app BookCourt per la gestione di un centro sportivo. Permette di prenotare campi
+da tennis, padel e calcetto, gestire istruttori, segretarie, manutenzioni,
+disponibilita a calendario, chat operativa e funziona con ruoli diversi per
+clienti e staff.
 
-## Development server
+E sviluppata in Angular e dialoga con il backend Spring Boot tramite chiamate
+REST e WebSocket per la chat.
 
-To start a local development server, run:
+## Prerequisiti
+
+Prima di avviare il progetto servono:
+
+- Node.js 20 o superiore installato e disponibile nel `PATH`.
+- npm (incluso con Node.js) per la gestione delle dipendenze.
+- Il backend BookCourt in esecuzione, tipicamente su `http://localhost:8080`.
+
+Angular CLI non e obbligatorio installarlo globalmente: viene usato tramite gli
+script npm del progetto (`npm start`, `npm run build`, `npm test`).
+
+## Installazione delle dipendenze
+
+Dalla cartella del frontend:
+
+```bash
+cd frontend
+npm install
+```
+
+## Configurazione del backend
+
+L'URL del backend si trova in:
+
+```text
+frontend/src/environments/environment.ts
+```
+
+Valore predefinito:
+
+```ts
+export const environment = {
+  backendBaseUrl: 'http://localhost:8080',
+} as const;
+```
+
+Se il backend gira su un host o una porta diversi, modifica
+`backendBaseUrl` in questo file. Ricorda che il backend abilita le chiamate
+(CORS) per `http://localhost:4200` e `http://localhost:3000`: avvia il frontend
+su una di queste porte oppure aggiorna la configurazione CORS lato backend.
+
+## Avvio in sviluppo
+
+Dalla cartella del frontend:
+
+```bash
+cd frontend
+npm start
+```
+
+In alternativa, con Angular CLI:
 
 ```bash
 ng serve
 ```
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+L'applicazione e disponibile a:
 
-## Code scaffolding
-
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
-
-```bash
-ng generate component component-name
+```text
+http://localhost:4200
 ```
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+Il server di sviluppo ricarica automaticamente la pagina a ogni modifica dei
+file sorgente.
+
+## Build di produzione
+
+Per generare la build ottimizzata:
 
 ```bash
-ng generate --help
+npm run build
 ```
 
-## Building
-
-To build the project run:
+Gli artefatti vengono salvati nella cartella `dist/`. Per ricompilare in modo
+continuo durante lo sviluppo:
 
 ```bash
-ng build
+npm run watch
 ```
 
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
+## Ruoli e accesso
 
-## Running unit tests
+L'applicazione gestisce quattro ruoli, ognuno con funzioni e rotte dedicate:
 
-To execute unit tests with the [Vitest](https://vitest.dev/) test runner, use the following command:
+| Ruolo       | Funzioni principali                                                        |
+|-------------|---------------------------------------------------------------------------|
+| Manager     | Gestione di istruttori, segretarie e campi sportivi; chat.                |
+| Segretaria  | Manutenzioni campi, eccezioni orarie del centro e dei calendari; chat.    |
+| Istruttore  | Consultazione del proprio calendario.                                     |
+| Cliente     | Flusso di prenotazione, annullamento, feedback, gestione account; chat.   |
+
+Le rotte private sono protette da `AuthGuard` (autenticazione) e da `RoleGuard`
+(autorizzazione in base al ruolo). Gli utenti gia autenticati non possono
+accedere alle pagine pubbliche di login e registrazione grazie a `GuestGuard`.
+
+L'autenticazione si basa su token JWT: dopo il login il token viene allegato
+automaticamente alle richieste HTTP protette tramite `AuthInterceptor`.
+
+## Flusso consigliato per l'avvio
+
+1. Avvia il backend BookCourt (vedi il README del backend) su
+   `http://localhost:8080`.
+2. Installa le dipendenze del frontend, se non gia fatto:
 
 ```bash
-ng test
+cd frontend
+npm install
 ```
 
-## Running end-to-end tests
-
-For end-to-end (e2e) testing, run:
+3. Avvia il server di sviluppo:
 
 ```bash
-ng e2e
+npm start
 ```
 
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
+4. Apri il browser su `http://localhost:4200` ed effettua il login.
 
-## Additional Resources
+Per provare l'applicazione con dati dimostrativi, applica il seed del backend
+e accedi con uno degli account inclusi (vedi il README del backend per
+credenziali e password).
 
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+## Struttura del progetto
+
+Il codice sorgente principale si trova in `frontend/src/app`:
+
+- `components/` — componenti delle pagine, organizzati per area funzionale
+  (auth, booking, chat, dashboard, fields, instructors, secretaries, ecc.).
+- `services/` — servizi che incapsulano le chiamate REST e la logica condivisa,
+  inclusa la gestione della chat via WebSocket.
+- `guard/` — guardie di rotta per autenticazione, ruoli e accesso ospite.
+- `interceptor/` — interceptor HTTP per l'aggiunta del token JWT.
+- `dto/` — definizioni dei dati scambiati con il backend.
+- `enumeration/` — enumerazioni condivise (ruoli, sport).
+- `util/` — funzioni e helper di utilita.
+
+Le rotte dell'applicazione sono definite in `frontend/src/app/app.routes.ts`,
+mentre i provider globali (routing, HttpClient, Angular Material, localizzazione
+italiana delle date) sono configurati in `frontend/src/app/app.config.ts`.
+
+## Note
+
+- L'interfaccia usa Angular Material e Tailwind CSS per lo stile.
+- La localizzazione di date e calendari e impostata su italiano (`it-IT`).
+- La chat operativa usa STOMP su WebSocket (SockJS) verso il backend.

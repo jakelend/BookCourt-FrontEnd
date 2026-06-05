@@ -1,11 +1,14 @@
-import { Role } from '../../../enumeration/role.enum';
+import type { Role } from '../../../enumeration/role.enum';
 
 export interface ProfileResponseDto {
   id: number;
   email: string;
   nome: string;
   cognome: string;
+  telefono: string;
+  fotoProfiloUrl: string | null;
   ruolo: Role;
-  telefono?: string;
-  dataNascita?: string;
+  attivo: boolean;
+  costoOrarioTennis?: number | null;
+  costoOrarioPadel?: number | null;
 }

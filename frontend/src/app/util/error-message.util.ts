@@ -5,18 +5,30 @@ export interface BackendErrorResponse {
   fields?: Record<string, string>;
 }
 
+export interface BackendErrorMessageOptions {
+  statusMessages?: Partial<Record<number, string>>;
+  timeoutMessage?: string;
+  useGenericErrorMessage?: boolean;
+}
+
 export type FieldErrors<K extends string> = Partial<Record<K, string>>;
 
-export function extractBackendErrorMessage(error: unknown, fallback: string): string {
-  const httpError = error as {
-    error?: unknown;
-    status?: number;
-    name?: string;
-    message?: string;
-  };
+interface HttpErrorLike {
+  error?: unknown;
+  status?: number;
+  name?: string;
+  message?: string;
+}
+
+export function extractBackendErrorMessage(
+  error: unknown,
+  fallback: string,
+  options: BackendErrorMessageOptions = {},
+): string {
+  const httpError = toHttpErrorLike(error);
 
   if (httpError?.name === 'TimeoutError') {
-    return 'Richiesta scaduta: il backend non ha risposto. Controlla il terminale Spring Boot.';
+    return options.timeoutMessage ?? 'Richiesta scaduta: il backend non ha risposto. Controlla il terminale Spring Boot.';
   }
 
   const backendBody = parseBackendErrorBody(httpError?.error);
@@ -43,6 +55,16 @@ export function extractBackendErrorMessage(error: unknown, fallback: string): st
     return httpError.error;
   }
 
+  if (httpError?.message && options.useGenericErrorMessage) {
+    return httpError.message;
+  }
+
+  const customStatusMessage = httpError?.status !== undefined ? options.statusMessages?.[httpError.status] : undefined;
+
+  if (customStatusMessage) {
+    return customStatusMessage;
+  }
+
   switch (httpError?.status) {
     case 0:
       return 'Backend non raggiungibile. Controlla che Spring Boot sia avviato sulla porta 8080.';
@@ -55,7 +77,7 @@ export function extractBackendErrorMessage(error: unknown, fallback: string): st
     case 404:
       return 'Elemento non trovato.';
     case 409:
-      return 'Esiste già una eccezione calendario per questo istruttore nell\'intervallo selezionato.';
+      return 'Operazione non riuscita: esiste già un elemento con questi dati.';
     case 413:
       return 'File troppo grande. Controlla la dimensione delle immagini.';
     case 500:
@@ -69,7 +91,7 @@ export function extractBackendFieldErrors<K extends string>(
   error: unknown,
   knownFields: readonly K[],
 ): FieldErrors<K> {
-  const httpError = error as { error?: unknown } | null | undefined;
+  const httpError = toHttpErrorLike(error);
   const backendBody = parseBackendErrorBody(httpError?.error);
 
   if (!backendBody?.fields || typeof backendBody.fields !== 'object') {
@@ -86,6 +108,14 @@ export function extractBackendFieldErrors<K extends string>(
   }
 
   return mappedErrors;
+}
+
+function toHttpErrorLike(error: unknown): HttpErrorLike | null {
+  if (!error || typeof error !== 'object') {
+    return null;
+  }
+
+  return error as HttpErrorLike;
 }
 
 function parseBackendErrorBody(rawError: unknown): BackendErrorResponse | null {

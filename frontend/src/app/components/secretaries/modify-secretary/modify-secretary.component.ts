@@ -8,6 +8,7 @@ import { ManagerUpdateSecretaryRequestDto } from '../../../dto/request/manager/m
 import { ManagerSecretaryResponseDto } from '../../../dto/response/manager/manager-secretary-response.dto';
 import { ManagerService } from '../../../services/manager.service';
 import { extractBackendErrorMessage, extractBackendFieldErrors, FieldErrors } from '../../../util/error-message.util';
+import { ImageUrlUtil } from '../../../util/image-url.util';
 
 /**
  * Modello locale con i dati modificabili della segretaria.
@@ -262,7 +263,7 @@ export class ModifySecretaryComponent implements OnInit, OnDestroy {
   clearProfilePhoto(): void {
     this.profilePhotoFile.set(null);
     this.revokeUploadedProfilePhotoPreview();
-    this.profilePhotoPreviewUrl.set(this.buildImageUrl(this.secretary.fotoProfiloUrl));
+    this.profilePhotoPreviewUrl.set(ImageUrlUtil.normalizeProfileImageUrl(this.secretary.fotoProfiloUrl) ?? '');
     this.clearFieldError('profilePhoto');
 
     if (this.profilePhotoInput) {
@@ -393,23 +394,8 @@ export class ModifySecretaryComponent implements OnInit, OnDestroy {
     };
 
     if (!this.profilePhotoFile()) {
-      this.profilePhotoPreviewUrl.set(this.buildImageUrl(secretary.fotoProfiloUrl));
+      this.profilePhotoPreviewUrl.set(ImageUrlUtil.normalizeProfileImageUrl(secretary.fotoProfiloUrl) ?? '');
     }
-  }
-
-  /**
-   * Costruisce l'URL della foto profilo partendo dal path backend.
-   */
-  private buildImageUrl(path: string | null): string {
-    if (!path) {
-      return '';
-    }
-
-    if (path.startsWith('http://') || path.startsWith('https://')) {
-      return path;
-    }
-
-    return path.startsWith('/') ? `http://localhost:8080${path}` : `http://localhost:8080/${path}`;
   }
 
   /**

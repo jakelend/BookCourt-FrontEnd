@@ -3,88 +3,91 @@
     <header class="page-header">
       <span class="page-kicker">Feedback</span>
       <h1>Prenotazioni concluse</h1>
-      <p>
-        Qui trovi le prenotazioni passate per cui hai già completato il feedback.
-      </p>
+      <p>Qui trovi le prenotazioni passate per cui hai già completato il feedback.</p>
     </header>
 
-    <section *ngIf="errorMessage()" class="form-alert error-feedback">
-      <span class="material-symbols-outlined">error</span>
-      <span>{{ errorMessage() }}</span>
-    </section>
+    @if (errorMessage()) {
+      <section class="form-alert error-feedback">
+        <span class="material-symbols-outlined">error</span>
+        <span>{{ errorMessage() }}</span>
+      </section>
+    }
 
-    <section *ngIf="isLoading()" class="loading-panel">
-      <div class="loading-spinner" aria-hidden="true"></div>
-      <span>Caricamento prenotazioni concluse...</span>
-    </section>
+    @if (isLoading()) {
+      <section class="loading-panel">
+        <div class="loading-spinner" aria-hidden="true"></div>
+        <span>Caricamento prenotazioni concluse...</span>
+      </section>
+    }
 
-    <section *ngIf="!isLoading() && feedbacks().length === 0" class="empty-panel">
-      <span class="material-symbols-outlined">reviews</span>
-      <div>
-        <strong>Nessuna prenotazione conclusa con feedback</strong>
-        <p>Dopo aver lasciato un feedback, la prenotazione verrà mostrata qui.</p>
-      </div>
-    </section>
-
-    <section *ngIf="!isLoading() && feedbacks().length > 0" class="feedback-grid">
-      <article
-        *ngFor="let feedback of feedbacks(); trackBy: trackByFeedbackId"
-        class="feedback-card"
-      >
-        <div class="feedback-card-header">
-          <div class="feedback-icon">
-            <span class="material-symbols-outlined">reviews</span>
-          </div>
-
-          <div>
-            <h2>Prenotazione</h2>
-            <p>{{ getFieldName(feedback) }}</p>
-          </div>
+    @if (!isLoading() && feedbacks().length === 0) {
+      <section class="empty-panel">
+        <span class="material-symbols-outlined">reviews</span>
+        <div>
+          <strong>Nessuna prenotazione conclusa con feedback</strong>
+          <p>Dopo aver lasciato un feedback, la prenotazione verrà mostrata qui.</p>
         </div>
+      </section>
+    }
 
-        <div class="booking-info-list">
-          <div class="booking-info-row">
-            <span>Campo</span>
-            <strong>{{ getFieldName(feedback) }}</strong>
-          </div>
-
-          <div class="booking-info-row" *ngIf="hasBookingDate(feedback)">
-            <span>Data</span>
-            <strong>{{ formatBookingDate(feedback.inizio) }}</strong>
-          </div>
-
-          <div class="booking-info-row" *ngIf="hasBookingDate(feedback)">
-            <span>Ora</span>
-            <strong>{{ formatTimeRange(feedback.inizio, feedback.fine) }}</strong>
-          </div>
-
-          <div class="booking-info-row" *ngIf="hasInstructor(feedback)">
-            <span>Istruttore</span>
-            <strong>{{ getInstructorName(feedback) }}</strong>
-          </div>
-
-          <div class="booking-info-row">
-            <span>Feedback inviato</span>
-            <strong>{{ formatCreatedAt(feedback.creatoIl) }}</strong>
-          </div>
-        </div>
-
-        <div class="rating-row" aria-label="Valutazione lasciata">
-          <span
-            *ngFor="let star of starIndexes"
-            class="material-symbols-outlined star-icon"
-            [class.active]="isStarActive(feedback, star)"
-          >
-            star
-          </span>
-
-          <strong>{{ feedback.valutazione }}/5</strong>
-        </div>
-
-        <blockquote class="comment-box">
-          {{ getComment(feedback) }}
-        </blockquote>
-      </article>
-    </section>
+    @if (!isLoading() && feedbacks().length > 0) {
+      <section class="feedback-grid">
+        @for (feedback of feedbacks(); track trackByFeedbackId($index, feedback)) {
+          <article class="feedback-card">
+            <div class="feedback-card-header">
+              <div class="feedback-icon">
+                <span class="material-symbols-outlined">reviews</span>
+              </div>
+              <div>
+                <h2>Prenotazione</h2>
+                <p>{{ getFieldName(feedback) }}</p>
+              </div>
+            </div>
+            <div class="booking-info-list">
+              <div class="booking-info-row">
+                <span>Campo</span>
+                <strong>{{ getFieldName(feedback) }}</strong>
+              </div>
+              @if (hasBookingDate(feedback)) {
+                <div class="booking-info-row">
+                  <span>Data</span>
+                  <strong>{{ formatBookingDate(feedback.inizio) }}</strong>
+                </div>
+              }
+              @if (hasBookingDate(feedback)) {
+                <div class="booking-info-row">
+                  <span>Ora</span>
+                  <strong>{{ formatTimeRange(feedback.inizio, feedback.fine) }}</strong>
+                </div>
+              }
+              @if (hasInstructor(feedback)) {
+                <div class="booking-info-row">
+                  <span>Istruttore</span>
+                  <strong>{{ getInstructorName(feedback) }}</strong>
+                </div>
+              }
+              <div class="booking-info-row">
+                <span>Feedback inviato</span>
+                <strong>{{ formatCreatedAt(feedback.creatoIl) }}</strong>
+              </div>
+            </div>
+            <div class="rating-row" aria-label="Valutazione lasciata">
+              @for (star of starIndexes; track star) {
+                <span
+                  class="material-symbols-outlined star-icon"
+                  [class.active]="isStarActive(feedback, star)"
+                >
+                  star
+                </span>
+              }
+              <strong>{{ feedback.valutazione }}/5</strong>
+            </div>
+            <blockquote class="comment-box">
+              {{ getComment(feedback) }}
+            </blockquote>
+          </article>
+        }
+      </section>
+    }
   </section>
 </main>

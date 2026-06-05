@@ -17,24 +17,31 @@
           (ngModelChange)="onInstructorSelected($event)"
           [disabled]="loadingInstructors || !instructors.length"
         >
-          <mat-option
-            *ngFor="let instructor of instructors; trackBy: trackByInstructor"
-            [value]="instructor.id"
-          >
-            {{ instructor.cognome }} {{ instructor.nome }}
-          </mat-option>
+          @for (instructor of instructors; track trackByInstructor($index, instructor)) {
+            <mat-option [value]="instructor.id">
+              {{ instructor.cognome }} {{ instructor.nome }}
+            </mat-option>
+          }
         </mat-select>
       </mat-form-field>
 
-      <button type="button" class="day-nav-button" aria-label="Giorno precedente" (click)="goToPreviousDay()">
+      <button
+        type="button"
+        class="day-nav-button"
+        aria-label="Giorno precedente"
+        (click)="goToPreviousDay()"
+      >
         <span class="material-symbols-outlined">chevron_left</span>
       </button>
 
-      <button type="button" class="today-button" (click)="goToToday()">
-        Oggi
-      </button>
+      <button type="button" class="today-button" (click)="goToToday()">Oggi</button>
 
-      <button type="button" class="day-nav-button" aria-label="Giorno successivo" (click)="goToNextDay()">
+      <button
+        type="button"
+        class="day-nav-button"
+        aria-label="Giorno successivo"
+        (click)="goToNextDay()"
+      >
         <span class="material-symbols-outlined">chevron_right</span>
       </button>
 
@@ -53,177 +60,189 @@
     </div>
   </section>
 
-  <section *ngIf="errorMessage()" class="feedback-panel feedback-panel-error">
-    <div>
-      <strong>Operazione non riuscita</strong>
-      <p>{{ errorMessage() }}</p>
-    </div>
+  @if (errorMessage()) {
+    <section class="feedback-panel feedback-panel-error">
+      <div>
+        <strong>Operazione non riuscita</strong>
+        <p>{{ errorMessage() }}</p>
+      </div>
+      <button type="button" class="retry-button" (click)="retry()">Riprova</button>
+    </section>
+  }
 
-    <button type="button" class="retry-button" (click)="retry()">Riprova</button>
-  </section>
-
-  <section *ngIf="successMessage()" class="feedback-panel feedback-panel-success">
-    <div>
-      <strong>Operazione completata</strong>
-      <p>{{ successMessage() }}</p>
-    </div>
-  </section>
+  @if (successMessage()) {
+    <section class="feedback-panel feedback-panel-success">
+      <div>
+        <strong>Operazione completata</strong>
+        <p>{{ successMessage() }}</p>
+      </div>
+    </section>
+  }
 
   <section class="workspace-grid">
     <section class="calendar-shell" [class.loading-state]="loadingAgenda || loadingInstructors">
-      <div *ngIf="loadingAgenda || loadingInstructors" class="loading-overlay">
-        <mat-spinner diameter="42"></mat-spinner>
-        <p>Caricamento calendario...</p>
-      </div>
-      <div *ngIf="hasInstructorSelected" class="calendar-scroll-area">
-        <div class="time-column">
-          <div
-            *ngFor="let slot of hourSlots; trackBy: trackByHour"
-            class="time-label"
-            [style.top.%]="slot.topPct"
-          >
-            {{ slot.label }}
+      @if (loadingAgenda || loadingInstructors) {
+        <div class="loading-overlay">
+          <mat-spinner diameter="42"></mat-spinner>
+          <p>Caricamento calendario...</p>
+        </div>
+      }
+      @if (hasInstructorSelected) {
+        <div class="calendar-scroll-area">
+          <div class="time-column">
+            @for (slot of hourSlots; track trackByHour($index, slot)) {
+              <div class="time-label" [style.top.%]="slot.topPct">
+                {{ slot.label }}
+              </div>
+            }
+          </div>
+          <div class="day-column">
+            @for (slot of hourSlots; track trackByHour($index, slot)) {
+              <div class="hour-line" [style.top.%]="slot.topPct"></div>
+            }
+            @for (event of events; track trackByEvent($index, event)) {
+              <article
+                class="calendar-event"
+                tabindex="0"
+                role="button"
+                [ngClass]="event.cssClass"
+                [style.top.%]="event.topPct"
+                [style.height.%]="event.heightPct"
+                [style.left.%]="event.leftPct"
+                [style.width.%]="event.widthPct"
+                (click)="openEventDetails(event, $event)"
+                (keydown.enter)="openEventDetails(event, $event)"
+              >
+                <div class="event-main-row">
+                  <span class="material-symbols-outlined event-icon">{{ event.icon }}</span>
+                  <div class="event-content">
+                    <h3>{{ event.source.titolo }}</h3>
+                    <p class="event-time">{{ event.timeLabel }} · {{ event.durationLabel }}</p>
+                    <p class="event-subtitle">{{ event.subtitle }}</p>
+                    @if (event.details) {
+                      <p class="event-details">{{ event.details }}</p>
+                    }
+                  </div>
+                </div>
+              </article>
+            }
           </div>
         </div>
-
-        <div class="day-column">
-          <div
-            *ngFor="let slot of hourSlots; trackBy: trackByHour"
-            class="hour-line"
-            [style.top.%]="slot.topPct"
-          ></div>
-
-          <article
-            *ngFor="let event of events; trackBy: trackByEvent"
-            class="calendar-event"
-            tabindex="0"
-            role="button"
-            [ngClass]="event.cssClass"
-            [style.top.%]="event.topPct"
-            [style.height.%]="event.heightPct"
-            [style.left.%]="event.leftPct"
-            [style.width.%]="event.widthPct"
-            (click)="openEventDetails(event, $event)"
-            (keydown.enter)="openEventDetails(event, $event)"
-          >
-            <div class="event-main-row">
-              <span class="material-symbols-outlined event-icon">{{ event.icon }}</span>
-              <div class="event-content">
-                <h3>{{ event.source.titolo }}</h3>
-                <p class="event-time">{{ event.timeLabel }} · {{ event.durationLabel }}</p>
-                <p class="event-subtitle">{{ event.subtitle }}</p>
-                <p *ngIf="event.details" class="event-details">{{ event.details }}</p>
-              </div>
-            </div>
-          </article>
-        </div>
-      </div>
+      }
     </section>
 
     <aside class="side-panel">
-      <section *ngIf="hasInstructorSelected" class="editor-panel">
-        <div class="editor-header">
-          <div>
-            <p class="eyebrow">Nuova indisponibilità</p>
-            <h3>Periodo personalizzato</h3>
+      @if (hasInstructorSelected) {
+        <section class="editor-panel">
+          <div class="editor-header">
+            <div>
+              <p class="eyebrow">Nuova indisponibilità</p>
+              <h3>Periodo personalizzato</h3>
+            </div>
           </div>
-        </div>
+          <form class="editor-grid" (ngSubmit)="submitCreate()">
+            <label class="field-block">
+              <span>Data inizio</span>
+              <input type="date" name="startDate" [(ngModel)]="createForm.startDate" />
+            </label>
+            <label class="field-block">
+              <span>Ora inizio</span>
+              <input type="time" name="startTime" [(ngModel)]="createForm.startTime" />
+            </label>
+            <label class="field-block">
+              <span>Data fine</span>
+              <input type="date" name="endDate" [(ngModel)]="createForm.endDate" />
+            </label>
+            <label class="field-block">
+              <span>Ora fine</span>
+              <input type="time" name="endTime" [(ngModel)]="createForm.endTime" />
+            </label>
+            <label class="field-block field-block-wide">
+              <span>Motivo</span>
+              <input
+                type="text"
+                name="motivo"
+                [(ngModel)]="createForm.motivo"
+                placeholder="Es. ferie, malattia, permesso..."
+              />
+            </label>
+            @if (formErrorMessage()) {
+              <p class="form-error">{{ formErrorMessage() }}</p>
+            }
+            <div class="editor-footer">
+              <button type="submit" class="primary-action" [disabled]="isSaving()">
+                @if (isSaving()) {
+                  <mat-spinner diameter="18"></mat-spinner>
+                }
+                @if (!isSaving()) {
+                  <span class="material-symbols-outlined">save</span>
+                }
+                Salva indisponibilità
+              </button>
+            </div>
+          </form>
+        </section>
+      }
 
-        <form class="editor-grid" (ngSubmit)="submitCreate()">
-          <label class="field-block">
-            <span>Data inizio</span>
-            <input type="date" name="startDate" [(ngModel)]="createForm.startDate" />
-          </label>
-
-          <label class="field-block">
-            <span>Ora inizio</span>
-            <input type="time" name="startTime" [(ngModel)]="createForm.startTime" />
-          </label>
-
-          <label class="field-block">
-            <span>Data fine</span>
-            <input type="date" name="endDate" [(ngModel)]="createForm.endDate" />
-          </label>
-
-          <label class="field-block">
-            <span>Ora fine</span>
-            <input type="time" name="endTime" [(ngModel)]="createForm.endTime" />
-          </label>
-
-          <label class="field-block field-block-wide">
-            <span>Motivo</span>
-            <input
-              type="text"
-              name="motivo"
-              [(ngModel)]="createForm.motivo"
-              placeholder="Es. ferie, malattia, permesso..."
-            />
-          </label>
-
-          <p *ngIf="formErrorMessage()" class="form-error">{{ formErrorMessage() }}</p>
-
-          <div class="editor-footer">
-            <button type="submit" class="primary-action" [disabled]="isSaving()">
-              <mat-spinner *ngIf="isSaving()" diameter="18"></mat-spinner>
-              <span *ngIf="!isSaving()" class="material-symbols-outlined">save</span>
-              Salva indisponibilità
+      @if (selectedEvent) {
+        <section class="event-detail-panel">
+          <div class="event-detail-header">
+            <div>
+              <p class="eyebrow">Dettaglio evento</p>
+              <h3>{{ selectedEvent.source.titolo }}</h3>
+            </div>
+            <button
+              type="button"
+              class="icon-button"
+              aria-label="Chiudi dettaglio"
+              (click)="closeEventDetails()"
+            >
+              <span class="material-symbols-outlined">close</span>
             </button>
           </div>
-        </form>
-      </section>
-
-      <section *ngIf="selectedEvent" class="event-detail-panel">
-        <div class="event-detail-header">
-          <div>
-            <p class="eyebrow">Dettaglio evento</p>
-            <h3>{{ selectedEvent.source.titolo }}</h3>
+          <div class="detail-grid">
+            <div>
+              <span class="detail-label">Tipo</span>
+              <strong>{{ selectedEvent.subtitle }}</strong>
+            </div>
+            <div>
+              <span class="detail-label">Orario</span>
+              <strong>{{ selectedEvent.timeLabel }}</strong>
+            </div>
+            <div>
+              <span class="detail-label">Durata</span>
+              <strong>{{ selectedEvent.durationLabel }}</strong>
+            </div>
+            @if (selectedEvent.details) {
+              <div>
+                <span class="detail-label">Dettagli</span>
+                <strong>{{ selectedEvent.details }}</strong>
+              </div>
+            }
           </div>
-
-          <button type="button" class="icon-button" aria-label="Chiudi dettaglio" (click)="closeEventDetails()">
-            <span class="material-symbols-outlined">close</span>
-          </button>
-        </div>
-
-        <div class="detail-grid">
-          <div>
-            <span class="detail-label">Tipo</span>
-            <strong>{{ selectedEvent.subtitle }}</strong>
+          <div class="event-detail-footer">
+            @if (!isDeletableInstructorException(selectedEvent)) {
+              <p class="readonly-note">Questo evento è solo consultabile dalla segreteria.</p>
+            }
+            @if (isDeletableInstructorException(selectedEvent)) {
+              <button
+                type="button"
+                class="danger-action"
+                [disabled]="deleting()"
+                (click)="deleteSelectedEvent()"
+              >
+                @if (deleting()) {
+                  <mat-spinner diameter="18"></mat-spinner>
+                }
+                @if (!deleting()) {
+                  <span class="material-symbols-outlined">delete</span>
+                }
+                Elimina indisponibilità
+              </button>
+            }
           </div>
-
-          <div>
-            <span class="detail-label">Orario</span>
-            <strong>{{ selectedEvent.timeLabel }}</strong>
-          </div>
-
-          <div>
-            <span class="detail-label">Durata</span>
-            <strong>{{ selectedEvent.durationLabel }}</strong>
-          </div>
-
-          <div *ngIf="selectedEvent.details">
-            <span class="detail-label">Dettagli</span>
-            <strong>{{ selectedEvent.details }}</strong>
-          </div>
-        </div>
-
-        <div class="event-detail-footer">
-          <p *ngIf="!isDeletableInstructorException(selectedEvent)" class="readonly-note">
-            Questo evento è solo consultabile dalla segreteria.
-          </p>
-
-          <button
-            *ngIf="isDeletableInstructorException(selectedEvent)"
-            type="button"
-            class="danger-action"
-            [disabled]="deleting()"
-            (click)="deleteSelectedEvent()"
-          >
-            <mat-spinner *ngIf="deleting()" diameter="18"></mat-spinner>
-            <span *ngIf="!deleting()" class="material-symbols-outlined">delete</span>
-            Elimina indisponibilità
-          </button>
-        </div>
-      </section>
+        </section>
+      }
     </aside>
   </section>
 </main>

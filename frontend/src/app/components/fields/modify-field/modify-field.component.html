@@ -6,161 +6,155 @@
       <p>Aggiorna dati sportivi, tariffa oraria, stato e immagini del campo.</p>
     </header>
 
-    <section *ngIf="loading()" class="form-message info-message">
-      Caricamento dati campo...
-    </section>
+    @if (loading()) {
+      <section class="form-message info-message">Caricamento dati campo...</section>
+    }
 
-    <form *ngIf="!loading()" class="instructor-form" novalidate (submit)="modifyField($event)">
-      <section class="images-upload-section" aria-label="Immagini campo">
-        <div class="images-header">
-          <div>
-            <h2>Immagini campo</h2>
-            <p>Minimo 1, massimo {{ maxImages }} immagini. Caricate: {{ imagePreviews().length }}/{{ maxImages }}</p>
-          </div>
-
-          <button
-            type="button"
-            class="secondary-action"
-            [disabled]="imagePreviews().length >= maxImages"
-            (click)="openImagesPicker()"
-          >
-            Aggiungi immagini
-          </button>
-        </div>
-
-        <input
-          #fieldImagesInput
-          type="file"
-          class="visually-hidden"
-          accept="image/png,image/jpeg"
-          multiple
-          (change)="onImagesSelected($event)"
-        />
-
-        <div class="images-grid" *ngIf="imagePreviews().length; else emptyImages">
-          <figure
-            *ngFor="let preview of imagePreviews(); let index = index; trackBy: trackByImageUrl"
-            class="image-preview"
-          >
-            <img [src]="preview.url" [alt]="'Immagine campo ' + (index + 1)" />
-
-            <button type="button" aria-label="Rimuovi immagine" (click)="removeImage(index)">
-              <span class="material-symbols-outlined">close</span>
+    @if (!loading()) {
+      <form class="instructor-form" novalidate (submit)="modifyField($event)">
+        <section class="images-upload-section" aria-label="Immagini campo">
+          <div class="images-header">
+            <div>
+              <h2>Immagini campo</h2>
+              <p>
+                Minimo 1, massimo {{ maxImages }} immagini. Caricate:
+                {{ imagePreviews().length }}/{{ maxImages }}
+              </p>
+            </div>
+            <button
+              type="button"
+              class="secondary-action"
+              [disabled]="imagePreviews().length >= maxImages"
+              (click)="openImagesPicker()"
+            >
+              Aggiungi immagini
             </button>
-          </figure>
-        </div>
-
-        <ng-template #emptyImages>
-          <button
-            type="button"
-            class="empty-images-button"
-            [class.invalid]="fieldError('images')"
-            (click)="openImagesPicker()"
-          >
-            <span class="material-symbols-outlined">add_photo_alternate</span>
-            <span>Carica da 1 a 6 immagini</span>
+          </div>
+          <input
+            #fieldImagesInput
+            type="file"
+            class="visually-hidden"
+            accept="image/png,image/jpeg"
+            multiple
+            (change)="onImagesSelected($event)"
+          />
+          @if (imagePreviews().length) {
+            <div class="images-grid">
+              @for (
+                preview of imagePreviews();
+                track trackByImageUrl(index, preview);
+                let index = $index
+              ) {
+                <figure class="image-preview">
+                  <img [src]="preview.url" [alt]="'Immagine campo ' + (index + 1)" />
+                  <button type="button" aria-label="Rimuovi immagine" (click)="removeImage(index)">
+                    <span class="material-symbols-outlined">close</span>
+                  </button>
+                </figure>
+              }
+            </div>
+          } @else {
+            <button
+              type="button"
+              class="empty-images-button"
+              [class.invalid]="fieldError('images')"
+              (click)="openImagesPicker()"
+            >
+              <span class="material-symbols-outlined">add_photo_alternate</span>
+              <span>Carica da 1 a 6 immagini</span>
+            </button>
+          }
+          @if (fieldError('images')) {
+            <p class="upload-error">
+              {{ fieldError('images') }}
+            </p>
+          }
+        </section>
+        <section class="form-grid" aria-label="Dati campo">
+          <label class="form-field">
+            <span>Nome campo</span>
+            <input
+              type="text"
+              name="name"
+              maxlength="100"
+              required
+              [(ngModel)]="field.name"
+              [class.invalid]="fieldError('nome')"
+              [attr.aria-invalid]="fieldError('nome') ? 'true' : 'false'"
+              (input)="clearFieldError('nome')"
+            />
+            @if (fieldError('nome')) {
+              <small class="field-error">
+                {{ fieldError('nome') }}
+              </small>
+            }
+          </label>
+          <label class="form-field">
+            <span>Tipo sport</span>
+            <select
+              name="sportType"
+              required
+              [(ngModel)]="field.sportType"
+              [class.invalid]="fieldError('sport')"
+              [attr.aria-invalid]="fieldError('sport') ? 'true' : 'false'"
+              (change)="clearFieldError('sport')"
+            >
+              @for (sportType of sportTypes; track sportType) {
+                <option [value]="sportType">
+                  {{ sportType }}
+                </option>
+              }
+            </select>
+            @if (fieldError('sport')) {
+              <small class="field-error">
+                {{ fieldError('sport') }}
+              </small>
+            }
+          </label>
+          <label class="form-field">
+            <span>Tariffa oraria</span>
+            <input
+              type="number"
+              name="hourlyRate"
+              min="0"
+              required
+              step="0.01"
+              [(ngModel)]="field.hourlyRate"
+              [class.invalid]="fieldError('costoOrario')"
+              [attr.aria-invalid]="fieldError('costoOrario') ? 'true' : 'false'"
+              (keydown)="preventNegativeValue($event)"
+              (input)="normalizeHourlyRate($event); clearFieldError('costoOrario')"
+            />
+            @if (fieldError('costoOrario')) {
+              <small class="field-error">
+                {{ fieldError('costoOrario') }}
+              </small>
+            }
+          </label>
+          <label class="field-active-control">
+            <span>{{ field.active ? 'Attivo' : 'Inattivo' }}</span>
+            <input type="checkbox" name="active" [(ngModel)]="field.active" />
+          </label>
+        </section>
+        @if (submitError()) {
+          <div class="form-message error-message">
+            {{ submitError() }}
+          </div>
+        }
+        @if (submitSuccess()) {
+          <div class="form-message success-message">
+            {{ submitSuccess() }}
+          </div>
+        }
+        <div class="form-actions">
+          <button type="button" class="secondary-action" [disabled]="isSaving()" (click)="cancel()">
+            Annulla
           </button>
-        </ng-template>
-
-        <p *ngIf="fieldError('images')" class="upload-error">
-          {{ fieldError('images') }}
-        </p>
-      </section>
-
-      <section class="form-grid" aria-label="Dati campo">
-        <label class="form-field">
-          <span>Nome campo</span>
-
-          <input
-            type="text"
-            name="name"
-            maxlength="100"
-            required
-            [(ngModel)]="field.name"
-            [class.invalid]="fieldError('nome')"
-            [attr.aria-invalid]="fieldError('nome') ? 'true' : 'false'"
-            (input)="clearFieldError('nome')"
-          />
-
-          <small *ngIf="fieldError('nome')" class="field-error">
-            {{ fieldError('nome') }}
-          </small>
-        </label>
-
-        <label class="form-field">
-          <span>Tipo sport</span>
-
-          <select
-            name="sportType"
-            required
-            [(ngModel)]="field.sportType"
-            [class.invalid]="fieldError('sport')"
-            [attr.aria-invalid]="fieldError('sport') ? 'true' : 'false'"
-            (change)="clearFieldError('sport')"
-          >
-            <option *ngFor="let sportType of sportTypes" [value]="sportType">
-              {{ sportType }}
-            </option>
-          </select>
-
-          <small *ngIf="fieldError('sport')" class="field-error">
-            {{ fieldError('sport') }}
-          </small>
-        </label>
-
-        <label class="form-field">
-          <span>Tariffa oraria</span>
-
-          <input
-            type="number"
-            name="hourlyRate"
-            min="0"
-            required
-            step="0.01"
-            [(ngModel)]="field.hourlyRate"
-            [class.invalid]="fieldError('costoOrario')"
-            [attr.aria-invalid]="fieldError('costoOrario') ? 'true' : 'false'"
-            (keydown)="preventNegativeValue($event)"
-            (input)="normalizeHourlyRate($event); clearFieldError('costoOrario')"
-          />
-
-          <small *ngIf="fieldError('costoOrario')" class="field-error">
-            {{ fieldError('costoOrario') }}
-          </small>
-        </label>
-
-        <label class="field-active-control">
-          <span>{{ field.active ? 'Attivo' : 'Inattivo' }}</span>
-          <input type="checkbox" name="active" [(ngModel)]="field.active" />
-        </label>
-      </section>
-
-      <div *ngIf="submitError()" class="form-message error-message">
-        {{ submitError() }}
-      </div>
-
-      <div *ngIf="submitSuccess()" class="form-message success-message">
-        {{ submitSuccess() }}
-      </div>
-
-      <div class="form-actions">
-        <button
-          type="button"
-          class="secondary-action"
-          [disabled]="isSaving()"
-          (click)="cancel()"
-        >
-          Annulla
-        </button>
-
-        <button
-          type="submit"
-          class="primary-action"
-          [disabled]="isSaving()"
-        >
-          {{ isSaving() ? 'Salvataggio...' : 'Salva modifiche' }}
-        </button>
-      </div>
-    </form>
+          <button type="submit" class="primary-action" [disabled]="isSaving()">
+            {{ isSaving() ? 'Salvataggio...' : 'Salva modifiche' }}
+          </button>
+        </div>
+      </form>
+    }
   </section>
 </main>

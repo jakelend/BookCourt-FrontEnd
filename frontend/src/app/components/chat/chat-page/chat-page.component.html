@@ -1,155 +1,171 @@
 <main class="chat-page">
-  <section *ngIf="isCliente" class="chat-header-card">
-    <div>
-      <p class="eyebrow">BookCourt</p>
-      <h2>{{ pageTitle }}</h2>
-      <p>{{ pageSubtitle }}</p>
-    </div>
-  </section>
-
-  <p *ngIf="errorMessage" class="alert alert-error">{{ errorMessage }}</p>
-  <p *ngIf="websocketError" class="alert alert-warning">{{ websocketError }}</p>
-
-  <section *ngIf="initializingChat" class="chat-panel no-conversation">
-    <div class="empty-state big">
-      <span class="material-symbols-outlined">sync</span>
-      <h3>Caricamento chat</h3>
-      <p>Stiamo preparando conversazioni e profilo utente.</p>
-    </div>
-  </section>
-
-  <section *ngIf="!initializingChat" class="chat-shell" [class.client-shell]="isCliente">
-    <aside *ngIf="isCentroReadRole" class="conversation-list">
-      <div class="conversation-list-header">
-        <h3>Clienti</h3>
-        <span>{{ conversations.length }}</span>
+  @if (isCliente) {
+    <section class="chat-header-card">
+      <div>
+        <p class="eyebrow">BookCourt</p>
+        <h2>{{ pageTitle }}</h2>
+        <p>{{ pageSubtitle }}</p>
       </div>
-
-      <div *ngIf="loadingConversations" class="empty-state compact">
-        Caricamento conversazioni...
-      </div>
-
-      <div *ngIf="!loadingConversations && conversations.length === 0" class="empty-state compact">
-        Nessun cliente ha ancora scritto al centro sportivo.
-      </div>
-
-      <button
-        *ngFor="let conversation of conversations; trackBy: trackByConversationId"
-        type="button"
-        class="conversation-item"
-        [class.active]="selectedConversation?.id === conversation.id"
-        (click)="openConversation(conversation)"
-      >
-        <span class="conversation-text">
-          <strong>{{ conversation.clienteNomeCompleto || 'Cliente' }}</strong>
-          <small>{{ conversation.clienteEmail }}</small>
-          <em>{{ conversation.ultimoMessaggioPreview || 'Nessun messaggio' }}</em>
-        </span>
-
-        <span class="conversation-date">
-          {{ formatDateTime(conversation.ultimoMessaggioIl || conversation.creataIl) }}
-        </span>
-      </button>
-    </aside>
-
-    <section class="chat-panel" [class.no-conversation]="!selectedConversation">
-      <ng-container *ngIf="selectedConversation; else noConversationSelected">
-        <header class="chat-panel-header">
-          <div>
-            <h3>
-              {{
-                isCentroReadRole
-                  ? selectedConversation.clienteNomeCompleto || 'Cliente'
-                  : selectedConversation.interlocutoreDisplay
-              }}
-            </h3>
-            <p *ngIf="isCliente">Centro sportivo BookCourt</p>
-            <p *ngIf="isCentroReadRole">{{ selectedConversation.clienteEmail }}</p>
-          </div>
-
-          <span *ngIf="isManager" class="readonly-badge">Solo lettura</span>
-        </header>
-
-        <div #messagesContainer class="messages-container">
-          <div *ngIf="loadingMessages" class="empty-state">Caricamento messaggi...</div>
-
-          <div *ngIf="!loadingMessages && messages.length === 0" class="empty-state">
-            Non ci sono ancora messaggi. Inizia la conversazione.
-          </div>
-
-          <article
-            *ngFor="let message of messages; trackBy: trackByMessageId"
-            class="message-row"
-            [class.mine]="isOutgoingMessage(message)"
-            [class.center-message]="shouldShowAsCenterMessage(message)"
-          >
-            <div class="message-bubble">
-              <div class="message-meta">
-                <strong>{{ getMessageAuthor(message) }}</strong>
-                <span>{{ formatDateTime(message.inviatoIl) }}</span>
-              </div>
-
-              <p>{{ message.contenuto }}</p>
-            </div>
-          </article>
-        </div>
-
-        <footer class="composer" *ngIf="canWrite; else readOnlyComposer">
-          <textarea
-            [(ngModel)]="newMessage"
-            rows="1"
-            maxlength="2000"
-            placeholder="Scrivi un messaggio..."
-            (keydown)="onMessageKeydown($event)"
-          ></textarea>
-
-          <button
-            type="button"
-            class="send-button"
-            [disabled]="!newMessage.trim()"
-            (click)="sendMessage()"
-          >
-            <span class="material-symbols-outlined">send</span>
-          </button>
-        </footer>
-
-        <ng-template #readOnlyComposer>
-          <footer class="composer readonly">
-            <span class="material-symbols-outlined">visibility</span>
-            <p *ngIf="isManager">Il manager può solo visualizzare la conversazione.</p>
-            <p *ngIf="!isManager">Questa conversazione non è scrivibile.</p>
-          </footer>
-        </ng-template>
-      </ng-container>
-
-      <ng-template #noConversationSelected>
-        <div *ngIf="isCliente; else centerNoConversationSelected" class="empty-state big">
-          <span class="material-symbols-outlined">forum</span>
-          <h3>{{ loadingConversations ? 'Apertura chat...' : 'Chat non aperta' }}</h3>
-          <p>
-            {{
-              loadingConversations
-                ? 'Stiamo preparando la tua conversazione con il centro sportivo.'
-                : 'Non è stato possibile aprire automaticamente la conversazione.'
-            }}
-          </p>
-          <button
-            *ngIf="!loadingConversations"
-            type="button"
-            class="empty-state-action"
-            (click)="loadClienteConversation()"
-          >
-            Riprova
-          </button>
-        </div>
-        <ng-template #centerNoConversationSelected>
-          <div class="empty-state big">
-            <span class="material-symbols-outlined">forum</span>
-          <h3>Seleziona un cliente</h3>
-          <p>Scegli una conversazione dalla lista per visualizzare i messaggi.</p>
-          </div>
-        </ng-template>
-      </ng-template>
     </section>
-  </section>
+  }
+
+  @if (errorMessage) {
+    <p class="alert alert-error">{{ errorMessage }}</p>
+  }
+  @if (websocketError) {
+    <p class="alert alert-warning">{{ websocketError }}</p>
+  }
+
+  @if (initializingChat) {
+    <section class="chat-panel no-conversation">
+      <div class="empty-state big">
+        <span class="material-symbols-outlined">sync</span>
+        <h3>Caricamento chat</h3>
+        <p>Stiamo preparando conversazioni e profilo utente.</p>
+      </div>
+    </section>
+  }
+
+  @if (!initializingChat) {
+    <section class="chat-shell" [class.client-shell]="isCliente">
+      @if (isCentroReadRole) {
+        <aside class="conversation-list">
+          <div class="conversation-list-header">
+            <h3>Clienti</h3>
+            <span>{{ conversations.length }}</span>
+          </div>
+          @if (loadingConversations) {
+            <div class="empty-state compact">Caricamento conversazioni...</div>
+          }
+          @if (!loadingConversations && conversations.length === 0) {
+            <div class="empty-state compact">
+              Nessun cliente ha ancora scritto al centro sportivo.
+            </div>
+          }
+          @for (conversation of conversations; track trackByConversationId($index, conversation)) {
+            <button
+              type="button"
+              class="conversation-item"
+              [class.active]="selectedConversation?.id === conversation.id"
+              (click)="openConversation(conversation)"
+            >
+              <span class="conversation-text">
+                <strong>{{ conversation.clienteNomeCompleto || 'Cliente' }}</strong>
+                <small>{{ conversation.clienteEmail }}</small>
+                <em>{{ conversation.ultimoMessaggioPreview || 'Nessun messaggio' }}</em>
+              </span>
+              <span class="conversation-date">
+                {{ formatDateTime(conversation.ultimoMessaggioIl || conversation.creataIl) }}
+              </span>
+            </button>
+          }
+        </aside>
+      }
+      <section class="chat-panel" [class.no-conversation]="!selectedConversation">
+        @if (selectedConversation) {
+          <header class="chat-panel-header">
+            <div>
+              <h3>
+                {{
+                  isCentroReadRole
+                    ? selectedConversation.clienteNomeCompleto || 'Cliente'
+                    : selectedConversation.interlocutoreDisplay
+                }}
+              </h3>
+              @if (isCliente) {
+                <p>Centro sportivo BookCourt</p>
+              }
+              @if (isCentroReadRole) {
+                <p>{{ selectedConversation.clienteEmail }}</p>
+              }
+            </div>
+            @if (isManager) {
+              <span class="readonly-badge">Solo lettura</span>
+            }
+          </header>
+          <div #messagesContainer class="messages-container">
+            @if (loadingMessages) {
+              <div class="empty-state">Caricamento messaggi...</div>
+            }
+            @if (!loadingMessages && messages.length === 0) {
+              <div class="empty-state">Non ci sono ancora messaggi. Inizia la conversazione.</div>
+            }
+            @for (message of messages; track trackByMessageId($index, message)) {
+              <article
+                class="message-row"
+                [class.mine]="isOutgoingMessage(message)"
+                [class.center-message]="shouldShowAsCenterMessage(message)"
+              >
+                <div class="message-bubble">
+                  <div class="message-meta">
+                    <strong>{{ getMessageAuthor(message) }}</strong>
+                    <span>{{ formatDateTime(message.inviatoIl) }}</span>
+                  </div>
+                  <p>{{ message.contenuto }}</p>
+                </div>
+              </article>
+            }
+          </div>
+          @if (canWrite) {
+            <footer class="composer">
+              <textarea
+                [(ngModel)]="newMessage"
+                rows="1"
+                maxlength="2000"
+                placeholder="Scrivi un messaggio..."
+                (keydown)="onMessageKeydown($event)"
+              ></textarea>
+              <button
+                type="button"
+                class="send-button"
+                [disabled]="!newMessage.trim()"
+                (click)="sendMessage()"
+              >
+                <span class="material-symbols-outlined">send</span>
+              </button>
+            </footer>
+          } @else {
+            <footer class="composer readonly">
+              <span class="material-symbols-outlined">visibility</span>
+              @if (isManager) {
+                <p>Il manager può solo visualizzare la conversazione.</p>
+              }
+              @if (!isManager) {
+                <p>Questa conversazione non è scrivibile.</p>
+              }
+            </footer>
+          }
+        } @else {
+          @if (isCliente) {
+            <div class="empty-state big">
+              <span class="material-symbols-outlined">forum</span>
+              <h3>{{ loadingConversations ? 'Apertura chat...' : 'Chat non aperta' }}</h3>
+              <p>
+                {{
+                  loadingConversations
+                    ? 'Stiamo preparando la tua conversazione con il centro sportivo.'
+                    : 'Non è stato possibile aprire automaticamente la conversazione.'
+                }}
+              </p>
+              @if (!loadingConversations) {
+                <button
+                  type="button"
+                  class="empty-state-action"
+                  (click)="loadClienteConversation()"
+                >
+                  Riprova
+                </button>
+              }
+            </div>
+          } @else {
+            <div class="empty-state big">
+              <span class="material-symbols-outlined">forum</span>
+              <h3>Seleziona un cliente</h3>
+              <p>Scegli una conversazione dalla lista per visualizzare i messaggi.</p>
+            </div>
+          }
+        }
+      </section>
+    </section>
+  }
 </main>

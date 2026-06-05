@@ -8,16 +8,17 @@
     </div>
 
     <div class="sport-grid" role="group" aria-label="Selezione sport">
-      <button
-        *ngFor="let sport of sports; trackBy: trackBySport"
-        type="button"
-        class="sport-card"
-        [class.active]="isSportSelected(sport.value)"
-        (click)="selectSport(sport.value)"
-      >
-        <span class="material-symbols-outlined">{{ sport.icon }}</span>
-        <strong>{{ sport.label }}</strong>
-      </button>
+      @for (sport of sports; track trackBySport($index, sport)) {
+        <button
+          type="button"
+          class="sport-card"
+          [class.active]="isSportSelected(sport.value)"
+          (click)="selectSport(sport.value)"
+        >
+          <span class="material-symbols-outlined">{{ sport.icon }}</span>
+          <strong>{{ sport.label }}</strong>
+        </button>
+      }
     </div>
   </section>
 
@@ -26,45 +27,60 @@
       <span class="step-badge">2</span>
       <div>
         <h2>Scegli il campo</h2>
-        <p *ngIf="selectedSport()">Campi disponibili per {{ selectedSportLabel() }}.</p>
-        <p *ngIf="!selectedSport()">Seleziona prima uno sport.</p>
+        @if (selectedSport()) {
+          <p>Campi disponibili per {{ selectedSportLabel() }}.</p>
+        }
+        @if (!selectedSport()) {
+          <p>Seleziona prima uno sport.</p>
+        }
       </div>
     </div>
 
-    <div *ngIf="loadingFields()" class="inline-feedback">
-      <span class="material-symbols-outlined rotating">progress_activity</span>
-      <span>Caricamento campi...</span>
-    </div>
-
-    <div *ngIf="!loadingFields() && fieldsErrorMessage()" class="inline-feedback error-feedback">
-      <div>
-        <strong>Errore caricamento campi</strong>
-        <p>{{ fieldsErrorMessage() }}</p>
+    @if (loadingFields()) {
+      <div class="inline-feedback">
+        <span class="material-symbols-outlined rotating">progress_activity</span>
+        <span>Caricamento campi...</span>
       </div>
-      <button type="button" class="text-button" (click)="retryFields()">Riprova</button>
-    </div>
+    }
 
-    <div *ngIf="selectedSport() && !loadingFields() && !fieldsErrorMessage() && !fields().length" class="inline-feedback">
-      <span class="material-symbols-outlined">stadium</span>
-      <span>Nessun campo attivo trovato per questo sport.</span>
-    </div>
+    @if (!loadingFields() && fieldsErrorMessage()) {
+      <div class="inline-feedback error-feedback">
+        <div>
+          <strong>Errore caricamento campi</strong>
+          <p>{{ fieldsErrorMessage() }}</p>
+        </div>
+        <button type="button" class="text-button" (click)="retryFields()">Riprova</button>
+      </div>
+    }
 
-    <div *ngIf="!loadingFields() && fields().length" class="field-grid" role="group" aria-label="Selezione campo">
-      <button
-        *ngFor="let field of fields(); trackBy: trackByField"
-        type="button"
-        class="field-card"
-        [class.active]="isFieldSelected(field)"
-        (click)="selectField(field)"
-      >
-        <span class="field-icon material-symbols-outlined">stadium</span>
-        <span class="field-content">
-          <strong>{{ field.nome }}</strong>
-          <small>{{ formatCurrency(field.costoOrario) }} / ora</small>
-        </span>
-        <span *ngIf="isFieldSelected(field)" class="selected-check material-symbols-outlined">check_circle</span>
-      </button>
-    </div>
+    @if (selectedSport() && !loadingFields() && !fieldsErrorMessage() && !fields().length) {
+      <div class="inline-feedback">
+        <span class="material-symbols-outlined">stadium</span>
+        <span>Nessun campo attivo trovato per questo sport.</span>
+      </div>
+    }
+
+    @if (!loadingFields() && fields().length) {
+      <div class="field-grid" role="group" aria-label="Selezione campo">
+        @for (field of fields(); track trackByField($index, field)) {
+          <button
+            type="button"
+            class="field-card"
+            [class.active]="isFieldSelected(field)"
+            (click)="selectField(field)"
+          >
+            <span class="field-icon material-symbols-outlined">stadium</span>
+            <span class="field-content">
+              <strong>{{ field.nome }}</strong>
+              <small>{{ formatCurrency(field.costoOrario) }} / ora</small>
+            </span>
+            @if (isFieldSelected(field)) {
+              <span class="selected-check material-symbols-outlined">check_circle</span>
+            }
+          </button>
+        }
+      </div>
+    }
   </section>
 
   <section class="maintenance-workspace" [class.disabled-card]="!selectedFieldId()">
@@ -78,13 +94,23 @@
         </div>
 
         <div class="toolbar-actions">
-          <button type="button" class="day-nav-button" aria-label="Giorno precedente" (click)="goToPreviousDay()">
+          <button
+            type="button"
+            class="day-nav-button"
+            aria-label="Giorno precedente"
+            (click)="goToPreviousDay()"
+          >
             <span class="material-symbols-outlined">chevron_left</span>
           </button>
 
           <button type="button" class="today-button" (click)="goToToday()">Oggi</button>
 
-          <button type="button" class="day-nav-button" aria-label="Giorno successivo" (click)="goToNextDay()">
+          <button
+            type="button"
+            class="day-nav-button"
+            aria-label="Giorno successivo"
+            (click)="goToNextDay()"
+          >
             <span class="material-symbols-outlined">chevron_right</span>
           </button>
 
@@ -103,52 +129,53 @@
         </div>
       </section>
 
-      <section *ngIf="maintenancesErrorMessage()" class="inline-feedback error-feedback">
-        <div>
-          <strong>Errore caricamento manutenzioni</strong>
-          <p>{{ maintenancesErrorMessage() }}</p>
-        </div>
-        <button type="button" class="text-button" (click)="retryMaintenances()">Riprova</button>
-      </section>
+      @if (maintenancesErrorMessage()) {
+        <section class="inline-feedback error-feedback">
+          <div>
+            <strong>Errore caricamento manutenzioni</strong>
+            <p>{{ maintenancesErrorMessage() }}</p>
+          </div>
+          <button type="button" class="text-button" (click)="retryMaintenances()">Riprova</button>
+        </section>
+      }
 
       <section class="calendar-shell" [class.loading-state]="loadingMaintenances()">
-        <div *ngIf="loadingMaintenances()" class="loading-overlay">
-          <span class="material-symbols-outlined rotating">progress_activity</span>
-          <p>Caricamento manutenzioni...</p>
-        </div>
+        @if (loadingMaintenances()) {
+          <div class="loading-overlay">
+            <span class="material-symbols-outlined rotating">progress_activity</span>
+            <p>Caricamento manutenzioni...</p>
+          </div>
+        }
 
         <div class="calendar-scroll-area">
           <div class="time-column">
-            <div
-              *ngFor="let slot of hourSlots(); trackBy: trackByHour"
-              class="time-label"
-              [style.top.%]="slot.topPct"
-            >
-              {{ slot.label }}
-            </div>
+            @for (slot of hourSlots(); track trackByHour($index, slot)) {
+              <div class="time-label" [style.top.%]="slot.topPct">
+                {{ slot.label }}
+              </div>
+            }
           </div>
 
           <div class="day-column">
-            <div
-              *ngFor="let slot of hourSlots(); trackBy: trackByHour"
-              class="hour-line"
-              [style.top.%]="slot.topPct"
-            ></div>
+            @for (slot of hourSlots(); track trackByHour($index, slot)) {
+              <div class="hour-line" [style.top.%]="slot.topPct"></div>
+            }
 
-            <article
-              *ngFor="let event of eventViews(); trackBy: trackByEvent"
-              class="calendar-event maintenance-event"
-              [style.top.%]="event.topPct"
-              [style.height.%]="event.heightPct"
-            >
-              <div class="event-main-row">
-                <span class="material-symbols-outlined event-icon">construction</span>
-                <div class="event-content">
-                  <h3>{{ event.title }}</h3>
-                  <p class="event-time">{{ event.timeLabel }}</p>
+            @for (event of eventViews(); track trackByEvent($index, event)) {
+              <article
+                class="calendar-event maintenance-event"
+                [style.top.%]="event.topPct"
+                [style.height.%]="event.heightPct"
+              >
+                <div class="event-main-row">
+                  <span class="material-symbols-outlined event-icon">construction</span>
+                  <div class="event-content">
+                    <h3>{{ event.title }}</h3>
+                    <p class="event-time">{{ event.timeLabel }}</p>
+                  </div>
                 </div>
-              </div>
-            </article>
+              </article>
+            }
           </div>
         </div>
       </section>
@@ -164,34 +191,66 @@
           </div>
         </div>
 
-        <div *ngIf="formErrorMessage()" class="form-alert error-feedback">
-          {{ formErrorMessage() }}
-        </div>
+        @if (formErrorMessage()) {
+          <div class="form-alert error-feedback">
+            {{ formErrorMessage() }}
+          </div>
+        }
 
-        <div *ngIf="feedbackMessage()" class="form-alert" [class.success-feedback]="feedbackType() === 'success'" [class.error-feedback]="feedbackType() === 'error'">
-          {{ feedbackMessage() }}
-        </div>
+        @if (feedbackMessage()) {
+          <div
+            class="form-alert"
+            [class.success-feedback]="feedbackType() === 'success'"
+            [class.error-feedback]="feedbackType() === 'error'"
+          >
+            {{ feedbackMessage() }}
+          </div>
+        }
 
         <form class="maintenance-form" (ngSubmit)="createMaintenance()">
           <div class="form-grid two-columns">
             <label>
               <span>Data inizio</span>
-              <input type="date" name="startDate" [ngModel]="startDate()" (ngModelChange)="setStartDate($event)" [disabled]="!selectedFieldId() || saving()" />
+              <input
+                type="date"
+                name="startDate"
+                [ngModel]="startDate()"
+                (ngModelChange)="setStartDate($event)"
+                [disabled]="!selectedFieldId() || saving()"
+              />
             </label>
 
             <label>
               <span>Ora inizio</span>
-              <input type="time" name="startTime" [ngModel]="startTime()" (ngModelChange)="setStartTime($event)" [disabled]="!selectedFieldId() || saving()" />
+              <input
+                type="time"
+                name="startTime"
+                [ngModel]="startTime()"
+                (ngModelChange)="setStartTime($event)"
+                [disabled]="!selectedFieldId() || saving()"
+              />
             </label>
 
             <label>
               <span>Data fine</span>
-              <input type="date" name="endDate" [ngModel]="endDate()" (ngModelChange)="setEndDate($event)" [disabled]="!selectedFieldId() || saving()" />
+              <input
+                type="date"
+                name="endDate"
+                [ngModel]="endDate()"
+                (ngModelChange)="setEndDate($event)"
+                [disabled]="!selectedFieldId() || saving()"
+              />
             </label>
 
             <label>
               <span>Ora fine</span>
-              <input type="time" name="endTime" [ngModel]="endTime()" (ngModelChange)="setEndTime($event)" [disabled]="!selectedFieldId() || saving()" />
+              <input
+                type="time"
+                name="endTime"
+                [ngModel]="endTime()"
+                (ngModelChange)="setEndTime($event)"
+                [disabled]="!selectedFieldId() || saving()"
+              />
             </label>
           </div>
 
@@ -224,34 +283,41 @@
           </div>
         </div>
 
-        <div *ngIf="!selectedFieldId()" class="inline-feedback compact-feedback">
-          <span class="material-symbols-outlined">touch_app</span>
-          <span>Seleziona prima un campo.</span>
-        </div>
+        @if (!selectedFieldId()) {
+          <div class="inline-feedback compact-feedback">
+            <span class="material-symbols-outlined">touch_app</span>
+            <span>Seleziona prima un campo.</span>
+          </div>
+        }
 
-        <div *ngIf="selectedFieldId() && !loadingMaintenances() && !maintenances().length" class="inline-feedback compact-feedback">
-          <span class="material-symbols-outlined">event_busy</span>
-          <span>Nessuna manutenzione eliminabile per questo giorno.</span>
-        </div>
+        @if (selectedFieldId() && !loadingMaintenances() && !maintenances().length) {
+          <div class="inline-feedback compact-feedback">
+            <span class="material-symbols-outlined">event_busy</span>
+            <span>Nessuna manutenzione eliminabile per questo giorno.</span>
+          </div>
+        }
 
-        <div *ngIf="maintenances().length" class="maintenance-list">
-          <article *ngFor="let maintenance of maintenances(); trackBy: trackByMaintenance" class="maintenance-list-item">
-            <div>
-              <strong>{{ maintenance.motivo || 'Manutenzione campo' }}</strong>
-              <p>{{ formatMaintenanceRange(maintenance) }}</p>
-            </div>
-
-            <button
-              type="button"
-              class="delete-button"
-              [disabled]="isDeleting(maintenance.id)"
-              (click)="deleteMaintenance(maintenance)"
-            >
-              <span class="material-symbols-outlined">delete</span>
-              <span>{{ isDeleting(maintenance.id) ? 'Elimino...' : 'Elimina' }}</span>
-            </button>
-          </article>
-        </div>
+        @if (maintenances().length) {
+          <div class="maintenance-list">
+            @for (maintenance of maintenances(); track trackByMaintenance($index, maintenance)) {
+              <article class="maintenance-list-item">
+                <div>
+                  <strong>{{ maintenance.motivo || 'Manutenzione campo' }}</strong>
+                  <p>{{ formatMaintenanceRange(maintenance) }}</p>
+                </div>
+                <button
+                  type="button"
+                  class="delete-button"
+                  [disabled]="isDeleting(maintenance.id)"
+                  (click)="deleteMaintenance(maintenance)"
+                >
+                  <span class="material-symbols-outlined">delete</span>
+                  <span>{{ isDeleting(maintenance.id) ? 'Elimino...' : 'Elimina' }}</span>
+                </button>
+              </article>
+            }
+          </div>
+        }
       </section>
     </aside>
   </section>

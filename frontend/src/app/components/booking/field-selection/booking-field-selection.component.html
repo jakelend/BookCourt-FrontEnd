@@ -2,139 +2,123 @@
   <section class="booking-field-container">
     <section class="booking-stepper" aria-label="Avanzamento prenotazione">
       <div class="stepper-header">
-        <span class="stepper-current">
-          Step {{ currentStep }} di {{ totalSteps }}
-        </span>
+        <span class="stepper-current"> Step {{ currentStep }} di {{ totalSteps }} </span>
 
-        <span class="stepper-title">
-          Scelta campo
-        </span>
+        <span class="stepper-title"> Scelta campo </span>
       </div>
 
       <div class="stepper-segments" aria-hidden="true">
-        <span
-          *ngFor="let step of steps; let i = index; trackBy: trackByStepLabel"
-          [class.active]="isStepCompleted(i)"
-        ></span>
+        @for (step of steps; track trackByStepLabel(i, step); let i = $index) {
+          <span [class.active]="isStepCompleted(i)"></span>
+        }
       </div>
 
       <div class="step-labels">
-        <span
-          *ngFor="let step of steps; let i = index; trackBy: trackByStepLabel"
-          [class.active]="isStepCompleted(i)"
-        >
-          {{ step.label }}
-        </span>
+        @for (step of steps; track trackByStepLabel(i, step); let i = $index) {
+          <span [class.active]="isStepCompleted(i)">
+            {{ step.label }}
+          </span>
+        }
       </div>
     </section>
 
     <header class="page-header">
       <h1>Seleziona il campo</h1>
-      <p>
-        Scegli la struttura di {{ selectedSportLabel() }} desiderata per la tua prenotazione.
-      </p>
+      <p>Scegli la struttura di {{ selectedSportLabel() }} desiderata per la tua prenotazione.</p>
     </header>
 
-    <section *ngIf="showLoading()" class="loading-panel">
-      <div class="loading-spinner" aria-hidden="true"></div>
-      <span>Caricamento campi disponibili...</span>
-    </section>
+    @if (showLoading()) {
+      <section class="loading-panel">
+        <div class="loading-spinner" aria-hidden="true"></div>
+        <span>Caricamento campi disponibili...</span>
+      </section>
+    }
 
-    <section *ngIf="showError()" class="error-panel">
-      <span class="material-symbols-outlined">error</span>
+    @if (showError()) {
+      <section class="error-panel">
+        <span class="material-symbols-outlined">error</span>
+        <div>
+          <strong>Errore caricamento campi</strong>
+          <p>{{ errorMessage() }}</p>
+          <button type="button" class="reload-button" (click)="loadFields()">Riprova</button>
+        </div>
+      </section>
+    }
 
-      <div>
-        <strong>Errore caricamento campi</strong>
-        <p>{{ errorMessage() }}</p>
-
-        <button type="button" class="reload-button" (click)="loadFields()">
-          Riprova
-        </button>
-      </div>
-    </section>
-
-    <section
-      *ngIf="showFields()"
-      class="fields-grid"
-      aria-label="Campi disponibili"
-    >
-      <article
-        *ngFor="let field of fields(); let i = index; trackBy: trackByFieldId"
-        class="field-card"
-        [class.selected]="isSelected(field)"
-        role="button"
-        tabindex="0"
-        (click)="selectField(field)"
-        (keydown)="onFieldCardKeydown($event, field)"
-      >
-        <div class="field-image-wrapper">
-          <img
-            *ngIf="field.urlImmaginePrincipale && !isFieldImageError(field); else fieldImagePlaceholder"
-            class="field-image"
-            [class.loaded]="isFieldImageLoaded(field)"
-            [src]="field.urlImmaginePrincipale"
-            [alt]="field.nome"
-            width="360"
-            height="170"
-            decoding="async"
-            [attr.loading]="i < 3 ? 'eager' : 'lazy'"
-            [attr.fetchpriority]="i === 0 ? 'high' : 'low'"
-            (load)="onFieldImageLoad(field)"
-            (error)="onFieldImageError(field)"
-          />
-
-          <div
-            *ngIf="isFieldImageLoading(field)"
-            class="field-image-skeleton"
-            aria-hidden="true"
+    @if (showFields()) {
+      <section class="fields-grid" aria-label="Campi disponibili">
+        @for (field of fields(); track trackByFieldId(i, field); let i = $index) {
+          <article
+            class="field-card"
+            [class.selected]="isSelected(field)"
+            role="button"
+            tabindex="0"
+            (click)="selectField(field)"
+            (keydown)="onFieldCardKeydown($event, field)"
           >
-            <span class="material-symbols-outlined">stadium</span>
-          </div>
-
-          <ng-template #fieldImagePlaceholder>
-            <div class="field-image-placeholder">
-              <span class="material-symbols-outlined">stadium</span>
+            <div class="field-image-wrapper">
+              @if (field.urlImmaginePrincipale && !isFieldImageError(field)) {
+                <img
+                  class="field-image"
+                  [class.loaded]="isFieldImageLoaded(field)"
+                  [src]="field.urlImmaginePrincipale"
+                  [alt]="field.nome"
+                  width="360"
+                  height="170"
+                  decoding="async"
+                  [attr.loading]="i < 3 ? 'eager' : 'lazy'"
+                  [attr.fetchpriority]="i === 0 ? 'high' : 'low'"
+                  (load)="onFieldImageLoad(field)"
+                  (error)="onFieldImageError(field)"
+                />
+              } @else {
+                <div class="field-image-placeholder">
+                  <span class="material-symbols-outlined">stadium</span>
+                </div>
+              }
+              @if (isFieldImageLoading(field)) {
+                <div class="field-image-skeleton" aria-hidden="true">
+                  <span class="material-symbols-outlined">stadium</span>
+                </div>
+              }
+              <span class="status-badge" [class.inactive]="!field.attivo">
+                {{ field.attivo ? 'ACTIVE' : 'INACTIVE' }}
+              </span>
             </div>
-          </ng-template>
-
-          <span class="status-badge" [class.inactive]="!field.attivo">
-            {{ field.attivo ? 'ACTIVE' : 'INACTIVE' }}
-          </span>
-        </div>
-
-        <div class="field-card-body">
-          <div class="field-info">
-            <h2>{{ field.nome }}</h2>
-            <p>{{ getFieldSubtitle(field) }}</p>
-          </div>
-
-          <div class="rate-section">
-            <div class="rate-row">
-              <span>Tariffa oraria</span>
-              <strong>{{ getHourlyRateLabel(field) }}</strong>
+            <div class="field-card-body">
+              <div class="field-info">
+                <h2>{{ field.nome }}</h2>
+                <p>{{ getFieldSubtitle(field) }}</p>
+              </div>
+              <div class="rate-section">
+                <div class="rate-row">
+                  <span>Tariffa oraria</span>
+                  <strong>{{ getHourlyRateLabel(field) }}</strong>
+                </div>
+                <button
+                  type="button"
+                  class="select-button"
+                  [disabled]="!field.attivo"
+                  (click)="selectFieldFromButton(field, $event)"
+                >
+                  Seleziona campo
+                </button>
+              </div>
             </div>
+          </article>
+        }
+      </section>
+    }
 
-            <button
-              type="button"
-              class="select-button"
-              [disabled]="!field.attivo"
-              (click)="selectFieldFromButton(field, $event)"
-            >
-              Seleziona campo
-            </button>
-          </div>
+    @if (showEmpty()) {
+      <section class="empty-panel">
+        <span class="material-symbols-outlined">stadium</span>
+        <div>
+          <strong>Nessun campo disponibile</strong>
+          <p>Al momento non ci sono campi attivi per {{ selectedSportLabel() }}.</p>
         </div>
-      </article>
-    </section>
-
-    <section *ngIf="showEmpty()" class="empty-panel">
-      <span class="material-symbols-outlined">stadium</span>
-
-      <div>
-        <strong>Nessun campo disponibile</strong>
-        <p>Al momento non ci sono campi attivi per {{ selectedSportLabel() }}.</p>
-      </div>
-    </section>
+      </section>
+    }
 
     <footer class="booking-actions">
       <button type="button" class="back-button" (click)="goBack()">

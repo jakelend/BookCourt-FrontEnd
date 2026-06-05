@@ -1,4 +1,4 @@
-import { Role } from '../../../enumeration/role.enum';
+import type { Role } from '../../../enumeration/role.enum';
 
 export interface MeResponseDto {
   id: number;

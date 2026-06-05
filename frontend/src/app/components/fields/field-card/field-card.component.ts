@@ -1,8 +1,10 @@
 import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { ManagerFieldResponseDto } from '../../../dto/response/manager/manager-field-response.dto';
+import type { Sport } from '../../../enumeration/sport.enum';
+import { ImageUrlUtil } from '../../../util/image-url.util';
 
-export type FieldSportType = 'CALCETTO' | 'TENNIS' | 'PADEL';
+export type FieldSportType = Sport;
 export type FieldCardMode = 'management' | 'selection';
 
 export interface FieldToggleEvent {
@@ -39,11 +41,6 @@ export class FieldCardComponent {
   @Output() selectField = new EventEmitter<ManagerFieldResponseDto>();
 
   /**
-   * Base URL usata per trasformare percorsi immagine relativi in URL assoluti visualizzabili dal browser.
-   */
-  private readonly backendBaseUrl = 'http://localhost:8080';
-
-  /**
    * Indica se la card è usata nel flusso di prenotazione come scelta del campo.
    */
   get isSelectionMode(): boolean {
@@ -54,17 +51,7 @@ export class FieldCardComponent {
    * Restituisce l'immagine principale del campo oppure un'immagine di default se assente.
    */
   get coverImageUrl(): string {
-    const path = this.field.urlImmaginePrincipale;
-
-    if (!path) {
-      return '';
-    }
-
-    if (path.startsWith('http://') || path.startsWith('https://')) {
-      return path;
-    }
-
-    return path.startsWith('/') ? `${this.backendBaseUrl}${path}` : `${this.backendBaseUrl}/${path}`;
+    return ImageUrlUtil.normalizeBackendImageUrl(this.field.urlImmaginePrincipale) ?? '';
   }
 
   /**

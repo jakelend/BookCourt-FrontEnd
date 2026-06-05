@@ -8,6 +8,7 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
+import { environment } from '../../environments/environment';
 import { SecretaryInstructorUnavailabilityRequestDto } from '../dto/request/secretary/secretary-instructor-unavailability-request.dto';
 import { SecretaryInstructorCalendarDayResponseDto } from '../dto/response/secretary/secretary-instructor-calendar-day-response.dto';
 import { SecretaryInstructorResponseDto } from '../dto/response/secretary/secretary-instructor-response.dto';
@@ -19,7 +20,7 @@ import { SecretaryInstructorResponseDto } from '../dto/response/secretary/secret
   providedIn: 'root',
 })
 export class SecretaryInstructorCalendarService {
-  private readonly secretaryApiUrl = 'http://localhost:8080/api/segreteria';
+  private readonly secretaryApiUrl = `${environment.backendBaseUrl}/api/segreteria`;
 
   constructor(private readonly http: HttpClient) {}
 

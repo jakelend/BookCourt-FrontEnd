@@ -8,49 +8,10 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { map, Observable, take, timeout } from 'rxjs';
-
-/**
- * DTO di una prenotazione conclusa per cui il cliente può lasciare un feedback.
- */
-export interface PrenotazioneDaRecensireResponseDto {
-  prenotazioneId: number;
-  campoId: number;
-  nomeCampo?: string | null;
-  inizio: string;
-  fine: string;
-  istruttoreId?: number | null;
-  nomeIstruttore?: string | null;
-  cognomeIstruttore?: string | null;
-  feedbackGiaInserito: boolean;
-  recensibile: boolean;
-}
-
-/**
- * Payload inviato dal cliente per creare un feedback.
- */
-export interface CreateFeedbackRequestDto {
-  valutazione: number;
-  commento: string;
-}
-
-/**
- * DTO di un feedback già salvato e associato a una prenotazione.
- */
-export interface FeedbackPrenotazioneResponseDto {
-  id: number;
-  prenotazioneId: number;
-  clienteId: number;
-  campoId?: number | null;
-  nomeCampo?: string | null;
-  inizio?: string | null;
-  fine?: string | null;
-  istruttoreId?: number | null;
-  nomeIstruttore?: string | null;
-  cognomeIstruttore?: string | null;
-  valutazione: number;
-  commento: string | null;
-  creatoIl: string;
-}
+import { environment } from '../../environments/environment';
+import type { CreateFeedbackRequestDto } from '../dto/request/feedback/create-feedback-request.dto';
+import type { FeedbackPrenotazioneResponseDto } from '../dto/response/feedback/feedback-prenotazione-response.dto';
+import type { PrenotazioneDaRecensireResponseDto } from '../dto/response/feedback/prenotazione-da-recensire-response.dto';
 
 /**
  * Service Angular singleton che gestisce lettura e creazione dei feedback.
@@ -59,7 +20,7 @@ export interface FeedbackPrenotazioneResponseDto {
   providedIn: 'root',
 })
 export class FeedbackService {
-  private readonly backendBaseUrl = 'http://localhost:8080';
+  private readonly backendBaseUrl = environment.backendBaseUrl;
   private readonly feedbackApiUrl = `${this.backendBaseUrl}/api/feedback`;
 
   constructor(private readonly http: HttpClient) {}

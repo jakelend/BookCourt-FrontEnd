@@ -1,4 +1,4 @@
-import { Role } from '../../../enumeration/role.enum';
+import type { Role } from '../../../enumeration/role.enum';
 
 export interface JwtResponseDto {
   token: string;
@@ -8,4 +8,5 @@ export interface JwtResponseDto {
   nome: string;
   cognome: string;
   ruolo: Role;
+  fotoProfiloUrl?: string | null;
 }

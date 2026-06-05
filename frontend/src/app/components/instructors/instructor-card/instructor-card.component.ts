@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Input, OnChanges, Output, SimpleChanges } from '@angular/core';
 import { ManagerInstructorResponseDto } from '../../../dto/response/manager/manager-instructor-response.dto';
+import { ImageUrlUtil } from '../../../util/image-url.util';
 
 export interface InstructorToggleEvent {
   instructor: ManagerInstructorResponseDto;
@@ -18,9 +19,6 @@ export class InstructorCardComponent implements OnChanges {
   @Input() togglePending = false;
   @Output() editInstructor = new EventEmitter<ManagerInstructorResponseDto>();
   @Output() toggleInstructor = new EventEmitter<InstructorToggleEvent>();
-
-  private readonly backendBaseUrl = 'http://localhost:8080';
-  private readonly defaultProfileImagePath = 'images/default/default-image-profile.png';
 
   imageLoadFailed = false;
 
@@ -40,17 +38,7 @@ export class InstructorCardComponent implements OnChanges {
       return '';
     }
 
-    const path = this.instructor.fotoProfiloUrl?.trim();
-
-    if (!path || this.isInvalidImagePath(path)) {
-      return '';
-    }
-
-    if (path.startsWith('http://') || path.startsWith('https://')) {
-      return path;
-    }
-
-    return path.startsWith('/') ? `${this.backendBaseUrl}${path}` : `${this.backendBaseUrl}/${path}`;
+    return ImageUrlUtil.normalizeProfileImageUrl(this.instructor.fotoProfiloUrl) ?? '';
   }
 
   get statusLabel(): string {
@@ -73,19 +61,6 @@ export class InstructorCardComponent implements OnChanges {
 
   get padelRateLabel(): string {
     return this.instructor.costoOrarioPadel != null ? `EUR ${this.instructor.costoOrarioPadel}/h` : '—';
-  }
-
-  private isInvalidImagePath(path: string): boolean {
-    const normalizedPath = path.trim().toLowerCase();
-
-    return (
-      normalizedPath === 'string' ||
-      normalizedPath === 'null' ||
-      normalizedPath === 'undefined' ||
-      normalizedPath === this.defaultProfileImagePath ||
-      normalizedPath === `/${this.defaultProfileImagePath}` ||
-      normalizedPath.endsWith(`/${this.defaultProfileImagePath}`)
-    );
   }
 
   edit(): void {

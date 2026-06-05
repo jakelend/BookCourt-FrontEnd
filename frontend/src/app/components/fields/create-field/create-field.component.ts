@@ -6,6 +6,7 @@ import { catchError, finalize, switchMap } from 'rxjs/operators';
 
 import { ManagerCreateFieldRequestDto } from '../../../dto/request/manager/manager-create-field-request.dto';
 import { ManagerFieldSport } from '../../../dto/response/manager/manager-field-response.dto';
+import { SPORTS, isSport } from '../../../enumeration/sport.enum';
 import { ManagerService } from '../../../services/manager.service';
 import { extractBackendErrorMessage, extractBackendFieldErrors, FieldErrors } from '../../../util/error-message.util';
 import { FieldSportType } from '../field-card/field-card.component';
@@ -54,7 +55,7 @@ export class CreateFieldComponent implements OnDestroy {
   /**
    * Sport selezionabili nella creazione del campo.
    */
-  readonly sportTypes: FieldSportType[] = ['CALCETTO', 'TENNIS', 'PADEL'];
+  readonly sportTypes: FieldSportType[] = [...SPORTS];
   readonly maxImages = 6;
 
   /**
@@ -418,7 +419,7 @@ export class CreateFieldComponent implements OnDestroy {
    * Type guard che verifica se lo sport ricevuto dal form è uno sport valido per il backend.
    */
   private isValidSport(value: string): value is ManagerFieldSport {
-    return this.sportTypes.includes(value as FieldSportType);
+    return isSport(value);
   }
 
   /**

@@ -1,8 +1,8 @@
 import { CommonModule } from '@angular/common';
 import { Component } from '@angular/core';
 import { Router } from '@angular/router';
-
-type BookingSport = 'CALCETTO' | 'PADEL' | 'TENNIS';
+import type { Sport } from '../../../enumeration/sport.enum';
+import { isSport } from '../../../enumeration/sport.enum';
 
 /**
  * Singolo step mostrato nella timeline del flusso di prenotazione.
@@ -15,7 +15,7 @@ interface BookingStep {
  * Opzione sportiva visualizzata nella prima schermata della prenotazione.
  */
 interface SportOption {
-  code: BookingSport;
+  code: Sport;
   name: string;
   imageUrl: string;
   alt: string;
@@ -76,7 +76,7 @@ export class BookingSportSelectionComponent {
 
   /** Sport selezionato, ripristinato da sessionStorage se l'utente torna indietro nel flusso. */
 
-  selectedSport: BookingSport | null = this.readSavedSport();
+  selectedSport: Sport | null = this.readSavedSport();
 
   /** Numero totale di step del wizard. */
   get totalSteps(): number {
@@ -108,7 +108,7 @@ export class BookingSportSelectionComponent {
   }
 
   /** TrackBy usato da Angular per ottimizzare il rendering delle card sport. */
-  trackBySportCode(_: number, sport: SportOption): BookingSport {
+  trackBySportCode(_: number, sport: SportOption): Sport {
     return sport.code;
   }
 
@@ -122,10 +122,10 @@ export class BookingSportSelectionComponent {
    *
    * Accetta solo valori noti, così eventuali dati sporchi non entrano nello stato del componente.
    */
-  private readSavedSport(): BookingSport | null {
+  private readSavedSport(): Sport | null {
     const savedSport = sessionStorage.getItem('booking.selectedSport');
 
-    if (savedSport === 'CALCETTO' || savedSport === 'PADEL' || savedSport === 'TENNIS') {
+    if (isSport(savedSport)) {
       return savedSport;
     }
 

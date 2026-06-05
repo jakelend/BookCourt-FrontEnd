@@ -2,7 +2,8 @@ import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, OnInit, computed, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { finalize } from 'rxjs';
-import { FeedbackService, PrenotazioneDaRecensireResponseDto } from '../../../services/feedback.service';
+import type { PrenotazioneDaRecensireResponseDto } from '../../../dto/response/feedback/prenotazione-da-recensire-response.dto';
+import { FeedbackService } from '../../../services/feedback.service';
 import { extractBackendErrorMessage } from '../../../util/error-message.util';
 
 @Component({

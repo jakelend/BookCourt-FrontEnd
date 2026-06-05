@@ -1,7 +1,8 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, OnInit, signal } from '@angular/core';
 import { finalize } from 'rxjs';
-import { BookingService, PrenotazioneConfermataResponseDto } from '../../../services/booking.service';
+import type { PrenotazioneConfermataResponseDto } from '../../../dto/response/booking/prenotazione-confermata-response.dto';
+import { BookingService } from '../../../services/booking.service';
 import { extractBackendErrorMessage } from '../../../util/error-message.util';
 
 /**
@@ -18,22 +19,22 @@ import { extractBackendErrorMessage } from '../../../util/error-message.util';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CancelBookingsComponent implements OnInit {
-  /** Lista reattiva delle prenotazioni future visualizzate nella pagina. */
+
   readonly prenotazioni = signal<PrenotazioneConfermataResponseDto[]>([]);
-  /** Indica se è in corso il caricamento delle prenotazioni future. */
+
+  //  Indica se è in corso il caricamento delle prenotazioni future
   readonly isLoading = signal(false);
-  /** Id della prenotazione che si sta annullando, usato per disabilitare solo il relativo pulsante. */
+
+  // Id della prenotazione che si sta annullando, usato per disabilitare solo il relativo pulsante
   readonly cancellingPrenotazioneId = signal<number | null>(null);
   readonly errorMessage = signal('');
   readonly feedbackMessage = signal('');
 
-  /** Numero minimo di ore di anticipo richiesto per consentire l'annullamento lato frontend. */
   private readonly cancellationLimitHours = 48;
 
-  /** Inietta il service usato per dialogare con le API di prenotazione. */
   constructor(private readonly bookingService: BookingService) {}
 
-  /** All'apertura della pagina carica le prenotazioni future del cliente autenticato. */
+  // All'apertura della pagina carica le prenotazioni future del cliente autenticato
   ngOnInit(): void {
     this.loadPrenotazioniFuture();
   }

@@ -1,4 +1,6 @@
-export type MaintenanceSport = 'CALCETTO' | 'TENNIS' | 'PADEL';
+import type { Sport } from '../../../enumeration/sport.enum';
+
+export type MaintenanceSport = Sport;
 
 export interface MaintenanceResponseDto {
   id: number;

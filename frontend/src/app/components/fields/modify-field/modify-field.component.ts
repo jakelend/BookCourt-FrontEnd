@@ -8,8 +8,10 @@ import { finalize } from 'rxjs/operators';
 import { ManagerUpdateFieldRequestDto } from '../../../dto/request/manager/manager-create-field-request.dto';
 import { ManagerFieldImageResponseDto } from '../../../dto/response/manager/manager-field-image-response.dto';
 import { ManagerFieldResponseDto, ManagerFieldSport } from '../../../dto/response/manager/manager-field-response.dto';
+import { SPORTS, isSport } from '../../../enumeration/sport.enum';
 import { ManagerService } from '../../../services/manager.service';
 import { extractBackendErrorMessage, extractBackendFieldErrors, FieldErrors } from '../../../util/error-message.util';
+import { ImageUrlUtil } from '../../../util/image-url.util';
 import { FieldSportType } from '../field-card/field-card.component';
 
 /**
@@ -69,7 +71,7 @@ export class ModifyFieldComponent implements OnInit, OnDestroy {
   /**
    * Sport disponibili per il campo.
    */
-  readonly sportTypes: FieldSportType[] = ['CALCETTO', 'TENNIS', 'PADEL'];
+  readonly sportTypes: FieldSportType[] = [...SPORTS];
   readonly maxImages = 6;
 
   /**
@@ -468,26 +470,11 @@ export class ModifyFieldComponent implements OnInit, OnDestroy {
     this.imagePreviews.set(
       images.map((image) => ({
         file: null,
-        url: this.buildImageUrl(image.urlImmagine),
+        url: ImageUrlUtil.normalizeBackendImageUrl(image.urlImmagine) ?? '',
         uploaded: false,
         existingImageId: image.id,
       })),
     );
-  }
-
-  /**
-   * Costruisce l'URL completo dell'immagine partendo dal path restituito dal backend.
-   */
-  private buildImageUrl(path: string): string {
-    if (!path) {
-      return '';
-    }
-
-    if (path.startsWith('http://') || path.startsWith('https://')) {
-      return path;
-    }
-
-    return path.startsWith('/') ? `http://localhost:8080${path}` : `http://localhost:8080/${path}`;
   }
 
   /**
@@ -522,7 +509,7 @@ export class ModifyFieldComponent implements OnInit, OnDestroy {
    * Type guard per verificare che lo sport sia uno dei valori gestiti dal backend.
    */
   private isValidSport(value: string): value is ManagerFieldSport {
-    return this.sportTypes.includes(value as FieldSportType);
+    return isSport(value);
   }
 
   /**

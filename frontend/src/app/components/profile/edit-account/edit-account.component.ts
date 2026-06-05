@@ -3,7 +3,8 @@ import { Component, OnInit, signal } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { finalize, map, switchMap } from 'rxjs/operators';
-import { AuthService, ProfileResponseDto } from '../../../services/auth.service';
+import type { ProfileResponseDto } from '../../../dto/response/profile/profile-response.dto';
+import { AuthService } from '../../../services/auth.service';
 import { extractBackendErrorMessage } from '../../../util/error-message.util';
 
 /**

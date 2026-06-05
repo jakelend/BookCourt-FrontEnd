@@ -5,9 +5,10 @@ import { App } from './app/app';
 /**
  * Avvia l'applicazione Angular in modalità standalone.
  *
- * Angular monta il componente radice `App` e usa `appConfig` per caricare
- * rotte, interceptor HTTP, provider globali e configurazioni condivise.
+ * Componente `App` e usa `appConfig` per caricare
+ * rotte, interceptor HTTP, provider globali e configurazioni condivise
  */
 bootstrapApplication(App, appConfig)
+
   // Stampa in console eventuali errori avvenuti durante il bootstrap iniziale.
   .catch((err) => console.error(err));

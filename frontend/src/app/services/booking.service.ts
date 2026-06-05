@@ -9,135 +9,21 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { map, Observable, take, timeout } from 'rxjs';
-import {
+import { environment } from '../../environments/environment';
+import type { BookingPreviewRequestDto } from '../dto/request/booking/booking-preview-request.dto';
+import type { ConfermaPrenotazioneRequestDto } from '../dto/request/booking/conferma-prenotazione-request.dto';
+import type { CreateBookingLockRequestDto } from '../dto/request/booking/create-booking-lock-request.dto';
+import type { BookingAvailableInstructorResponseDto } from '../dto/response/booking/booking-available-instructor-response.dto';
+import type { BookingFieldCalendarResponseDto } from '../dto/response/booking/booking-calendar-response.dto';
+import type {
   BookingFieldResponseDto,
   BookingSport,
   CampiPerSportApiResponseDto,
 } from '../dto/response/booking/booking-field-response.dto';
-
-/**
- * Tipi di evento che il calendario campo può ricevere dal backend.
- */
-export type BookingCalendarEventType =
-  | 'PRENOTAZIONE'
-  | 'MANUTENZIONE'
-  | 'LOCK'
-  | 'FESTIVITA'
-  | 'ECCEZIONE_ORARIO_CENTRO'
-  | 'ECCEZIONE_ORARI_CENTRO'
-  | string;
-
-/**
- * Singolo evento del calendario campo, ad esempio prenotazione, manutenzione, lock o eccezione.
- */
-export interface BookingCalendarEventResponseDto {
-  tipo: BookingCalendarEventType;
-  titolo: string;
-  inizio: string;
-  fine: string;
-  selezionabile: boolean;
-  prenotazioneId: number | null;
-  lockId: number | null;
-  istruttoreId: number | null;
-}
-
-/**
- * Risposta del calendario giornaliero di un campo sportivo.
- */
-export interface BookingFieldCalendarResponseDto {
-  apertura: string;
-  campoId: number;
-  chiuso: boolean;
-  chiusura: string;
-  data: string;
-  eventi: BookingCalendarEventResponseDto[];
-  nomeCampo: string;
-  sport: BookingSport;
-}
-
-/**
- * DTO che rappresenta un istruttore disponibile nello slot selezionato.
- */
-export interface BookingAvailableInstructorResponseDto {
-  istruttoreId: number;
-  nome: string;
-  cognome: string;
-  costoOrario: number | null;
-  fotoProfiloUrl?: string | null;
-}
-
-/**
- * Payload usato per creare un lock temporaneo sullo slot scelto dal cliente.
- */
-export interface CreateBookingLockRequestDto {
-  campoId: number;
-  inizio: string;
-  durataMinuti: number;
-  conIstruttore: boolean;
-  istruttoreId?: number | null;
-}
-
-/**
- * Risposta della creazione lock, con intervallo bloccato e scadenza.
- */
-export interface BookingLockResponseDto {
-  lockId: number;
-  campoId: number;
-  istruttoreId: number | null;
-  inizio: string;
-  fine: string;
-  stato: string;
-  scadeIl: string;
-}
-
-/**
- * Payload usato per calcolare il costo prima della conferma della prenotazione.
- */
-export interface BookingPreviewRequestDto {
-  lockId: number;
-  numeroPartecipanti: number;
-  numeroRacchette: number;
-}
-
-/**
- * Dettaglio dei costi mostrati nella preview della prenotazione.
- */
-export interface BookingPreviewResponseDto {
-  costoCampo: number;
-  costoIstruttore: number;
-  costoRacchette: number;
-  totale: number;
-}
-
-/**
- * Payload usato per trasformare il lock in una prenotazione confermata.
- */
-export interface ConfermaPrenotazioneRequestDto {
-  lockId: number;
-  numeroPartecipanti: number;
-  numeroRacchette: number;
-}
-
-/**
- * DTO della prenotazione restituito dopo conferma, lettura storico o annullamento.
- */
-export interface PrenotazioneConfermataResponseDto {
-  id: number;
-  campoId: number;
-  nomeCampo?: string | null;
-  campoNome?: string | null;
-  nomeCampoSportivo?: string | null;
-  clienteId: number;
-  istruttoreId: number | null;
-  inizio: string;
-  fine: string;
-  numeroPartecipanti: number | null;
-  numeroRacchette: number;
-  costoTotale: number;
-  stato: string;
-  feedbackInserito: boolean;
-  recensibile: boolean;
-}
+import type { BookingLockResponseDto } from '../dto/response/booking/booking-lock-response.dto';
+import type { BookingPreviewResponseDto } from '../dto/response/booking/booking-preview-response.dto';
+import type { PrenotazioneConfermataResponseDto } from '../dto/response/booking/prenotazione-confermata-response.dto';
+import { ImageUrlUtil } from '../util/image-url.util';
 
 /**
  * Service Angular singleton che coordina il flusso frontend di prenotazione.
@@ -146,7 +32,7 @@ export interface PrenotazioneConfermataResponseDto {
   providedIn: 'root',
 })
 export class BookingService {
-  private readonly backendBaseUrl = 'http://localhost:8080';
+  private readonly backendBaseUrl = environment.backendBaseUrl;
   private readonly campiApiUrl = `${this.backendBaseUrl}/api/campi`;
   private readonly prenotazioniApiUrl = `${this.backendBaseUrl}/api/prenotazioni`;
 
@@ -181,7 +67,7 @@ export class BookingService {
             sport,
             costoOrario: Number(campo.costoOrario),
             attivo: true,
-            urlImmaginePrincipale: this.buildImageUrl(campo.urlImmagine),
+            urlImmaginePrincipale: ImageUrlUtil.normalizeBackendImageUrl(campo.urlImmagine),
           })),
         ),
       );
@@ -376,27 +262,4 @@ export class BookingService {
     return expirationDate.toISOString();
   }
 
-  /**
-   * Normalizza l'URL immagine restituito dal backend.
-   * @param urlImmagine URL o path dell'immagine principale del campo.
-   * @returns URL assoluto utilizzabile dal browser oppure null.
-   */
-  private buildImageUrl(urlImmagine: string | null): string | null {
-    const url = urlImmagine?.trim();
-
-    if (!url || url === 'string' || url === 'null' || url === 'undefined') {
-      return null;
-    }
-
-    if (url.startsWith('http://') || url.startsWith('https://')) {
-      return url;
-    }
-
-    if (url.startsWith('/images/')) {
-      return `${this.backendBaseUrl}${url}`;
-    }
-
-    console.warn('URL immagine non valida ricevuta dal backend:', url);
-    return null;
-  }
 }

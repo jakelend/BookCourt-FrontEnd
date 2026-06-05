@@ -11,76 +11,89 @@
     </button>
   </header>
 
-  <section *ngIf="!loading && !errorMessage && instructors.length" class="list-controls" aria-label="Filtro disponibilità istruttori">
-    <span>Disponibilità</span>
-
-    <div class="availability-filter" role="group" aria-label="Filtra istruttori per disponibilità">
-      <button
-        type="button"
-        [class.active]="availabilityFilter === 'all'"
-        (click)="setAvailabilityFilter('all')"
+  @if (!loading && !errorMessage && instructors.length) {
+    <section class="list-controls" aria-label="Filtro disponibilità istruttori">
+      <span>Disponibilità</span>
+      <div
+        class="availability-filter"
+        role="group"
+        aria-label="Filtra istruttori per disponibilità"
       >
-        Tutti
-      </button>
-      <button
-        type="button"
-        [class.active]="availabilityFilter === 'active'"
-        (click)="setAvailabilityFilter('active')"
-      >
-        Attivi
-      </button>
-      <button
-        type="button"
-        [class.active]="availabilityFilter === 'inactive'"
-        (click)="setAvailabilityFilter('inactive')"
-      >
-        Inattivi
-      </button>
-    </div>
-  </section>
+        <button
+          type="button"
+          [class.active]="availabilityFilter === 'all'"
+          (click)="setAvailabilityFilter('all')"
+        >
+          Tutti
+        </button>
+        <button
+          type="button"
+          [class.active]="availabilityFilter === 'active'"
+          (click)="setAvailabilityFilter('active')"
+        >
+          Attivi
+        </button>
+        <button
+          type="button"
+          [class.active]="availabilityFilter === 'inactive'"
+          (click)="setAvailabilityFilter('inactive')"
+        >
+          Inattivi
+        </button>
+      </div>
+    </section>
+  }
 
-  <section *ngIf="loading" class="feedback-panel" aria-live="polite">
-    <span class="material-symbols-outlined">progress_activity</span>
-    <span>Caricamento istruttori...</span>
-  </section>
+  @if (loading) {
+    <section class="feedback-panel" aria-live="polite">
+      <span class="material-symbols-outlined">progress_activity</span>
+      <span>Caricamento istruttori...</span>
+    </section>
+  }
 
-  <section *ngIf="!loading && errorMessage" class="feedback-panel feedback-panel-error" aria-live="assertive">
-    <div>
-      <strong>Errore caricamento</strong>
-      <p>{{ errorMessage }}</p>
-    </div>
+  @if (!loading && errorMessage) {
+    <section class="feedback-panel feedback-panel-error" aria-live="assertive">
+      <div>
+        <strong>Errore caricamento</strong>
+        <p>{{ errorMessage }}</p>
+      </div>
+      <button type="button" class="retry-button" (click)="retry()">Riprova</button>
+    </section>
+  }
 
-    <button type="button" class="retry-button" (click)="retry()">Riprova</button>
-  </section>
+  @if (!loading && toggleError) {
+    <section class="feedback-panel feedback-panel-error" aria-live="assertive">
+      <div>
+        <strong>Operazione non riuscita</strong>
+        <p>{{ toggleError }}</p>
+      </div>
+    </section>
+  }
 
-  <section *ngIf="!loading && toggleError" class="feedback-panel feedback-panel-error" aria-live="assertive">
-    <div>
-      <strong>Operazione non riuscita</strong>
-      <p>{{ toggleError }}</p>
-    </div>
-  </section>
+  @if (!loading && !errorMessage && !instructors.length) {
+    <section class="feedback-panel" aria-live="polite">
+      <span class="material-symbols-outlined">groups</span>
+      <span>Nessun istruttore presente.</span>
+    </section>
+  }
 
-  <section *ngIf="!loading && !errorMessage && !instructors.length" class="feedback-panel" aria-live="polite">
-    <span class="material-symbols-outlined">groups</span>
-    <span>Nessun istruttore presente.</span>
-  </section>
+  @if (!loading && !errorMessage && instructors.length && !filteredInstructors.length) {
+    <section class="feedback-panel" aria-live="polite">
+      <span class="material-symbols-outlined">filter_alt_off</span>
+      <span>Nessun istruttore corrisponde al filtro selezionato.</span>
+    </section>
+  }
 
-  <section *ngIf="!loading && !errorMessage && instructors.length && !filteredInstructors.length" class="feedback-panel" aria-live="polite">
-    <span class="material-symbols-outlined">filter_alt_off</span>
-    <span>Nessun istruttore corrisponde al filtro selezionato.</span>
-  </section>
-
-  <section
-    *ngIf="!loading && !errorMessage && filteredInstructors.length"
-    class="instructors-grid"
-    aria-label="Lista istruttori"
-  >
-    <app-instructor-card
-      *ngFor="let instructor of filteredInstructors; trackBy: trackByInstructorId"
-      [instructor]="instructor"
-      [togglePending]="isToggling(instructor.id)"
-      (editInstructor)="modifyInstructor($event)"
-      (toggleInstructor)="onToggleInstructor($event)"
-    />
-  </section>
+  @if (!loading && !errorMessage && filteredInstructors.length) {
+    <section class="instructors-grid" aria-label="Lista istruttori">
+      @for (instructor of filteredInstructors; track trackByInstructorId($index, instructor)) {
+        <app-instructor-card
+          [instructor]="instructor"
+          [togglePending]="isToggling(instructor.id)"
+          (editInstructor)="modifyInstructor($event)"
+          (toggleInstructor)="onToggleInstructor($event)"
+        />
+      }
+    </section>
+  }
 </main>

@@ -7,6 +7,7 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
+import { environment } from '../../environments/environment';
 import { InstructorCalendarDayResponseDto } from '../dto/response/instructor/instructor-calendar-day-response.dto';
 
 /**
@@ -16,7 +17,7 @@ import { InstructorCalendarDayResponseDto } from '../dto/response/instructor/ins
   providedIn: 'root',
 })
 export class InstructorCalendarService {
-  private readonly apiUrl = 'http://localhost:8080/api/istruttori/me/agenda-giornaliera';
+  private readonly apiUrl = `${environment.backendBaseUrl}/api/istruttori/me/agenda-giornaliera`;
 
   constructor(private readonly http: HttpClient) {}
 

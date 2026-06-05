@@ -9,6 +9,7 @@ import { Role } from '../../../enumeration/role.enum';
 import { AuthService } from '../../../services/auth.service';
 import { ChatService } from '../../../services/chat.service';
 import { ChatWebsocketService } from '../../../services/chat-websocket.service';
+import { extractBackendErrorMessage } from '../../../util/error-message.util';
 
 @Component({
   selector: 'app-chat-page',
@@ -226,9 +227,10 @@ export class ChatPageComponent implements OnInit, OnDestroy {
           this.openConversation(conversation);
         },
         error: (error) => {
-          this.errorMessage = this.extractErrorMessage(
+          this.errorMessage = extractBackendErrorMessage(
             error,
             'Impossibile aprire la tua chat con il centro sportivo.',
+            { useGenericErrorMessage: true },
           );
         },
       });
@@ -260,9 +262,10 @@ export class ChatPageComponent implements OnInit, OnDestroy {
           this.applyConversations(conversations);
         },
         error: (error) => {
-          this.errorMessage = this.extractErrorMessage(
+          this.errorMessage = extractBackendErrorMessage(
             error,
             'Impossibile caricare le conversazioni dei clienti.',
+            { useGenericErrorMessage: true },
           );
         },
       });
@@ -321,7 +324,11 @@ export class ChatPageComponent implements OnInit, OnDestroy {
           this.handleRealtimeMessage(message);
         },
         error: (error) => {
-          this.errorMessage = this.extractErrorMessage(error, 'Impossibile inviare il messaggio.');
+          this.errorMessage = extractBackendErrorMessage(
+            error,
+            'Impossibile inviare il messaggio.',
+            { useGenericErrorMessage: true },
+          );
         },
       });
   }
@@ -440,9 +447,10 @@ export class ChatPageComponent implements OnInit, OnDestroy {
           this.scrollMessagesToBottom();
         },
         error: (error) => {
-          this.errorMessage = this.extractErrorMessage(
+          this.errorMessage = extractBackendErrorMessage(
             error,
             'Impossibile caricare i messaggi della conversazione.',
+            { useGenericErrorMessage: true },
           );
         },
       });
@@ -656,22 +664,4 @@ export class ChatPageComponent implements OnInit, OnDestroy {
     this.realtimeSubscriptions.clear();
   }
 
-  /**
-   * Estrae un messaggio di errore leggibile dal backend, usando un fallback se non disponibile.
-   */
-  private extractErrorMessage(error: any, fallbackMessage: string): string {
-    if (error?.error?.message) {
-      return error.error.message;
-    }
-
-    if (error?.message) {
-      return error.message;
-    }
-
-    if (error?.status === 0) {
-      return 'Backend non raggiungibile. Controlla che Spring Boot sia avviato sulla porta 8080.';
-    }
-
-    return fallbackMessage;
-  }
 }

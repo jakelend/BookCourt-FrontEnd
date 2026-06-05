@@ -7,8 +7,9 @@ import {
   signal,
 } from '@angular/core';
 import { Router } from '@angular/router';
-import { BookingSport } from '../../../dto/response/booking/booking-field-response.dto';
-import { PrenotazioneConfermataResponseDto } from '../../../services/booking.service';
+import type { BookingSport } from '../../../dto/response/booking/booking-field-response.dto';
+import type { PrenotazioneConfermataResponseDto } from '../../../dto/response/booking/prenotazione-confermata-response.dto';
+import { isSport } from '../../../enumeration/sport.enum';
 
 /**
  * Pagina finale del flusso di prenotazione.
@@ -24,9 +25,11 @@ import { PrenotazioneConfermataResponseDto } from '../../../services/booking.ser
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BookingConfirmationComponent implements OnInit {
-  /** Prenotazione confermata restituita dal backend e salvata temporaneamente in sessionStorage. */
+
+  // Prenotazione confermata restituita dal backend e salvata temporaneamente in sessionStorage
   readonly prenotazione = signal<PrenotazioneConfermataResponseDto | null>(null);
-  /** Dati descrittivi della prenotazione usati per il riepilogo visuale. */
+
+  // Dati descrittivi della prenotazione usati per il riepilogo visuale
   readonly selectedFieldName = signal('');
   readonly selectedSport = signal<BookingSport | null>(null);
   readonly selectedInstructorName = signal('Nessun istruttore');
@@ -34,14 +37,16 @@ export class BookingConfirmationComponent implements OnInit {
   readonly selectedTimeLabel = signal('');
   readonly selectedDurationLabel = signal('');
   readonly selectedRacketsLabel = signal('Nessuna racchetta');
-  /** Costi calcolati nella preview, usati come fallback se la risposta finale non contiene tutti i dettagli. */
+
+  // Costi calcolati nella preview, usati come fallback se la risposta finale
+  // non contiene tutti i dettagli
   readonly previewCostoCampo = signal(0);
   readonly previewCostoIstruttore = signal(0);
   readonly previewCostoRacchette = signal(0);
   readonly previewTotale = signal(0);
 
 
-  /** Etichetta leggibile dello sport selezionato. */
+  // Etichetta leggibile dello sport selezionato
   readonly selectedSportLabel = computed(() => {
     switch (this.selectedSport()) {
       case 'CALCETTO':
@@ -55,7 +60,8 @@ export class BookingConfirmationComponent implements OnInit {
     }
   });
 
-  /** Totale pagato: privilegia il totale della prenotazione confermata e usa la preview come fallback. */
+  // Totale pagato: privilegia il totale della prenotazione confermata
+  // e usa la preview come fallback
   readonly totalPaid = computed(() => {
     const responseTotal = Number(this.prenotazione()?.costoTotale ?? 0);
 
@@ -66,16 +72,20 @@ export class BookingConfirmationComponent implements OnInit {
     return this.previewTotale();
   });
 
+  // Indica se la prenotazione include un istruttore, usato per mostrare/nascondere
+  // la relativa sezione
   readonly hasInstructor = computed(() => {
     return Boolean(this.prenotazione()?.istruttoreId);
   });
 
+  // Indica se lo sport selezionato è un extra sport, usato per mostrare/nascondere
+  // la sezione relativa al numero di racchette
   readonly isExtraSport = computed(() => {
     const sport = this.selectedSport();
     return sport === 'TENNIS' || sport === 'PADEL';
   });
 
-  /** Inietta il Router per gestire le azioni di uscita dalla pagina di conferma. */
+  // Inietta il Router per gestire le azioni di uscita dalla pagina di conferma
   constructor(private readonly router: Router) {}
 
   /**
@@ -157,7 +167,7 @@ export class BookingConfirmationComponent implements OnInit {
     const sport = sessionStorage.getItem('booking.confirmedSport')
       || sessionStorage.getItem('booking.selectedSport');
 
-    if (sport === 'CALCETTO' || sport === 'PADEL' || sport === 'TENNIS') {
+    if (isSport(sport)) {
       this.selectedSport.set(sport);
     }
 
@@ -188,6 +198,7 @@ export class BookingConfirmationComponent implements OnInit {
       || this.buildRacketsLabelFromReservation(),
     );
 
+    // I costi vengono salvati nella preview al momento della conferma
     this.previewCostoCampo.set(Number(sessionStorage.getItem('booking.previewCostoCampo') ?? 0));
     this.previewCostoIstruttore.set(Number(sessionStorage.getItem('booking.previewCostoIstruttore') ?? 0));
     this.previewCostoRacchette.set(Number(sessionStorage.getItem('booking.previewCostoRacchette') ?? 0));

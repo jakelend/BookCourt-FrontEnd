@@ -10,15 +10,23 @@
         </div>
 
         <div class="toolbar-actions">
-          <button type="button" class="day-nav-button" aria-label="Giorno precedente" (click)="goToPreviousDay()">
+          <button
+            type="button"
+            class="day-nav-button"
+            aria-label="Giorno precedente"
+            (click)="goToPreviousDay()"
+          >
             <span class="material-symbols-outlined">chevron_left</span>
           </button>
 
-          <button type="button" class="today-button" (click)="goToToday()">
-            Oggi
-          </button>
+          <button type="button" class="today-button" (click)="goToToday()">Oggi</button>
 
-          <button type="button" class="day-nav-button" aria-label="Giorno successivo" (click)="goToNextDay()">
+          <button
+            type="button"
+            class="day-nav-button"
+            aria-label="Giorno successivo"
+            (click)="goToNextDay()"
+          >
             <span class="material-symbols-outlined">chevron_right</span>
           </button>
 
@@ -37,58 +45,60 @@
         </div>
       </section>
 
-      <section *ngIf="errorMessage" class="inline-feedback error-feedback">
-        <div>
-          <strong>Errore caricamento calendario</strong>
-          <p>{{ errorMessage }}</p>
-        </div>
-
-        <button type="button" class="text-button" (click)="retry()">Riprova</button>
-      </section>
+      @if (errorMessage) {
+        <section class="inline-feedback error-feedback">
+          <div>
+            <strong>Errore caricamento calendario</strong>
+            <p>{{ errorMessage }}</p>
+          </div>
+          <button type="button" class="text-button" (click)="retry()">Riprova</button>
+        </section>
+      }
 
       <section class="calendar-shell" [class.loading-state]="loading">
-        <div *ngIf="loading" class="loading-overlay">
-          <mat-spinner diameter="42"></mat-spinner>
-          <p>Caricamento calendario...</p>
-        </div>
+        @if (loading) {
+          <div class="loading-overlay">
+            <mat-spinner diameter="42"></mat-spinner>
+            <p>Caricamento calendario...</p>
+          </div>
+        }
 
         <div class="calendar-scroll-area">
           <div class="time-column">
-            <div
-              *ngFor="let slot of hourSlots; trackBy: trackByHour"
-              class="time-label"
-              [style.top.%]="slot.topPct"
-            >
-              {{ slot.label }}
-            </div>
+            @for (slot of hourSlots; track trackByHour($index, slot)) {
+              <div class="time-label" [style.top.%]="slot.topPct">
+                {{ slot.label }}
+              </div>
+            }
           </div>
 
           <div class="day-column">
-            <div
-              *ngFor="let slot of hourSlots; trackBy: trackByHour"
-              class="hour-line"
-              [style.top.%]="slot.topPct"
-            ></div>
+            @for (slot of hourSlots; track trackByHour($index, slot)) {
+              <div class="hour-line" [style.top.%]="slot.topPct"></div>
+            }
 
-            <article
-              *ngFor="let event of events; trackBy: trackByEvent"
-              class="calendar-event"
-              [ngClass]="event.cssClass"
-              [style.top.%]="event.topPct"
-              [style.height.%]="event.heightPct"
-              [style.left.%]="event.leftPct"
-              [style.width.%]="event.widthPct"
-            >
-              <div class="event-main-row">
-                <span class="material-symbols-outlined event-icon">{{ event.icon }}</span>
-                <div class="event-content">
-                  <h3>{{ event.source.titolo }}</h3>
-                  <p class="event-time">{{ event.timeLabel }} · {{ event.durationLabel }}</p>
-                  <p class="event-subtitle">{{ event.subtitle }}</p>
-                  <p *ngIf="event.details" class="event-details">{{ event.details }}</p>
+            @for (event of events; track trackByEvent($index, event)) {
+              <article
+                class="calendar-event"
+                [ngClass]="event.cssClass"
+                [style.top.%]="event.topPct"
+                [style.height.%]="event.heightPct"
+                [style.left.%]="event.leftPct"
+                [style.width.%]="event.widthPct"
+              >
+                <div class="event-main-row">
+                  <span class="material-symbols-outlined event-icon">{{ event.icon }}</span>
+                  <div class="event-content">
+                    <h3>{{ event.source.titolo }}</h3>
+                    <p class="event-time">{{ event.timeLabel }} · {{ event.durationLabel }}</p>
+                    <p class="event-subtitle">{{ event.subtitle }}</p>
+                    @if (event.details) {
+                      <p class="event-details">{{ event.details }}</p>
+                    }
+                  </div>
                 </div>
-              </div>
-            </article>
+              </article>
+            }
           </div>
         </div>
       </section>

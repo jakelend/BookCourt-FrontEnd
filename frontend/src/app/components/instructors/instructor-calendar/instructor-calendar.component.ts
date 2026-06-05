@@ -11,6 +11,7 @@ import { finalize } from 'rxjs/operators';
 import { InstructorCalendarDayResponseDto } from '../../../dto/response/instructor/instructor-calendar-day-response.dto';
 import { InstructorCalendarEventResponseDto } from '../../../dto/response/instructor/instructor-calendar-event-response.dto';
 import { InstructorCalendarService } from '../../../services/instructor-calendar.service';
+import { extractBackendErrorMessage } from '../../../util/error-message.util';
 
 /**
  * Singola riga oraria visualizzata nel calendario giornaliero dell'istruttore.
@@ -220,7 +221,15 @@ export class InstructorCalendarComponent implements OnInit {
           this.eventsSignal.set([]);
           this.hourSlotsSignal.set([]);
           this.calendarHeightSignal.set(0);
-          this.errorMessage = this.extractErrorMessage(error, 'Impossibile caricare il calendario istruttore.');
+          this.errorMessage = extractBackendErrorMessage(
+            error,
+            'Impossibile caricare il calendario istruttore.',
+            {
+              statusMessages: {
+                403: 'Non hai i permessi per visualizzare questo calendario.',
+              },
+            },
+          );
         },
       });
   }
@@ -535,27 +544,4 @@ export class InstructorCalendarComponent implements OnInit {
     return clone;
   }
 
-  /**
-   * Estrae un messaggio di errore leggibile dal backend.
-   */
-  private extractErrorMessage(error: unknown, fallback: string): string {
-    const maybeError = error as { error?: { message?: string; fields?: Record<string, string> }; status?: number };
-
-    if (maybeError?.error?.message) {
-      return maybeError.error.message;
-    }
-
-    if (maybeError?.error?.fields) {
-      const fieldErrors = Object.values(maybeError.error.fields).filter(Boolean);
-      if (fieldErrors.length) {
-        return fieldErrors.join(' ');
-      }
-    }
-
-    if (maybeError?.status === 403) {
-      return 'Non hai i permessi per visualizzare questo calendario.';
-    }
-
-    return fallback;
-  }
 }

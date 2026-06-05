@@ -10,119 +10,22 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
+import type { ChangePasswordRequestDto } from '../dto/request/auth/change-password-request.dto';
+import type { ForgotPasswordRequestDto } from '../dto/request/auth/forgot-password-request.dto';
+import type { LoginRequestDto } from '../dto/request/auth/login-request.dto';
+import type { RegisterClienteRequestDto } from '../dto/request/auth/register-cliente-request.dto';
+import type { ResetPasswordRequestDto } from '../dto/request/auth/reset-password-request.dto';
+import type { UpdatePersonalDataRequestDto } from '../dto/request/profile/update-personal-data-request.dto';
+import type { JwtResponseDto } from '../dto/response/auth/jwt-response.dto';
+import type { MeResponseDto } from '../dto/response/auth/me-response.dto';
+import type { MessageResponseDto } from '../dto/response/auth/message-response.dto';
+import type { ProfileResponseDto } from '../dto/response/profile/profile-response.dto';
+import type { UpdatePersonalDataResponseDto } from '../dto/response/profile/update-personal-data-response.dto';
+import { environment } from '../../environments/environment';
 import { Role } from '../enumeration/role.enum';
+import { StorageKeys, StorageUtil } from '../util/storage.util';
 
-/**
- * Payload inviato al backend per eseguire il login con email e password.
- */
-export interface LoginRequestDto {
-  email: string;
-  password: string;
-}
-
-/**
- * Payload usato nella registrazione di un nuovo cliente.
- */
-export interface RegisterClienteRequestDto {
-  email: string;
-  password: string;
-  nome: string;
-  cognome: string;
-  telefono: string;
-}
-
-/**
- * Payload per il cambio password eseguito da un utente autenticato.
- */
-export interface ChangePasswordRequestDto {
-  email: string;
-  passwordCorrente: string;
-  passwordNuova: string;
-  ripetutaPasswordNuova: string;
-}
-
-/**
- * Payload per richiedere la procedura di recupero password tramite email.
- */
-export interface ForgotPasswordRequestDto {
-  email: string;
-}
-
-/**
- * Payload per impostare una nuova password utilizzando il token di reset.
- */
-export interface ResetPasswordRequestDto {
-  token: string;
-  passwordNuova: string;
-  ripetutaPasswordNuova: string;
-}
-
-/**
- * Risposta generica del backend per operazioni che restituiscono esito e messaggio.
- */
-export interface MessageResponseDto {
-  success: boolean;
-  message: string;
-}
-
-/**
- * Risposta di autenticazione contenente token JWT e dati principali dell'utente.
- */
-export interface LoginResponseDto {
-  token: string;
-  type: string;
-  id: number;
-  email: string;
-  nome: string;
-  cognome: string;
-  ruolo: Role;
-  fotoProfiloUrl?: string | null;
-}
-
-/**
- * Risposta minimale dell'endpoint /me con i dati dell'utente autenticato.
- */
-export interface MeResponseDto {
-  id: number;
-  email: string;
-  nome: string;
-  cognome: string;
-  ruolo: Role;
-}
-
-/**
- * DTO completo del profilo utente mostrato e modificato nella sezione profilo.
- */
-export interface ProfileResponseDto {
-  id: number;
-  email: string;
-  nome: string;
-  cognome: string;
-  telefono: string;
-  fotoProfiloUrl: string | null;
-  ruolo: Role;
-  attivo: boolean;
-  costoOrarioTennis?: number | null;
-  costoOrarioPadel?: number | null;
-}
-
-/**
- * Payload per aggiornare i dati personali modificabili dal profilo.
- */
-export interface UpdatePersonalDataRequestDto {
-  nome: string;
-  cognome: string;
-  email: string;
-  telefono: string;
-}
-
-/**
- * Risposta restituita dopo l'aggiornamento dei dati personali.
- */
-export interface UpdatePersonalDataResponseDto {
-  message: string;
-  cliente: ProfileResponseDto;
-}
+type LoginResponseDto = JwtResponseDto;
 
 /**
  * Service Angular singleton che espone funzionalità di autenticazione, sessione e profilo.
@@ -131,10 +34,8 @@ export interface UpdatePersonalDataResponseDto {
   providedIn: 'root',
 })
 export class AuthService {
-  private readonly apiUrl = 'http://localhost:8080/api/auth';
-  private readonly profileUrl = 'http://localhost:8080/api/profilo';
-  private readonly tokenKey = 'bookcourt_token';
-  private readonly userKey = 'bookcourt_user';
+  private readonly apiUrl = `${environment.backendBaseUrl}/api/auth`;
+  private readonly profileUrl = `${environment.backendBaseUrl}/api/profilo`;
 
   constructor(private readonly http: HttpClient) {}
 
@@ -248,8 +149,8 @@ export class AuthService {
    * Esegue il logout lato frontend rimuovendo token e dati utente dal localStorage.
    */
   logout(): void {
-    localStorage.removeItem(this.tokenKey);
-    localStorage.removeItem(this.userKey);
+    StorageUtil.removeItem(StorageKeys.token);
+    StorageUtil.removeItem(StorageKeys.user);
   }
 
   /**
@@ -257,7 +158,7 @@ export class AuthService {
    * @returns Token JWT oppure null se l'utente non è autenticato.
    */
   getToken(): string | null {
-    return localStorage.getItem(this.tokenKey);
+    return StorageUtil.getItem(StorageKeys.token);
   }
 
   /**
@@ -281,15 +182,15 @@ export class AuthService {
    * Se il JSON salvato è corrotto, la sessione viene eliminata per evitare stati incoerenti.
    * @returns Dati utente oppure null.
    */
-  getCurrentUser(): LoginResponseDto | null {
-    const rawUser = localStorage.getItem(this.userKey);
+  getCurrentUser(): JwtResponseDto | null {
+    const rawUser = StorageUtil.getItem(StorageKeys.user);
 
     if (!rawUser) {
       return null;
     }
 
     try {
-      return JSON.parse(rawUser) as LoginResponseDto;
+      return JSON.parse(rawUser) as JwtResponseDto;
     } catch {
       this.logout();
       return null;
@@ -315,8 +216,8 @@ export class AuthService {
       return;
     }
 
-    localStorage.setItem(
-      this.userKey,
+    StorageUtil.setItem(
+      StorageKeys.user,
       JSON.stringify({
         ...currentUser,
         fotoProfiloUrl,
@@ -338,8 +239,8 @@ export class AuthService {
       return;
     }
 
-    localStorage.setItem(
-      this.userKey,
+    StorageUtil.setItem(
+      StorageKeys.user,
       JSON.stringify({
         token: currentUser?.token ?? token,
         type: currentUser?.type ?? 'Bearer',
@@ -367,8 +268,8 @@ export class AuthService {
       return;
     }
 
-    localStorage.setItem(
-      this.userKey,
+    StorageUtil.setItem(
+      StorageKeys.user,
       JSON.stringify({
         token: currentUser?.token ?? token,
         type: currentUser?.type ?? 'Bearer',
@@ -417,8 +318,8 @@ export class AuthService {
    * Salva token JWT e dati utente nel localStorage.
    * @param response Risposta di login o registrazione.
    */
-  private saveSession(response: LoginResponseDto): void {
-    localStorage.setItem(this.tokenKey, response.token);
-    localStorage.setItem(this.userKey, JSON.stringify(response));
+  private saveSession(response: JwtResponseDto): void {
+    StorageUtil.setItem(StorageKeys.token, response.token);
+    StorageUtil.setItem(StorageKeys.user, JSON.stringify(response));
   }
 }

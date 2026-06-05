@@ -8,6 +8,7 @@ import { ManagerUpdateInstructorRequestDto } from '../../../dto/request/manager/
 import { ManagerInstructorResponseDto } from '../../../dto/response/manager/manager-instructor-response.dto';
 import { ManagerService } from '../../../services/manager.service';
 import { extractBackendErrorMessage, extractBackendFieldErrors, FieldErrors } from '../../../util/error-message.util';
+import { ImageUrlUtil } from '../../../util/image-url.util';
 
 /**
  * Modello locale che contiene i dati modificabili dell'istruttore.
@@ -316,7 +317,7 @@ export class ModifyInstructorComponent implements OnInit, OnDestroy {
   clearProfilePhoto(): void {
     this.profilePhotoFile.set(null);
     this.revokeUploadedProfilePhotoPreview();
-    this.profilePhotoPreviewUrl.set(this.buildImageUrl(this.instructor.fotoProfiloUrl));
+    this.profilePhotoPreviewUrl.set(ImageUrlUtil.normalizeProfileImageUrl(this.instructor.fotoProfiloUrl) ?? '');
     this.clearFieldError('profilePhoto');
 
     if (this.profilePhotoInput) {
@@ -455,23 +456,8 @@ export class ModifyInstructorComponent implements OnInit, OnDestroy {
     };
 
     if (!this.profilePhotoFile()) {
-      this.profilePhotoPreviewUrl.set(this.buildImageUrl(instructor.fotoProfiloUrl));
+      this.profilePhotoPreviewUrl.set(ImageUrlUtil.normalizeProfileImageUrl(instructor.fotoProfiloUrl) ?? '');
     }
-  }
-
-  /**
-   * Costruisce l'URL della foto profilo partendo dal path backend.
-   */
-  private buildImageUrl(path: string | null): string {
-    if (!path) {
-      return '';
-    }
-
-    if (path.startsWith('http://') || path.startsWith('https://')) {
-      return path;
-    }
-
-    return path.startsWith('/') ? `http://localhost:8080${path}` : `http://localhost:8080/${path}`;
   }
 
   /**

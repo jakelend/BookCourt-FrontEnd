@@ -25,8 +25,8 @@
 
         <h1>BookCourt - Eleva il Tuo Gioco</h1>
         <p>
-          La piattaforma definitiva per la gestione e le prenotazioni di campi sportivi.
-          Connetti senza problemi giocatori, gestori e istruttori.
+          La piattaforma definitiva per la gestione e le prenotazioni di campi sportivi. Connetti
+          senza problemi giocatori, gestori e istruttori.
         </p>
       </section>
     </header>
@@ -35,27 +35,25 @@
       <div class="section-heading">
         <h2>Tutto Ciò di cui Hai Bisogno per Giocare</h2>
         <p>
-          Trova e prenota il campo perfetto per la tua prossima partita. Dal calcetto amatoriale
-          al padel competitivo.
+          Trova e prenota il campo perfetto per la tua prossima partita. Dal calcetto amatoriale al
+          padel competitivo.
         </p>
       </div>
 
       <div class="sports-grid">
-        <article
-          *ngFor="let card of sportCards; trackBy: trackByTitle"
-          class="sport-card"
-          [ngClass]="card.layoutClass"
-        >
-          <img [src]="card.imageUrl" [alt]="card.title" loading="lazy" />
-
-          <div class="sport-overlay"></div>
-
-          <div class="sport-content">
-            <span *ngIf="card.label" class="sport-label">{{ card.label }}</span>
-            <h3>{{ card.title }}</h3>
-            <p>{{ card.description }}</p>
-          </div>
-        </article>
+        @for (card of sportCards; track trackByTitle($index, card)) {
+          <article class="sport-card" [ngClass]="card.layoutClass">
+            <img [src]="card.imageUrl" [alt]="card.title" loading="lazy" />
+            <div class="sport-overlay"></div>
+            <div class="sport-content">
+              @if (card.label) {
+                <span class="sport-label">{{ card.label }}</span>
+              }
+              <h3>{{ card.title }}</h3>
+              <p>{{ card.description }}</p>
+            </div>
+          </article>
+        }
 
         <article class="lesson-card">
           <span class="material-symbols-outlined lesson-icon">school</span>
@@ -84,19 +82,17 @@
           </p>
 
           <div class="feature-list">
-            <article
-              *ngFor="let feature of managementFeatures; trackBy: trackByTitle"
-              class="feature-item"
-            >
-              <div class="feature-icon">
-                <span class="material-symbols-outlined">{{ feature.icon }}</span>
-              </div>
-
-              <div>
-                <h3>{{ feature.title }}</h3>
-                <p>{{ feature.description }}</p>
-              </div>
-            </article>
+            @for (feature of managementFeatures; track trackByTitle($index, feature)) {
+              <article class="feature-item">
+                <div class="feature-icon">
+                  <span class="material-symbols-outlined">{{ feature.icon }}</span>
+                </div>
+                <div>
+                  <h3>{{ feature.title }}</h3>
+                  <p>{{ feature.description }}</p>
+                </div>
+              </article>
+            }
           </div>
         </section>
 
@@ -138,7 +134,9 @@
   <footer class="preview-footer">
     <div>
       <strong>BookCourt</strong>
-      <p>© {{ currentYear }} Piattaforma di Gestione Sportiva BookCourt. Tutti i diritti riservati.</p>
+      <p>
+        © {{ currentYear }} Piattaforma di Gestione Sportiva BookCourt. Tutti i diritti riservati.
+      </p>
     </div>
   </footer>
 </div>

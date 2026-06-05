@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Input, OnChanges, Output, SimpleChanges } from '@angular/core';
 import { ManagerSecretaryResponseDto } from '../../../dto/response/manager/manager-secretary-response.dto';
+import { ImageUrlUtil } from '../../../util/image-url.util';
 
 export interface SecretaryToggleEvent {
   secretary: ManagerSecretaryResponseDto;
@@ -18,9 +19,6 @@ export class SecretaryCardComponent implements OnChanges {
   @Input() togglePending = false;
   @Output() editSecretary = new EventEmitter<ManagerSecretaryResponseDto>();
   @Output() toggleSecretary = new EventEmitter<SecretaryToggleEvent>();
-
-  private readonly backendBaseUrl = 'http://localhost:8080';
-  private readonly defaultProfileImagePath = 'images/default/default-image-profile.png';
 
   imageLoadFailed = false;
 
@@ -40,17 +38,7 @@ export class SecretaryCardComponent implements OnChanges {
       return '';
     }
 
-    const path = this.secretary.fotoProfiloUrl?.trim();
-
-    if (!path || this.isInvalidImagePath(path)) {
-      return '';
-    }
-
-    if (path.startsWith('http://') || path.startsWith('https://')) {
-      return path;
-    }
-
-    return path.startsWith('/') ? `${this.backendBaseUrl}${path}` : `${this.backendBaseUrl}/${path}`;
+    return ImageUrlUtil.normalizeProfileImageUrl(this.secretary.fotoProfiloUrl) ?? '';
   }
 
   ngOnChanges(changes: SimpleChanges): void {
@@ -65,19 +53,6 @@ export class SecretaryCardComponent implements OnChanges {
 
   get statusLabel(): string {
     return this.secretary.attivo ? 'Disponibile' : 'In pausa';
-  }
-
-  private isInvalidImagePath(path: string): boolean {
-    const normalizedPath = path.trim().toLowerCase();
-
-    return (
-      normalizedPath === 'string' ||
-      normalizedPath === 'null' ||
-      normalizedPath === 'undefined' ||
-      normalizedPath === this.defaultProfileImagePath ||
-      normalizedPath === `/${this.defaultProfileImagePath}` ||
-      normalizedPath.endsWith(`/${this.defaultProfileImagePath}`)
-    );
   }
 
   edit(): void {

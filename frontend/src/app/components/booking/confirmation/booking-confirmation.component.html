@@ -16,84 +16,84 @@
       </p>
     </header>
 
-    <section class="confirmation-card" *ngIf="prenotazione() as booking">
-      <div class="main-summary-grid">
-        <article class="summary-block">
-          <span>Data e ora</span>
-          <strong>{{ selectedDateTitle() }}</strong>
-          <small>{{ selectedTimeLabel() }} · {{ selectedDurationLabel() }}</small>
-        </article>
-
-        <article class="summary-block">
-          <span>Campo</span>
-          <strong>{{ selectedFieldName() || '-' }}</strong>
-          <small>{{ selectedSportLabel() }}</small>
-        </article>
-
-        <article class="summary-block highlight-total">
-          <span>Totale</span>
-          <strong>{{ formatCurrency(totalPaid()) }}</strong>
-        </article>
-      </div>
-
-      <div class="details-divider"></div>
-
-      <section class="details-section">
-        <h2>Dettagli</h2>
-
-        <div class="details-list">
-          <div class="details-row">
-            <span>Stato</span>
-            <strong>{{ booking.stato }}</strong>
-          </div>
-
-          <div class="details-row" *ngIf="isExtraSport()">
-            <span>Istruttore</span>
-            <strong>
-              <ng-container *ngIf="hasInstructor(); else noInstructor">
-                {{ selectedInstructorName() }}
-              </ng-container>
-
-              <ng-template #noInstructor>Nessun istruttore</ng-template>
-            </strong>
-          </div>
-
-          <div class="details-row" *ngIf="isExtraSport()">
-            <span>Numero racchette</span>
-            <strong>{{ selectedRacketsLabel() }}</strong>
-          </div>
-
-          <div class="details-row" *ngIf="isExtraSport() && booking.numeroPartecipanti">
-            <span>Partecipanti</span>
-            <strong>{{ booking.numeroPartecipanti }}</strong>
-          </div>
+    <!-- Dettagli prenotazione -->
+    @if (prenotazione(); as booking) {
+      <section class="confirmation-card">
+        <div class="main-summary-grid">
+          <article class="summary-block">
+            <span>Data e ora</span>
+            <strong>{{ selectedDateTitle() }}</strong>
+            <small>{{ selectedTimeLabel() }} · {{ selectedDurationLabel() }}</small>
+          </article>
+          <article class="summary-block">
+            <span>Campo</span>
+            <strong>{{ selectedFieldName() || '-' }}</strong>
+            <small>{{ selectedSportLabel() }}</small>
+          </article>
+          <article class="summary-block highlight-total">
+            <span>Totale</span>
+            <strong>{{ formatCurrency(totalPaid()) }}</strong>
+          </article>
         </div>
+        <div class="details-divider"></div>
+        <section class="details-section">
+          <h2>Dettagli</h2>
+          <div class="details-list">
+            <div class="details-row">
+              <span>Stato</span>
+              <strong>{{ booking.stato }}</strong>
+            </div>
+            @if (isExtraSport()) {
+              <div class="details-row">
+                <span>Istruttore</span>
+                <strong>
+                  @if (hasInstructor()) {
+                    {{ selectedInstructorName() }}
+                  } @else {
+                    Nessun istruttore
+                  }
+                </strong>
+              </div>
+            }
+            @if (isExtraSport()) {
+              <div class="details-row">
+                <span>Numero racchette</span>
+                <strong>{{ selectedRacketsLabel() }}</strong>
+              </div>
+            }
+            @if (isExtraSport() && booking.numeroPartecipanti) {
+              <div class="details-row">
+                <span>Partecipanti</span>
+                <strong>{{ booking.numeroPartecipanti }}</strong>
+              </div>
+            }
+          </div>
+        </section>
+        <section class="costs-section">
+          <h2>Costi</h2>
+          <div class="cost-row">
+            <span>Costo campo</span>
+            <strong>{{ formatCurrency(previewCostoCampo()) }}</strong>
+          </div>
+          @if (isExtraSport()) {
+            <div class="cost-row">
+              <span>Costo istruttore</span>
+              <strong>{{ formatCurrency(previewCostoIstruttore()) }}</strong>
+            </div>
+          }
+          @if (isExtraSport()) {
+            <div class="cost-row">
+              <span>Costo racchette</span>
+              <strong>{{ formatCurrency(previewCostoRacchette()) }}</strong>
+            </div>
+          }
+          <div class="cost-row total">
+            <span>Totale pagato</span>
+            <strong>{{ formatCurrency(totalPaid()) }}</strong>
+          </div>
+        </section>
       </section>
-
-      <section class="costs-section">
-        <h2>Costi</h2>
-
-        <div class="cost-row">
-          <span>Costo campo</span>
-          <strong>{{ formatCurrency(previewCostoCampo()) }}</strong>
-        </div>
-
-        <div class="cost-row" *ngIf="isExtraSport()">
-          <span>Costo istruttore</span>
-          <strong>{{ formatCurrency(previewCostoIstruttore()) }}</strong>
-        </div>
-
-        <div class="cost-row" *ngIf="isExtraSport()">
-          <span>Costo racchette</span>
-          <strong>{{ formatCurrency(previewCostoRacchette()) }}</strong>
-        </div>
-
-        <div class="cost-row total">
-          <span>Totale pagato</span>
-          <strong>{{ formatCurrency(totalPaid()) }}</strong>
-        </div>
-      </section>
-    </section>
+    }
 
     <section class="confirmation-actions">
       <button type="button" class="secondary-button" (click)="startNewBooking()">

@@ -1,12 +1,14 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnDestroy, OnInit, computed, signal } from '@angular/core';
 import { Router, RouterOutlet } from '@angular/router';
+import { Subscription, interval } from 'rxjs';
+import type { ProfileResponseDto } from '../../dto/response/profile/profile-response.dto';
 import { Role } from '../../enumeration/role.enum';
-import { AuthService, ProfileResponseDto } from '../../services/auth.service';
+import { AuthService } from '../../services/auth.service';
+import { BookingService } from '../../services/booking.service';
 import { ChatService } from '../../services/chat.service';
 import { ManagerService } from '../../services/manager.service';
-import { BookingService } from '../../services/booking.service';
-import { Subscription, interval } from 'rxjs';
+import { ImageUrlUtil } from '../../util/image-url.util';
 
 interface SidebarItem {
   label: string;
@@ -26,7 +28,6 @@ export class SidebarHeaderComponent implements OnInit, OnDestroy {
   profileImageUrl = '';
   selectedItemKey = '';
 
-  private readonly backendBaseUrl = 'http://localhost:8080';
   private readonly lockTimerRefreshMs = 1000;
 
   private lockTimerSubscription?: Subscription;
@@ -412,39 +413,6 @@ export class SidebarHeaderComponent implements OnInit, OnDestroy {
       return '';
     }
 
-    const url = path?.trim();
-
-    if (!url || this.isInvalidImagePath(url)) {
-      return '';
-    }
-
-    if (url.startsWith('http://') || url.startsWith('https://')) {
-      return url;
-    }
-
-    if (url.startsWith('/images/')) {
-      return `${this.backendBaseUrl}${url}`;
-    }
-
-    if (!url.startsWith('images/')) {
-       return `${this.backendBaseUrl}/images/${url.replace(/^\/+/, '')}`;
-    }
-
-    return `${this.backendBaseUrl}/${url.replace(/^\/+/, '')}`;
-  }
-
-  private readonly defaultProfileImagePath = 'images/default/default-image-profile.png';
-
-  private isInvalidImagePath(path: string): boolean {
-    const normalizedPath = path.trim().toLowerCase();
-
-    return (
-      normalizedPath === 'string' ||
-      normalizedPath === 'null' ||
-      normalizedPath === 'undefined' ||
-      normalizedPath === this.defaultProfileImagePath ||
-      normalizedPath === `/${this.defaultProfileImagePath}` ||
-      normalizedPath.endsWith(`/${this.defaultProfileImagePath}`)
-    );
+    return ImageUrlUtil.normalizeProfileImageUrl(path, { assumeImagesDirectory: true }) ?? '';
   }
 }

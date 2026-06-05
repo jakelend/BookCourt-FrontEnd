@@ -5,22 +5,25 @@
 
       <h1>{{ dashboardTitle }}</h1>
 
-      <p *ngIf="roleLabel" class="role-label">
-        {{ roleLabel }}
-      </p>
+      @if (roleLabel) {
+        <p class="role-label">
+          {{ roleLabel }}
+        </p>
+      }
     </div>
 
     <nav class="sidebar-nav" aria-label="Menu dashboard">
-      <button
-        *ngFor="let item of sidebarItems; trackBy: trackByKey"
-        type="button"
-        class="sidebar-link"
-        [class.active]="isSidebarItemActive(item)"
-        (click)="selectMenuItem(item)"
-      >
-        <span class="material-symbols-outlined">{{ item.icon }}</span>
-        <span>{{ item.label }}</span>
-      </button>
+      @for (item of sidebarItems; track trackByKey($index, item)) {
+        <button
+          type="button"
+          class="sidebar-link"
+          [class.active]="isSidebarItemActive(item)"
+          (click)="selectMenuItem(item)"
+        >
+          <span class="material-symbols-outlined">{{ item.icon }}</span>
+          <span>{{ item.label }}</span>
+        </button>
+      }
     </nav>
 
     <div class="sidebar-footer">
@@ -33,57 +36,60 @@
 
   <section class="dashboard-main">
     <header class="topbar">
-      <nav *ngIf="canViewStaffHeaderNav" class="topbar-nav" aria-label="Sezioni staff">
-        <button
-          type="button"
-          class="topbar-nav-link"
-          [class.active]="isInstructorsActive()"
-          [attr.aria-current]="isInstructorsActive() ? 'page' : null"
-          (click)="openInstructors()"
-        >
-          Istruttori
-        </button>
-        <button
-          type="button"
-          class="topbar-nav-link"
-          [class.active]="isSecretariesActive()"
-          [attr.aria-current]="isSecretariesActive() ? 'page' : null"
-          (click)="openSecretaries()"
-        >
-          Segretarie
-        </button>
-        <button
-          type="button"
-          class="topbar-nav-link"
-          [class.active]="isFieldsActive()"
-          [attr.aria-current]="isFieldsActive() ? 'page' : null"
-          (click)="openFields()"
-        >
-          Campi
-        </button>
-      </nav>
+      @if (canViewStaffHeaderNav) {
+        <nav class="topbar-nav" aria-label="Sezioni staff">
+          <button
+            type="button"
+            class="topbar-nav-link"
+            [class.active]="isInstructorsActive()"
+            [attr.aria-current]="isInstructorsActive() ? 'page' : null"
+            (click)="openInstructors()"
+          >
+            Istruttori
+          </button>
+          <button
+            type="button"
+            class="topbar-nav-link"
+            [class.active]="isSecretariesActive()"
+            [attr.aria-current]="isSecretariesActive() ? 'page' : null"
+            (click)="openSecretaries()"
+          >
+            Segretarie
+          </button>
+          <button
+            type="button"
+            class="topbar-nav-link"
+            [class.active]="isFieldsActive()"
+            [attr.aria-current]="isFieldsActive() ? 'page' : null"
+            (click)="openFields()"
+          >
+            Campi
+          </button>
+        </nav>
+      }
 
       <div class="profile-summary">
         <div class="profile-text">
           <strong>{{ fullName }}</strong>
 
-          <span *ngIf="hasActiveBookingLock()" class="booking-lock-timer">
-            <span class="material-symbols-outlined">timer</span>
-            {{ bookingLockRemainingLabel() }} per completare
-          </span>
+          @if (hasActiveBookingLock()) {
+            <span class="booking-lock-timer">
+              <span class="material-symbols-outlined">timer</span>
+              {{ bookingLockRemainingLabel() }} per completare
+            </span>
+          }
         </div>
 
         <button type="button" class="profile-button" aria-label="Profilo utente">
-          <img
-            *ngIf="profileImageUrl"
-            [src]="profileImageUrl"
-            [alt]="fullName"
-            (error)="onProfileImageError()"
-          />
+          @if (profileImageUrl) {
+            <img [src]="profileImageUrl" [alt]="fullName" (error)="onProfileImageError()" />
+          }
 
-          <span *ngIf="!profileImageUrl" class="profile-initials">
-            {{ userInitials }}
-          </span>
+          @if (!profileImageUrl) {
+            <span class="profile-initials">
+              {{ userInitials }}
+            </span>
+          }
         </button>
       </div>
     </header>
