@@ -164,7 +164,7 @@ export class SidebarHeaderComponent implements OnInit, OnDestroy {
   get dashboardTitle(): string {
     switch (this.currentRole) {
       case Role.SEGRETARIA:
-        return 'Center Management';
+        return 'Segretary Management';
       case Role.ISTRUTTORE:
         return 'Instructor Management';
       case Role.CLIENTE:
@@ -173,20 +173,6 @@ export class SidebarHeaderComponent implements OnInit, OnDestroy {
         return 'Manager Control';
       default:
         return 'Dashboard';
-    }
-  }
-
-  /** Testo leggibile del ruolo mostrato sotto il nome. */
-  get roleLabel(): string {
-    switch (this.currentRole) {
-      case Role.SEGRETARIA:
-        return 'Segretaria centro';
-      case Role.ISTRUTTORE:
-        return 'Istruttore';
-      case Role.MANAGER:
-        return 'Amministratore';
-      default:
-        return '';
     }
   }
 

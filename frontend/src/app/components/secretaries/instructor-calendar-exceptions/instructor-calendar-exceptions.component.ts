@@ -462,11 +462,11 @@ export class InstructorCalendarExceptionsComponent implements OnInit {
     const totalMinutes = Math.max(60, this.minutesBetween(range.start, range.end));
 
     /*
-      In questa pagina filtro solo le eccezioni istruttore.
-      Le lezioni o altri eventi non servono alla segretaria quando sta creando indisponibilita.
+      Mostro le indisponibilita gestibili dalla segretaria e le lezioni gia prenotate,
+      cosi la segretaria vede gli impegni dell'istruttore prima di creare nuove eccezioni.
     */
     const visibleEvents = (agenda.eventi ?? []).filter(
-      (event) => event.tipo === 'ECCEZIONE_ISTRUTTORE',
+      (event) => event.tipo === 'ECCEZIONE_ISTRUTTORE' || event.tipo === 'LEZIONE',
     );
 
     this.hourSlotsSignal.set(this.buildHourSlots(range.start, range.end, totalMinutes));

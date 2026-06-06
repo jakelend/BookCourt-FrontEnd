@@ -81,9 +81,6 @@
                   <span class="material-symbols-outlined">stadium</span>
                 </div>
               }
-              <span class="status-badge" [class.inactive]="!field.attivo">
-                {{ field.attivo ? 'ACTIVE' : 'INACTIVE' }}
-              </span>
             </div>
             <div class="field-card-body">
               <div class="field-info">
@@ -103,6 +100,13 @@
                 >
                   Seleziona campo
                 </button>
+                <button
+                  type="button"
+                  class="gallery-button"
+                  (click)="openFieldImages(field, $event)"
+                >
+                  Mostra immagini campo
+                </button>
               </div>
             </div>
           </article>
@@ -116,6 +120,64 @@
         <div>
           <strong>Nessun campo disponibile</strong>
           <p>Al momento non ci sono campi attivi per {{ selectedSportLabel() }}.</p>
+        </div>
+      </section>
+    }
+
+    @if (isGalleryOpen()) {
+      <section
+        class="field-gallery-overlay"
+        role="presentation"
+        (click)="closeFieldImages()"
+      >
+        <div
+          class="field-gallery-dialog"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="field-gallery-title"
+          (click)="$event.stopPropagation()"
+        >
+          <header class="field-gallery-header">
+            <div>
+              <span>Immagini campo</span>
+              <h2 id="field-gallery-title">{{ fieldWithOpenGallery()?.nome }}</h2>
+            </div>
+            <button type="button" class="gallery-close-button" (click)="closeFieldImages()">
+              Torna alla selezione campi
+            </button>
+          </header>
+
+          @if (isLoadingFieldGallery()) {
+            <div class="gallery-loading-panel">
+              <div class="loading-spinner" aria-hidden="true"></div>
+              <span>Caricamento immagini...</span>
+            </div>
+          } @else if (fieldGalleryErrorMessage()) {
+            <div class="gallery-error-panel">
+              <span class="material-symbols-outlined">error</span>
+              <p>{{ fieldGalleryErrorMessage() }}</p>
+            </div>
+          } @else {
+            <div class="field-gallery-grid" aria-label="Immagini del campo selezionato">
+              @for (image of fieldGalleryImages(); track trackByImageId(i, image); let i = $index) {
+                <figure class="field-gallery-item">
+                  @if (image.urlImmagine) {
+                    <img
+                      [src]="image.urlImmagine"
+                      [alt]="(fieldWithOpenGallery()?.nome || 'Campo') + ' - immagine ' + (i + 1)"
+                      width="420"
+                      height="260"
+                      decoding="async"
+                    />
+                  } @else {
+                    <div class="field-gallery-placeholder">
+                      <span class="material-symbols-outlined">stadium</span>
+                    </div>
+                  }
+                </figure>
+              }
+            </div>
+          }
         </div>
       </section>
     }

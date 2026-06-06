@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
+  HostListener,
   OnInit,
   computed,
   signal,
@@ -9,6 +10,7 @@ import {
 import { ActivatedRoute, Router } from '@angular/router';
 import { finalize } from 'rxjs';
 import {
+  BookingFieldImageResponseDto,
   BookingFieldResponseDto,
   BookingSport,
 } from '../../../dto/response/booking/booking-field-response.dto';
@@ -62,6 +64,11 @@ export class BookingFieldSelectionComponent implements OnInit {
   /** Mappa degli stati di caricamento immagine, indicizzata per id campo. */
   private readonly fieldImageStates = signal<Record<number, FieldImageState>>({});
 
+  readonly fieldWithOpenGallery = signal<BookingFieldResponseDto | null>(null);
+  readonly fieldGalleryImages = signal<BookingFieldImageResponseDto[]>([]);
+  readonly isLoadingFieldGallery = signal(false);
+  readonly fieldGalleryErrorMessage = signal('');
+
   /** Computed usato dal template per sapere se ci sono campi disponibili. */
   readonly hasFields = computed(() => this.fields().length > 0);
 
@@ -78,6 +85,8 @@ export class BookingFieldSelectionComponent implements OnInit {
   readonly showEmpty = computed(
     () => !this.isLoading() && !this.errorMessage() && !this.hasFields(),
   );
+
+  readonly isGalleryOpen = computed(() => this.fieldWithOpenGallery() !== null);
 
   readonly selectedSportLabel = computed(() => {
     switch (this.selectedSport()) {
@@ -191,6 +200,63 @@ export class BookingFieldSelectionComponent implements OnInit {
     this.selectField(field);
   }
 
+  /** Apre il popup immagini e carica on demand tutte le foto del campo scelto. */
+  openFieldImages(field: BookingFieldResponseDto, event: MouseEvent): void {
+    /*
+      La card intera è cliccabile per selezionare il campo.
+      Fermiamo la propagazione per evitare che questo pulsante apra la galleria
+      e allo stesso tempo mandi l'utente allo step successivo.
+    */
+    event.stopPropagation();
+
+    this.prepareFieldGallery(field);
+
+    this.bookingService
+      .getImmaginiCampo(field.id)
+      .pipe(
+        finalize(() => {
+          this.stopGalleryLoadingIfStillCurrent(field.id);
+        }),
+      )
+      .subscribe({
+        next: (images) => {
+          if (!this.isCurrentGalleryRequest(field.id)) {
+            return;
+          }
+
+          this.fieldGalleryImages.set(images);
+          if (images.length === 0) {
+            this.fieldGalleryErrorMessage.set('Nessuna immagine disponibile per questo campo.');
+          }
+        },
+        error: (error) => {
+          if (!this.isCurrentGalleryRequest(field.id)) {
+            return;
+          }
+
+          console.error('Errore caricamento immagini campo:', field.nome, error);
+          this.fieldGalleryImages.set([]);
+          this.fieldGalleryErrorMessage.set(this.buildLoadFieldImagesErrorMessage(error));
+        },
+      });
+  }
+
+  /** Chiude il popup immagini e torna alla lista dei campi. */
+  closeFieldImages(): void {
+    this.fieldWithOpenGallery.set(null);
+    this.fieldGalleryImages.set([]);
+    this.fieldGalleryErrorMessage.set('');
+    this.isLoadingFieldGallery.set(false);
+  }
+
+  /** Chiude il popup con Escape quando la galleria è aperta. */
+  @HostListener('document:keydown.escape')
+  onEscapeKeydown(): void {
+    if (this.isGalleryOpen()) {
+      this.closeFieldImages();
+    }
+  }
+
   /** Permette la selezione della card tramite tastiera, con Enter o Spazio. */
   onFieldCardKeydown(event: KeyboardEvent, field: BookingFieldResponseDto): void {
     if (event.key !== 'Enter' && event.key !== ' ') {
@@ -260,6 +326,11 @@ export class BookingFieldSelectionComponent implements OnInit {
     return field.id;
   }
 
+  /** TrackBy usato per ottimizzare il rendering della galleria immagini. */
+  trackByImageId(_: number, image: BookingFieldImageResponseDto): number {
+    return image.id;
+  }
+
   /** TrackBy usato per la timeline degli step. */
   trackByStepLabel(_: number, step: BookingStep): string {
     return step.label;
@@ -299,6 +370,44 @@ export class BookingFieldSelectionComponent implements OnInit {
           400: `Sport non valido inviato al backend: ${sport}. Deve essere CALCETTO, PADEL o TENNIS.`,
           401: 'Non sei autorizzato a visualizzare i campi. Effettua di nuovo il login come cliente.',
           403: 'Non sei autorizzato a visualizzare i campi. Effettua di nuovo il login come cliente.',
+        },
+      },
+    );
+  }
+
+  private prepareFieldGallery(field: BookingFieldResponseDto): void {
+    this.fieldWithOpenGallery.set(field);
+    this.fieldGalleryImages.set([]);
+    this.fieldGalleryErrorMessage.set('');
+    this.isLoadingFieldGallery.set(true);
+  }
+
+  /*
+    La risposta HTTP può arrivare dopo che il popup è stato chiuso
+    o dopo che l'utente ha aperto la galleria di un altro campo.
+    In quel caso la risposta non deve più aggiornare la schermata.
+  */
+  private isCurrentGalleryRequest(fieldId: number): boolean {
+    return this.fieldWithOpenGallery()?.id === fieldId;
+  }
+
+  private stopGalleryLoadingIfStillCurrent(fieldId: number): void {
+    if (this.isCurrentGalleryRequest(fieldId)) {
+      this.isLoadingFieldGallery.set(false);
+    }
+  }
+
+  private buildLoadFieldImagesErrorMessage(error: unknown): string {
+    return extractBackendErrorMessage(
+      error,
+      'Non è stato possibile caricare le immagini del campo. Riprova tra qualche istante.',
+      {
+        timeoutMessage: 'La richiesta delle immagini sta impiegando troppo tempo. Riprova tra qualche istante.',
+        statusMessages: {
+          0: 'Il frontend non riesce a raggiungere il backend. Controlla che Spring Boot sia avviato su porta 8080.',
+          401: 'Non sei autorizzato a visualizzare le immagini. Effettua di nuovo il login come cliente.',
+          403: 'Non sei autorizzato a visualizzare le immagini. Effettua di nuovo il login come cliente.',
+          404: 'Le immagini di questo campo non sono disponibili.',
         },
       },
     );

@@ -233,24 +233,6 @@
   gap: 16px;
 }
 
-.status-row {
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
-}
-
-.status-pill {
-  border-radius: 999px;
-  padding: 6px 10px;
-  background: #d4e3ff;
-  color: #001c39;
-  font-size: 11px;
-  font-weight: 900;
-  line-height: 1;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
-
 .rates-panel {
   margin-top: auto;
   border-radius: 10px;

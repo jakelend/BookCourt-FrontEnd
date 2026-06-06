@@ -14,6 +14,16 @@ export interface CampiPerSportApiResponseDto {
   campi: CampoCardApiResponseDto[];
 }
 
+export interface BookingFieldImageResponseDto {
+  id: number;
+  urlImmagine: string | null;
+}
+
+export interface CampoImmaginiApiResponseDto {
+  idCampo: number;
+  immagini: BookingFieldImageResponseDto[];
+}
+
 export interface BookingFieldResponseDto {
   id: number;
   nome: string;

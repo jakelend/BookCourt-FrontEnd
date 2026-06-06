@@ -16,8 +16,10 @@ import type { CreateBookingLockRequestDto } from '../dto/request/booking/create-
 import type { BookingAvailableInstructorResponseDto } from '../dto/response/booking/booking-available-instructor-response.dto';
 import type { BookingFieldCalendarResponseDto } from '../dto/response/booking/booking-calendar-response.dto';
 import type {
+  BookingFieldImageResponseDto,
   BookingFieldResponseDto,
   BookingSport,
+  CampoImmaginiApiResponseDto,
   CampiPerSportApiResponseDto,
 } from '../dto/response/booking/booking-field-response.dto';
 import type { BookingLockResponseDto } from '../dto/response/booking/booking-lock-response.dto';
@@ -70,6 +72,43 @@ export class BookingService {
             urlImmaginePrincipale: ImageUrlUtil.normalizeBackendImageUrl(campo.urlImmagine),
           })),
         ),
+      );
+  }
+
+  /**
+   * Recupera le immagini della galleria campo.
+   *
+   * Il backend restituisce URL relativi o assoluti; la UI lavora invece con URL già pronti
+   * per l'attributo src delle immagini, quindi li normalizziamo subito nel service.
+   *
+   * @param campoId Identificativo del campo.
+   * @returns Observable con le immagini del campo normalizzate per la UI.
+   */
+  getImmaginiCampo(campoId: number): Observable<BookingFieldImageResponseDto[]> {
+    const imagesUrl = `${this.campiApiUrl}/${campoId}/immagini`;
+
+    return this.http
+      .get<CampoImmaginiApiResponseDto>(imagesUrl)
+      .pipe(
+        timeout(10000),
+        take(1),
+        map((response) => {
+          const backendImages = response.immagini;
+          let immagini: BookingFieldImageResponseDto[] = [];
+
+          if (backendImages) {
+            immagini = backendImages;
+          }
+
+          return immagini.map((image) => {
+            const normalizedImageUrl = ImageUrlUtil.normalizeBackendImageUrl(image.urlImmagine);
+
+            return {
+              ...image,
+              urlImmagine: normalizedImageUrl,
+            };
+          });
+        }),
       );
   }
 
