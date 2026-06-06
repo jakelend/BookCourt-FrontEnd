@@ -170,6 +170,11 @@ export class CancelBookingsComponent implements OnInit {
     return 'Non puoi più annullarla: mancano meno di 48 ore all’inizio.';
   }
 
+  /** Restituisce l'etichetta che indica se la prenotazione include un istruttore. */
+  getInstructorPresenceLabel(prenotazione: PrenotazioneConfermataResponseDto): string {
+    return prenotazione.istruttoreId != null ? 'Presente' : 'Non presente';
+  }
+
 
   /**
    * Costruisce il nome del campo da mostrare nella card.

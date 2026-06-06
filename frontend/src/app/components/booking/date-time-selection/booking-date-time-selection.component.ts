@@ -134,6 +134,10 @@ export class BookingDateTimeSelectionComponent implements OnInit, OnDestroy {
   private realtimeRefreshInProgress = false;
 
   readonly selectedDateValue = computed(() => this.toDateOnly(this.selectedDate()));
+  readonly isPreviousDayDisabled = computed(() => this.isSelectedDateToday());
+  readonly datePickerLabel = computed(() =>
+    this.isSelectedDateToday() ? 'Scegli giorno (oggi)' : 'Scegli giorno',
+  );
   readonly dayStartTime = computed(() => this.visibleDayStartTime);
   readonly dayEndTime = computed(() => this.visibleDayEndTime);
 
@@ -153,12 +157,14 @@ export class BookingDateTimeSelectionComponent implements OnInit, OnDestroy {
   });
 
   readonly selectedDateTitle = computed(() => {
-    return this.toDateOnly(this.selectedDate()).toLocaleDateString('it-IT', {
+    const formattedDate = this.toDateOnly(this.selectedDate()).toLocaleDateString('it-IT', {
       weekday: 'long',
       month: 'long',
       day: 'numeric',
       year: 'numeric',
     });
+
+    return this.isSelectedDateToday() ? `Oggi, ${formattedDate}` : formattedDate;
   });
 
   readonly selectedSportLabel = computed(() => {
@@ -386,6 +392,19 @@ export class BookingDateTimeSelectionComponent implements OnInit, OnDestroy {
   /** Riporta il calendario alla data odierna e ricarica disponibilità/messaggi. */
   goToToday(): void {
     this.selectedDate.set(this.formatLocalDate(new Date()));
+    this.afterDateChanged();
+  }
+
+  /** Sposta la selezione al giorno precedente, senza permettere date passate. */
+  goToPreviousDay(): void {
+    if (this.isPreviousDayDisabled()) {
+      return;
+    }
+
+    this.selectedDate.set(
+      this.formatLocalDate(this.addDays(this.toDateOnly(this.selectedDate()), -1)),
+    );
+
     this.afterDateChanged();
   }
 

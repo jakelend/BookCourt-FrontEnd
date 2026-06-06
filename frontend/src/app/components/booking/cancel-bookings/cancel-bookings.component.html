@@ -70,6 +70,10 @@
                 <strong>{{ formatTimeRange(prenotazione.inizio, prenotazione.fine) }}</strong>
               </div>
               <div class="booking-info-row">
+                <span>Istruttore</span>
+                <strong>{{ getInstructorPresenceLabel(prenotazione) }}</strong>
+              </div>
+              <div class="booking-info-row">
                 <span>Stato</span>
                 <strong>{{ prenotazione.stato }}</strong>
               </div>

@@ -50,6 +50,16 @@
           </div>
 
           <div class="toolbar-actions">
+            <button
+              type="button"
+              class="day-nav-button"
+              aria-label="Giorno precedente"
+              [disabled]="isPreviousDayDisabled()"
+              (click)="goToPreviousDay()"
+            >
+              <span class="material-symbols-outlined">chevron_left</span>
+            </button>
+
             <button type="button" class="today-button" (click)="goToToday()">Oggi</button>
 
             <button
@@ -62,7 +72,7 @@
             </button>
 
             <mat-form-field appearance="outline" class="date-picker-field">
-              <mat-label>Scegli giorno</mat-label>
+              <mat-label>{{ datePickerLabel() }}</mat-label>
               <input
                 matInput
                 [matDatepicker]="picker"
