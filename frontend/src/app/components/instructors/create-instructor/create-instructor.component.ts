@@ -144,6 +144,10 @@ export class CreateInstructorComponent implements OnDestroy {
     this.managerService
       .creaIstruttore(payload, selectedProfilePhoto!)
       .pipe(
+        /*
+          Dopo la creazione provo anche a ricaricare la lista istruttori del manager.
+          Se il refresh fallisce, non blocco comunque il flusso di creazione appena concluso.
+        */
         switchMap(() => this.managerService.refreshIstruttori().pipe(catchError(() => of([])))),
         finalize(() => {
           this.isLoading.set(false);

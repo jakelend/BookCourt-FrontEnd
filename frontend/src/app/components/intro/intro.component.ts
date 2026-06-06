@@ -107,6 +107,10 @@ export class IntroComponent {
     },
   ];
 
+  /**
+   * Router usato solo per le azioni di navigazione della pagina introduttiva.
+   * Il componente non ha stato complesso: mostra contenuti statici e reindirizza.
+   */
   constructor(private readonly router: Router) {}
 
   /** Naviga verso la pagina di login. */

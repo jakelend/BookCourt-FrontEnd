@@ -568,6 +568,10 @@ export class FieldMaintenanceComponent implements OnInit {
     const dayEnd = new Date(this.buildHtmlDateTime(this.formatLocalDate(this.addDays(dayStart, 1)), '00:00'));
     const totalMinutes = Math.max(60, this.minutesBetween(dayStart, dayEnd));
 
+    /*
+      La vista calendario rappresenta solo il giorno selezionato.
+      Per questo converto tutte le manutenzioni in blocchi grafici ritagliati su quel range.
+    */
     this.hourSlots.set(this.buildHourSlots(dayStart, dayEnd, totalMinutes));
     this.eventViews.set(this.maintenances()
       .map((maintenance) => this.toMaintenanceEventView(maintenance, dayStart, dayEnd, totalMinutes))

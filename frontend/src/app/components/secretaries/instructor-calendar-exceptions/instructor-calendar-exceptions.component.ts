@@ -461,6 +461,10 @@ export class InstructorCalendarExceptionsComponent implements OnInit {
     const range = this.resolveCalendarRange();
     const totalMinutes = Math.max(60, this.minutesBetween(range.start, range.end));
 
+    /*
+      In questa pagina filtro solo le eccezioni istruttore.
+      Le lezioni o altri eventi non servono alla segretaria quando sta creando indisponibilita.
+    */
     const visibleEvents = (agenda.eventi ?? []).filter(
       (event) => event.tipo === 'ECCEZIONE_ISTRUTTORE',
     );

@@ -7,6 +7,11 @@
       </div>
     </div>
 
+    <!--
+      Primo step del flusso: scelgo lo sport.
+      @for crea i bottoni partendo dall'array sports, mentre [class.active]
+      evidenzia quello selezionato in questo momento.
+    -->
     <div class="sport-grid" role="group" aria-label="Selezione sport">
       @for (sport of sports; track trackBySport($index, sport)) {
         <button
@@ -61,6 +66,11 @@
     }
 
     @if (!loadingFields() && fields().length) {
+      <!--
+        Secondo step: selezione del campo.
+        Anche qui il template usa @for per creare le card, e i binding servono
+        a segnare il campo attivo e a reagire al click dell'utente.
+      -->
       <div class="field-grid" role="group" aria-label="Selezione campo">
         @for (field of fields(); track trackByField($index, field)) {
           <button
@@ -114,6 +124,11 @@
             <span class="material-symbols-outlined">chevron_right</span>
           </button>
 
+          <!--
+            Date picker Angular Material per cambiare il giorno del calendario manutenzioni.
+            selectedDateValue() fornisce la data da mostrare, mentre onDateSelected($event)
+            aggiorna stato e contenuti quando l'utente sceglie un nuovo giorno.
+          -->
           <mat-form-field appearance="outline" class="date-picker-field">
             <mat-label>Scegli giorno</mat-label>
             <input
@@ -139,6 +154,11 @@
         </section>
       }
 
+      <!--
+        Calendario giornaliero manutenzioni.
+        [class.loading-state] cambia stile durante il caricamento, mentre i due @for
+        sotto disegnano prima la griglia oraria e poi i blocchi evento.
+      -->
       <section class="calendar-shell" [class.loading-state]="loadingMaintenances()">
         @if (loadingMaintenances()) {
           <div class="loading-overlay">
@@ -207,6 +227,11 @@
           </div>
         }
 
+        <!--
+          Form Angular per creare una nuova manutenzione.
+          In questo caso non uso sempre [(ngModel)], ma la coppia [ngModel] + (ngModelChange),
+          cosi il component TS controlla in modo esplicito come aggiornare ogni signal.
+        -->
         <form class="maintenance-form" (ngSubmit)="createMaintenance()">
           <div class="form-grid two-columns">
             <label>
@@ -298,6 +323,10 @@
         }
 
         @if (maintenances().length) {
+          <!--
+            Lista delle manutenzioni del giorno.
+            Ogni riga ha un bottone elimina con [disabled] legato allo stato della singola cancellazione.
+          -->
           <div class="maintenance-list">
             @for (maintenance of maintenances(); track trackByMaintenance($index, maintenance)) {
               <article class="maintenance-list-item">

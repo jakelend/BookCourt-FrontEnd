@@ -180,6 +180,10 @@ export class ModifyInstructorComponent implements OnInit, OnDestroy {
       costoOrarioPadel,
     };
 
+    /*
+      Nel payload mando solo i dati testuali e numerici.
+      L'eventuale nuova foto profilo viene passata separatamente al service.
+    */
     this.isSaving.set(true);
 
     this.managerService
@@ -455,6 +459,10 @@ export class ModifyInstructorComponent implements OnInit, OnDestroy {
       fotoProfiloUrl: instructor.fotoProfiloUrl,
     };
 
+    /*
+      Se l'utente non ha appena scelto una nuova foto locale,
+      mostro l'immagine arrivata dal backend come anteprima corrente.
+    */
     if (!this.profilePhotoFile()) {
       this.profilePhotoPreviewUrl.set(ImageUrlUtil.normalizeProfileImageUrl(instructor.fotoProfiloUrl) ?? '');
     }

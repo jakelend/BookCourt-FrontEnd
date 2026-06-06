@@ -99,6 +99,11 @@ export class InstructorsPageComponent implements OnInit, OnDestroy {
     const previousActive = event.instructor.attivo;
 
     this.toggleRequests.get(event.instructor.id)?.unsubscribe();
+
+    /*
+      Aggiorno subito la UI in modo ottimistico.
+      Se il backend fallisce, sotto ripristino lo stato precedente.
+    */
     this.setInstructorActive(event.instructor.id, event.nextActive);
 
     const request$ = event.nextActive

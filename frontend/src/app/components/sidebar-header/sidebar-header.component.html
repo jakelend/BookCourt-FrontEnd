@@ -12,6 +12,12 @@
       }
     </div>
 
+    <!--
+      Questo menu laterale viene costruito dinamicamente con @for.
+      - sidebarItems arriva dal component TS in base al ruolo dell'utente;
+      - [class.active] evidenzia la voce attualmente attiva;
+      - (click) richiama la navigazione corretta senza scrivere tutta la logica qui dentro.
+    -->
     <nav class="sidebar-nav" aria-label="Menu dashboard">
       @for (item of sidebarItems; track trackByKey($index, item)) {
         <button
@@ -36,6 +42,11 @@
 
   <section class="dashboard-main">
     <header class="topbar">
+      <!--
+        Questa barra superiore compare solo in un caso preciso:
+        manager dentro la sezione di gestione staff.
+        I binding servono per evidenziare la sottosezione attiva e migliorare anche l'accessibilita.
+      -->
       @if (canViewStaffHeaderNav) {
         <nav class="topbar-nav" aria-label="Sezioni staff">
           <button
@@ -80,6 +91,12 @@
           }
         </div>
 
+        <!--
+          Il bottone profilo usa due fallback:
+          - se esiste profileImageUrl mostra la foto;
+          - se non esiste, mostra le iniziali dell'utente.
+          In piu, sopra viene mostrato il timer del lock prenotazione solo quando attivo.
+        -->
         <button type="button" class="profile-button" aria-label="Profilo utente">
           @if (profileImageUrl) {
             <img [src]="profileImageUrl" [alt]="fullName" (error)="onProfileImageError()" />

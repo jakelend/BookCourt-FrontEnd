@@ -99,6 +99,11 @@ export class SecretariesPageComponent implements OnInit, OnDestroy {
     const previousActive = event.secretary.attivo;
 
     this.toggleRequests.get(event.secretary.id)?.unsubscribe();
+
+    /*
+      Aggiorno subito la lista a video per rendere il toggle piu reattivo.
+      Se il backend risponde con errore, sotto rimetto il valore originale.
+    */
     this.setSecretaryActive(event.secretary.id, event.nextActive);
 
     const request$ = event.nextActive

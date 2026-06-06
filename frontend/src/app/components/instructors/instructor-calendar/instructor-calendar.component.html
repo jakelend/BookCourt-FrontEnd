@@ -48,6 +48,7 @@
       @if (errorMessage) {
         <section class="inline-feedback error-feedback">
           <div>
+            <!-- Testo evidenziato con maggiore importanza semantica (grassetto) -->
             <strong>Errore caricamento calendario</strong>
             <p>{{ errorMessage }}</p>
           </div>
@@ -78,6 +79,11 @@
             }
 
             @for (event of events; track trackByEvent($index, event)) {
+              <!--
+              Identifica una sezione autonoma della pagina,
+              cioè un contenuto che ha senso anche se letto separatamente dal resto.
+              In questo caso racchiude un blocco informativo dell'interfaccia.
+              -->
               <article
                 class="calendar-event"
                 [ngClass]="event.cssClass"

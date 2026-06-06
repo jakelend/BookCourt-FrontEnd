@@ -398,6 +398,10 @@ export class CenterHoursExceptionsComponent implements OnInit {
       .pipe(finalize(() => this.loading.set(false)))
       .subscribe({
         next: (exceptions) => {
+          /*
+            Chiedo lo stesso giorno sia come inizio sia come fine
+            per recuperare solo l'eventuale eccezione della data selezionata.
+          */
           this.exceptions.set(exceptions ?? []);
           this.rebuildCalendar();
         },

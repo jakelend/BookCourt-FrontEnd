@@ -241,6 +241,10 @@ export class InstructorCalendarComponent implements OnInit {
     const range = this.resolveCalendarRange();
     const totalMinutes = Math.max(60, this.minutesBetween(range.start, range.end));
 
+    /*
+      Nel calendario dell'istruttore mostro solo gli eventi che hanno impatto pratico
+      sulla sua giornata: lezioni e due tipi di eccezioni.
+    */
     const visibleEvents = (agenda.eventi ?? []).filter((event) =>
       ['LEZIONE', 'ECCEZIONE_ISTRUTTORE', 'ECCEZIONE_CENTRO'].includes(event.tipo),
     );
@@ -309,6 +313,10 @@ export class InstructorCalendarComponent implements OnInit {
       const eventStart = event.start.getTime();
       const eventEnd = event.end.getTime();
 
+      /*
+        Se il prossimo evento inizia prima che finisca il gruppo attuale,
+        significa che graficamente avremo una sovrapposizione da gestire.
+      */
       if (!currentGroup.length || eventStart < currentGroupEnd) {
         currentGroup.push(event);
         currentGroupEnd = Math.max(currentGroupEnd, eventEnd);

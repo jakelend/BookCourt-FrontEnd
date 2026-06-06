@@ -130,6 +130,10 @@ export class CreateSecretaryComponent implements OnDestroy {
     this.managerService
       .creaSegreteria(payload, this.profilePhotoFile())
       .pipe(
+        /*
+          Anche qui il refresh della lista e' comodo per riallineare lo stato locale del manager.
+          In caso di errore sul refresh, la creazione resta comunque valida.
+        */
         switchMap(() =>
           this.managerService.refreshSegreterie().pipe(
             catchError(() => of([])),

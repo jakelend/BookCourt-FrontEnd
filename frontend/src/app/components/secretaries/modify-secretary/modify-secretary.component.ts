@@ -164,6 +164,10 @@ export class ModifySecretaryComponent implements OnInit, OnDestroy {
       telefono,
     };
 
+    /*
+      Nel payload mando solo i campi testuali.
+      La nuova foto, se presente, viene passata separatamente al service.
+    */
     this.isSaving.set(true);
 
     this.managerService
@@ -393,6 +397,10 @@ export class ModifySecretaryComponent implements OnInit, OnDestroy {
       fotoProfiloUrl: secretary.fotoProfiloUrl,
     };
 
+    /*
+      Se non e' stata scelta una nuova foto locale, tengo come anteprima
+      l'immagine attuale arrivata dal backend.
+    */
     if (!this.profilePhotoFile()) {
       this.profilePhotoPreviewUrl.set(ImageUrlUtil.normalizeProfileImageUrl(secretary.fotoProfiloUrl) ?? '');
     }

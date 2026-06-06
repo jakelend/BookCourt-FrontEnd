@@ -47,6 +47,10 @@ export class EditAccountComponent implements OnInit {
     private readonly authService: AuthService,
     private readonly router: Router,
   ) {
+    /*
+      Il form viene creato nel costruttore cosi il template ha subito la struttura pronta.
+      I valori reali arrivano dopo con loadProfile() e vengono inseriti tramite patchValue().
+    */
     this.accountForm = this.fb.group({
       nome: ['', [Validators.required, Validators.maxLength(80)]],
       cognome: ['', [Validators.required, Validators.maxLength(80)]],

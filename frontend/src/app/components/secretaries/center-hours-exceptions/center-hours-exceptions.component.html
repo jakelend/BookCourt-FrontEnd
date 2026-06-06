@@ -30,6 +30,14 @@
         <span class="material-symbols-outlined">chevron_right</span>
       </button>
 
+      <!--
+        Questo blocco e' un date picker di Angular Material.
+        Serve per far scegliere alla segretaria il giorno su cui visualizzare o creare l'eccezione orario.
+        - [matDatepicker] collega l'input al componente calendario;
+        - [ngModel] mostra nell'input la data selezionata nel component TS;
+        - (ngModelChange) richiama il metodo che aggiorna stato e contenuti della pagina;
+        - mat-datepicker-toggle apre il calendario cliccando sull'icona.
+      -->
       <mat-form-field appearance="outline" class="date-picker-field">
         <mat-label>Scegli giorno</mat-label>
         <input
@@ -56,6 +64,10 @@
           <button type="button" class="retry-button" (click)="retry()">Riprova</button>
         </section>
       }
+      <!--
+        Questo blocco usa classi dinamiche per cambiare il colore del feedback.
+        Quindi la stessa struttura HTML viene riusata sia per successo sia per errore.
+      -->
       @if (feedbackMessage()) {
         <section
           class="feedback-panel"
@@ -74,6 +86,11 @@
   }
 
   <section class="workspace-grid">
+    <!--
+      Vista calendario del giorno selezionato.
+      I binding di stile sotto servono a posizionare tacche orarie ed eventi usando percentuali
+      calcolate nel component TypeScript.
+    -->
     <section class="calendar-shell" [class.loading-state]="loading()">
       @if (loading()) {
         <div class="loading-overlay">
@@ -134,7 +151,16 @@
           </div>
         }
 
+        <!--
+          Form per creare un'eccezione orario.
+          Il template cambia in base alla modalita scelta:
+          se il centro e' chiuso tutto il giorno, il blocco orari personalizzati non viene mostrato.
+        -->
         <form class="exception-form" (ngSubmit)="submitCreate()">
+          <!--
+            Questo toggle decide tra chiusura totale e orario personalizzato.
+            [ngModel] legge lo stato attuale, (ngModelChange) aggiorna la modalita nel component TS.
+          -->
           <section class="closed-toggle-panel" [class.active]="isClosedMode()">
             <div class="toggle-copy">
               <span class="material-symbols-outlined">domain_disabled</span>

@@ -169,6 +169,13 @@
                 class="rate-input"
                 [class.invalid]="fieldError('costoOrarioPadel') || fieldError('tariffe')"
               >
+                <!--
+                  Questo input usa binding Angular:
+                  - [(ngModel)] collega il campo HTML con instructor.costoOrarioPadel;
+                  - [attr.aria-invalid] segnala se il campo ha errori di validazione;
+                  - (keydown) blocca l'inserimento di segni non validi;
+                  - (input) normalizza il valore e pulisce l'errore del campo quando l'utente modifica il dato.
+                -->
                 <input
                   type="number"
                   name="costoOrarioPadel"

@@ -10,6 +10,13 @@
     </div>
 
     <div class="toolbar-actions">
+      <!--
+        Select Angular Material per scegliere l'istruttore da gestire.
+        - [ngModel] mostra l'id dell'istruttore attualmente selezionato;
+        - (ngModelChange) richiama il metodo TS che aggiorna agenda e form;
+        - [disabled] blocca la select mentre i dati non sono pronti;
+        - @for genera dinamicamente le option partendo dalla lista istruttori.
+      -->
       <mat-form-field appearance="outline" class="instructor-select-field">
         <mat-label>Istruttore</mat-label>
         <mat-select
@@ -45,6 +52,13 @@
         <span class="material-symbols-outlined">chevron_right</span>
       </button>
 
+      <!--
+        Date picker Angular Material usato per cambiare il giorno del calendario.
+        - [matDatepicker] collega l'input al popup calendario;
+        - [ngModel] mostra nel campo la data corrente del componente;
+        - (ngModelChange) aggiorna il giorno selezionato e ricarica l'agenda;
+        - readonly evita l'inserimento manuale e forza l'uso del picker.
+      -->
       <mat-form-field appearance="outline" class="date-picker-field">
         <mat-label>Scegli giorno</mat-label>
         <input
@@ -80,6 +94,11 @@
   }
 
   <section class="workspace-grid">
+    <!--
+      Questo contenitore rappresenta il calendario giornaliero.
+      Il binding [class.loading-state] aggiunge una classe CSS quando agenda o istruttori
+      sono ancora in caricamento, cosi il template puo cambiare aspetto in modo reattivo.
+    -->
     <section class="calendar-shell" [class.loading-state]="loadingAgenda || loadingInstructors">
       @if (loadingAgenda || loadingInstructors) {
         <div class="loading-overlay">
@@ -90,6 +109,11 @@
       @if (hasInstructorSelected) {
         <div class="calendar-scroll-area">
           <div class="time-column">
+            <!--
+              Primo @for: stampa la colonna degli orari.
+              [style.top.%] posiziona ogni etichetta verticalmente in base alla percentuale
+              calcolata nel file TypeScript.
+            -->
             @for (slot of hourSlots; track trackByHour($index, slot)) {
               <div class="time-label" [style.top.%]="slot.topPct">
                 {{ slot.label }}
@@ -97,9 +121,20 @@
             }
           </div>
           <div class="day-column">
+            <!--
+              Secondo @for: disegna le linee orarie della griglia.
+              Anche qui la posizione verticale arriva dal component TS tramite binding CSS.
+            -->
             @for (slot of hourSlots; track trackByHour($index, slot)) {
               <div class="hour-line" [style.top.%]="slot.topPct"></div>
             }
+            <!--
+              Terzo @for: renderizza gli eventi del calendario.
+              I binding [style.top.%], [style.height.%], [style.left.%] e [style.width.%]
+              servono per posizionare ogni blocco evento nel punto giusto della giornata.
+              [ngClass] applica una classe diversa in base al tipo di evento.
+              (click) e (keydown.enter) aprono il dettaglio sia con mouse sia con tastiera.
+            -->
             @for (event of events; track trackByEvent($index, event)) {
               <article
                 class="calendar-event"
@@ -140,6 +175,12 @@
               <h3>Periodo personalizzato</h3>
             </div>
           </div>
+          <!--
+            Form Angular template-driven per creare una nuova indisponibilita.
+            - (ngSubmit) intercetta il submit del form e chiama il metodo TS;
+            - [(ngModel)] sui campi collega input e oggetto createForm in due direzioni:
+              quello che scrive l'utente aggiorna il model, e il model aggiorna il valore mostrato.
+          -->
           <form class="editor-grid" (ngSubmit)="submitCreate()">
             <label class="field-block">
               <span>Data inizio</span>
@@ -184,6 +225,10 @@
         </section>
       }
 
+      <!--
+        Questo pannello compare solo quando selectedEvent contiene un evento selezionato.
+        Le condizioni @if servono quindi a mostrare o nascondere dettagli e azioni disponibili.
+      -->
       @if (selectedEvent) {
         <section class="event-detail-panel">
           <div class="event-detail-header">
@@ -221,6 +266,13 @@
             }
           </div>
           <div class="event-detail-footer">
+            <!--
+              Qui il template separa due casi:
+              - se l'evento non e' cancellabile dalla segreteria, mostra solo una nota informativa;
+              - se invece e' una vera eccezione istruttore eliminabile, mostra il bottone.
+              [disabled] blocca il click mentre la cancellazione e' in corso,
+              mentre gli @if interni cambiano icona o spinner in base allo stato deleting().
+            -->
             @if (!isDeletableInstructorException(selectedEvent)) {
               <p class="readonly-note">Questo evento è solo consultabile dalla segreteria.</p>
             }
