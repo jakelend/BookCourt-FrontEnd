@@ -2,12 +2,11 @@
   <main class="auth-card auth-card-small">
     <header class="auth-header">
       <button type="button" class="brand-button" (click)="onPreview()">BookCourt</button>
-      <p>Elevate Your Game</p>
     </header>
 
     <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" novalidate class="auth-form">
       <div class="form-field">
-        <label for="email">Email address</label>
+        <label for="email">Indirizzo Email</label>
 
         <div class="input-wrapper">
           <input
@@ -85,8 +84,8 @@
     </form>
 
     <footer class="auth-footer">
-      <span>Don't have an account?</span>
-      <button type="button" (click)="onRegister()">Register here</button>
+      <span>Non hai un account?</span>
+      <button type="button" (click)="onRegister()">Registarti</button>
     </footer>
 
     <div class="back-link-wrapper">
