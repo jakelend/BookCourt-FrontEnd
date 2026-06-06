@@ -97,6 +97,8 @@ export class BookingConfirmationComponent implements OnInit {
   ngOnInit(): void {
     this.loadConfirmationContext();
 
+    // Questa pagina ha senso solo subito dopo la conferma:
+    // se manca il riepilogo salvato torno all'inizio del flusso.
     if (!this.prenotazione()) {
       void this.router.navigate(['/dashboard/prenotazioni']);
     }
@@ -157,6 +159,8 @@ export class BookingConfirmationComponent implements OnInit {
 
     if (rawReservation) {
       try {
+        // Mi salvo l'oggetto completo,
+        // cosi uso direttamente i dati del backend senza ricostruirli.
         this.prenotazione.set(JSON.parse(rawReservation) as PrenotazioneConfermataResponseDto);
       } catch (error) {
         console.error('Prenotazione confermata non leggibile:', error);

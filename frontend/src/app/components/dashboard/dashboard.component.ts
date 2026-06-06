@@ -12,4 +12,7 @@ import { Component } from '@angular/core';
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.css',
 })
-export class DashboardComponent {}
+export class DashboardComponent {
+  // Qui non c'e logica vera:
+  // il componente serve solo come punto di appoggio del layout autenticato.
+}

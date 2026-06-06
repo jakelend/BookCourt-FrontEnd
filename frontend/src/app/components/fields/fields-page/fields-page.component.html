@@ -12,6 +12,8 @@
   </header>
 
   @if (!loading && !errorMessage && fields.length) {
+    <!-- Il filtro lavora sulla lista gia caricata,
+    quindi non fa nuove chiamate ogni volta. -->
     <section class="list-controls" aria-label="Filtro disponibilità campi">
       <span>Disponibilità</span>
       <div class="availability-filter" role="group" aria-label="Filtra campi per disponibilità">
@@ -81,6 +83,8 @@
   }
 
   @if (!loading && !errorMessage && filteredFields.length) {
+    <!-- Le card mandano gli eventi al padre,
+    che poi gestisce navigazione e chiamate backend. -->
     <section class="fields-grid" aria-label="Lista campi">
       @for (field of filteredFields; track trackByFieldId($index, field)) {
         <app-field-card

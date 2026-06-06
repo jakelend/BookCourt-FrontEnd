@@ -107,6 +107,8 @@ export class FieldCardComponent {
   toggleActive(event: Event): void {
     event.stopPropagation();
 
+    // Leggo lo stato della checkbox
+    // e lo passo al padre, che poi decide la chiamata API.
     const input = event.target as HTMLInputElement;
 
     this.toggleField.emit({

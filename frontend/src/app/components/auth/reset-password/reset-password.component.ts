@@ -63,6 +63,8 @@ export class ResetPasswordComponent implements OnInit {
     const tokenFromPath = this.route.snapshot.paramMap.get('token');
     const tokenFromQuery = this.route.snapshot.queryParamMap.get('token');
 
+    // Leggo il token sia dal path sia dalla query,
+    // cosi il componente funziona in entrambi i casi.
     this.token = tokenFromPath || tokenFromQuery || '';
 
     if (!this.token) {
@@ -102,6 +104,8 @@ export class ResetPasswordComponent implements OnInit {
     }
 
     const payload: ResetPasswordRequestDto = {
+      // Mando entrambe le password:
+      // il controllo lo faccio gia nel form, ma anche il backend le vuole.
       token: this.token,
       passwordNuova: this.nuovaPassword?.value ?? '',
       ripetutaPasswordNuova: this.confermaNuovaPassword?.value ?? '',

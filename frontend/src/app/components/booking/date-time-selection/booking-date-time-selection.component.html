@@ -130,6 +130,8 @@
               }
 
               @for (event of calendarEventViews(); track trackByCalendarEvent($index, event)) {
+                <!-- Ogni evento viene posizionato con percentuali,
+                cosi il calendario si comporta come una timeline verticale. -->
                 <article
                   class="calendar-event field-event"
                   [ngClass]="event.cssClass"
@@ -223,6 +225,7 @@
           <!-- Il form qui sotto contiene i due select per la scelta dell'ora di inizio e fine prenotazione,
           disabilitati quando il calendario è in caricamento, quando si sta rilasciando un lock, quando il giorno
           è chiuso o quando non ci sono opzioni disponibili -->
+          <!-- Le select mostrano solo orari gia filtrati dal component. -->
           <form class="booking-time-form">
             <div class="form-grid two-columns">
               <label>
@@ -345,6 +348,7 @@
           </div>
 
           <div class="booking-actions">
+            <!-- Vado avanti solo se data, orario e lock sono tutti coerenti. -->
             <button
               type="button"
               class="back-button"

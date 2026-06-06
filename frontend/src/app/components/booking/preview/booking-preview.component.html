@@ -83,6 +83,8 @@
           </div>
         </section>
 
+        <!-- Questo pezzo compare solo per tennis e padel,
+        perche il calcetto qui non ha extra. -->
         @if (isExtraSport()) {
           <section class="section-card">
             <div class="section-heading">
@@ -167,6 +169,7 @@
             </div>
           }
 
+          <!-- I costi arrivano gia calcolati dal backend. -->
           @if (preview(); as costi) {
             <div class="cost-row">
               <span>Costo campo</span>
@@ -222,6 +225,8 @@
           </div>
 
           <div class="booking-actions">
+            <!-- Posso confermare solo se il riepilogo c'e
+            e il lock e ancora in uno stato valido. -->
             <button
               type="button"
               class="back-button"

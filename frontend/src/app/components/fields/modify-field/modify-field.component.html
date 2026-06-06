@@ -30,6 +30,8 @@
               Aggiungi immagini
             </button>
           </div>
+          <!-- Anche qui tengo nascosto l'input file
+          e gestisco tutto dai pulsanti del template. -->
           <input
             #fieldImagesInput
             type="file"
@@ -39,6 +41,8 @@
             (change)="onImagesSelected($event)"
           />
           @if (imagePreviews().length) {
+            <!-- Qui dentro ci sono sia immagini gia salvate
+            sia file nuovi aggiunti in locale. -->
             <div class="images-grid">
               @for (
                 preview of imagePreviews();
@@ -70,6 +74,8 @@
             </p>
           }
         </section>
+        <!-- Il form mette insieme campi testuali, numerici e booleani,
+        che poi trasformo nel DTO da mandare al backend. -->
         <section class="form-grid" aria-label="Dati campo">
           <label class="form-field">
             <span>Nome campo</span>

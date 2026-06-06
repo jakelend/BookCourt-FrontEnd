@@ -94,6 +94,8 @@ export class RegisterComponent {
     }
 
     const payload: RegisterClienteRequestDto = {
+      // Tolgo eventuali spazi iniziali e finali,
+      // cosi al backend mando dati gia puliti.
       nome: String(this.nome?.value ?? '').trim(),
       cognome: String(this.cognome?.value ?? '').trim(),
       email: String(this.email?.value ?? '').trim(),

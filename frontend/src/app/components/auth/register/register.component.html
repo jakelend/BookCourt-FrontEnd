@@ -6,6 +6,8 @@
     </header>
 
     <form [formGroup]="registerForm" (ngSubmit)="onSubmit()" novalidate class="auth-form">
+      <!-- Nome e cognome stanno nello stesso blocco
+      perche sono i dati anagrafici base. -->
       <div class="form-grid">
         <div class="form-field">
           <label for="nome">Nome</label>
@@ -93,6 +95,8 @@
       </div>
 
       <div class="form-grid">
+        <!-- La conferma password la controllo insieme alla password,
+        non come campo separato. -->
         <div class="form-field">
           <label for="password">Password</label>
 
@@ -170,6 +174,8 @@
         </div>
       }
 
+      <!-- Il bottone si attiva solo quando il form e valido
+      e non c'e gia una richiesta partita. -->
       <button type="submit" class="primary-button" [disabled]="registerForm.invalid || isLoading">
         @if (!isLoading) {
           <span>Registrati</span>

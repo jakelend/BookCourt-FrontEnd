@@ -95,6 +95,8 @@ export class ChangePasswordComponent {
 
     const currentUser = this.authService.getCurrentUser();
 
+    // Recupero l'email dalla sessione,
+    // perche il backend deve sapere su quale account cambiare la password.
     if (!currentUser?.email) {
       this.changePasswordError = 'Sessione non valida. Effettua di nuovo il login.';
       return;

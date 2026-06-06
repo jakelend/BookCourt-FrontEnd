@@ -47,6 +47,8 @@
 
     @if (showFields()) {
       <section class="fields-grid" aria-label="Campi disponibili">
+        <!-- La card e cliccabile tutta,
+        mentre i bottoni interni servono per azioni diverse. -->
         @for (field of fields(); track trackByFieldId(i, field); let i = $index) {
           <article
             class="field-card"
@@ -124,6 +126,8 @@
       </section>
     }
 
+    <!-- La galleria la carico solo quando serve,
+    cosi all'inizio non scarico tutto. -->
     @if (isGalleryOpen()) {
       <section
         class="field-gallery-overlay"
@@ -183,6 +187,7 @@
     }
 
     <footer class="booking-actions">
+      <!-- Tornando indietro mi porto dietro lo sport gia scelto. -->
       <button type="button" class="back-button" (click)="goBack()">
         <span class="material-symbols-outlined">arrow_back</span>
         <span>Torna indietro</span>

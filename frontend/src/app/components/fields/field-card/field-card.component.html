@@ -56,12 +56,14 @@
       </div>
     </div>
 
+    <!-- In selezione questa card serve per scegliere il campo. -->
     @if (isSelectionMode) {
       <button type="button" class="selection-button" [disabled]="!field.attivo" (click)="select()">
         Seleziona campo
       </button>
     }
 
+    <!-- In gestione invece il manager puo attivare, disattivare o modificare il campo. -->
     @if (!isSelectionMode) {
       <div class="active-row">
         <span>{{ field.attivo ? 'Attivo' : 'Inattivo' }}</span>

@@ -28,6 +28,8 @@
 
   @if (!initializingChat) {
     <section class="chat-shell" [class.client-shell]="isCliente">
+      <!-- Per segretaria e manager la pagina e divisa in due:
+      lista a sinistra e chat a destra. -->
       @if (isCentroReadRole) {
         <aside class="conversation-list">
           <div class="conversation-list-header">
@@ -83,6 +85,8 @@
               <span class="readonly-badge">Solo lettura</span>
             }
           </header>
+          <!-- Questo contenitore mi serve anche nel TS
+          per portare lo scroll in basso quando arrivano messaggi nuovi. -->
           <div #messagesContainer class="messages-container">
             @if (loadingMessages) {
               <div class="empty-state">Caricamento messaggi...</div>
@@ -106,6 +110,8 @@
               </article>
             }
           </div>
+          <!-- Solo chi puo scrivere vede il composer attivo.
+          Il manager resta in sola lettura. -->
           @if (canWrite) {
             <footer class="composer">
               <textarea

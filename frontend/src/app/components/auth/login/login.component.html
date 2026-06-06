@@ -58,7 +58,8 @@
           </button>
         </div>
 
-        <!-- Se i campi sono stati toccati o il form è stato inviato, mostro errori di validazione -->
+        <!-- Mostro gli errori solo dopo che l'utente interagisce col form
+        o prova a inviarlo. -->
         @if ((submitted() || password?.touched) && password?.errors?.['required']) {
           <p class="field-error">Inserisci la password.</p>
         }
@@ -73,6 +74,8 @@
         </div>
       }
 
+      <!-- Tengo il pulsante disabilitato se il form non va bene
+      o se la richiesta e ancora in corso. -->
       <button type="submit" class="primary-button" [disabled]="loginForm.invalid || isLoading()">
         @if (!isLoading()) {
           <span>Login</span>

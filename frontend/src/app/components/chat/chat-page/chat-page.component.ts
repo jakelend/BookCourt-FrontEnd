@@ -85,6 +85,8 @@ export class ChatPageComponent implements OnInit, OnDestroy {
       },
     });
 
+    // L'avvio cambia in base al ruolo:
+    // il cliente entra nella sua chat, il centro vede la lista conversazioni.
     if (this.isCliente) {
       this.loadClienteConversation();
       return;
@@ -296,6 +298,8 @@ export class ChatPageComponent implements OnInit, OnDestroy {
     this.messagesSignal.set([]);
     this.websocketError = '';
 
+    // Mi aggancio prima al realtime e poi carico lo storico,
+    // cosi rischio meno di perdermi messaggi nel mezzo.
     this.subscribeRealtimeForConversation(conversation.id);
     this.loadMessages(conversation.id);
   }
@@ -554,6 +558,8 @@ export class ChatPageComponent implements OnInit, OnDestroy {
         (existingMessage) => existingMessage.id === message.id,
       );
 
+      // Questo controllo serve soprattutto con REST + WebSocket:
+      // lo stesso messaggio puo arrivare due volte.
       if (alreadyExists) {
         return currentMessages;
       }
@@ -571,6 +577,8 @@ export class ChatPageComponent implements OnInit, OnDestroy {
     let conversationFound = false;
 
     this.conversationsSignal.update((currentConversations) => {
+      // Aggiorno anteprima e orario cosi la conversazione torna in alto,
+      // come succede in una chat normale.
       const updatedConversations = currentConversations.map((conversation) => {
         if (conversation.id !== message.conversazioneId) {
           return conversation;

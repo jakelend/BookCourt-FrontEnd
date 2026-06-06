@@ -186,6 +186,8 @@ export class BookingFieldSelectionComponent implements OnInit {
       return;
     }
 
+    // Salvo sia id sia nome:
+    // l'id serve per la logica, il nome per i riepiloghi dopo.
     this.selectedFieldId.set(field.id);
 
     sessionStorage.setItem('booking.selectedFieldId', String(field.id));
@@ -211,6 +213,8 @@ export class BookingFieldSelectionComponent implements OnInit {
 
     this.prepareFieldGallery(field);
 
+    // Le altre immagini le carico solo quando servono,
+    // cosi la schermata iniziale resta piu leggera.
     this.bookingService
       .getImmaginiCampo(field.id)
       .pipe(
@@ -470,6 +474,8 @@ export class BookingFieldSelectionComponent implements OnInit {
       return;
     }
 
+    // Se il campo non c'e piu nella lista,
+    // pulisco la vecchia selezione per non lasciare dati incoerenti.
     this.selectedFieldId.set(null);
     sessionStorage.removeItem('booking.selectedFieldId');
     sessionStorage.removeItem('booking.selectedFieldName');

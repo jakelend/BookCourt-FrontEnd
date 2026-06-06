@@ -89,6 +89,8 @@ export class CancelBookingsComponent implements OnInit {
       `Vuoi annullare la prenotazione del ${this.formatDate(prenotazione.inizio)} alle ${this.formatTime(prenotazione.inizio)}?`,
     );
 
+    // Qui basta anche la confirm del browser,
+    // l'importante e evitare annullamenti partiti per sbaglio.
     if (!conferma) {
       return;
     }

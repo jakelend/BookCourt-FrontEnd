@@ -41,6 +41,8 @@
 
     @if (!isLoading() && prenotazioni().length > 0) {
       <section class="booking-grid">
+        <!-- Tengo aperto un solo form alla volta
+        usando l'id della prenotazione selezionata. -->
         @for (prenotazione of prenotazioni(); track trackByPrenotazioneId($index, prenotazione)) {
           <article class="booking-card" [class.open]="isFormOpen(prenotazione.prenotazioneId)">
             <div class="booking-card-header">
@@ -91,12 +93,14 @@
               <span class="material-symbols-outlined">rate_review</span>
               <span>Lascia feedback</span>
             </button>
+            <!-- Il form compare solo sulla prenotazione attiva. -->
             @if (isFormOpen(prenotazione.prenotazioneId)) {
               <form class="feedback-form">
                 <div class="form-heading">
                   <h3>Scrivi recensione</h3>
                   <p>Valuta l’esperienza vissuta durante la prenotazione.</p>
                 </div>
+                <!-- Ogni stella aggiorna direttamente il voto scelto. -->
                 <div class="rating-row" role="group" aria-label="Valutazione feedback">
                   @for (rating of ratingOptions; track rating) {
                     <button

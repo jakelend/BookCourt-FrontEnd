@@ -125,6 +125,8 @@ export class PendingFeedbackBookingsComponent implements OnInit {
       return;
     }
 
+    // Quando apro il form riparto pulito,
+    // cosi non mi porto dietro voto o testo della prenotazione prima.
     this.selectedPrenotazioneId.set(prenotazione.prenotazioneId);
     this.valutazione.set(5);
     this.commento.set('');
@@ -171,6 +173,8 @@ export class PendingFeedbackBookingsComponent implements OnInit {
     this.errorMessage.set('');
     this.feedbackMessage.set('');
 
+    // Tolgo spazi inutili dal commento,
+    // ma non lo rendo obbligatorio: anche il solo voto ha senso.
     this.feedbackService
       .creaFeedback(prenotazione.prenotazioneId, {
         valutazione: this.valutazione(),

@@ -366,6 +366,8 @@ export class BookingDateTimeSelectionComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.loadBookingContext();
 
+    // Se mancano sport o campo vuol dire che il flusso e stato aperto fuori ordine,
+    // quindi torno allo step prima.
     if (!this.selectedSport() || !this.selectedFieldId()) {
       void this.router.navigate(['/dashboard/prenotazioni/campi']);
       return;
@@ -481,6 +483,8 @@ export class BookingDateTimeSelectionComponent implements OnInit, OnDestroy {
 
     this.persistSelectedDateTime();
 
+    // Nel calcetto non ci sono extra da scegliere,
+    // quindi vado dritto al riepilogo.
     if (this.selectedSport() === 'CALCETTO') {
       this.clearBookingExtrasForCalcetto();
       this.createDateTimeFieldLockThenNavigate(['/dashboard/prenotazioni/riepilogo']);
@@ -1112,6 +1116,8 @@ export class BookingDateTimeSelectionComponent implements OnInit, OnDestroy {
     const availableStartTimes = this.startTimeOptions();
 
     if (availableStartTimes.length === 0) {
+      // Se non c'e nessun orario valido lascio il campo vuoto,
+      // cosi si capisce subito che non si puo andare avanti.
       this.selectedStartTime.set('');
       return;
     }
@@ -1137,6 +1143,8 @@ export class BookingDateTimeSelectionComponent implements OnInit, OnDestroy {
 
   /** Verifica che il range selezionato non si sovrapponga a eventi bloccanti. */
   private isIntervalAvailable(start: Date, end: Date): boolean {
+    // Lo slot non va bene anche se si sovrappone solo in parte
+    // a un evento che blocca il calendario.
     return !this.getBlockingEvents().some((event) => {
       const eventStart = new Date(event.inizio);
       const eventEnd = new Date(event.fine);

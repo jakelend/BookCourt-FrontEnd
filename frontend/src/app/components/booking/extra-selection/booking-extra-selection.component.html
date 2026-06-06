@@ -78,6 +78,8 @@
               </div>
             }
             @if (!isLoadingInstructors() && canUseInstructorWithSelectedDuration()) {
+              <!-- "Nessun istruttore" e una scelta vera,
+              non solo un valore di default. -->
               <div class="no-instructor-card" [class.selected]="selectedInstructorId() === null">
                 <div>
                   <h3>Nessun istruttore</h3>
@@ -193,6 +195,7 @@
             </div>
           </div>
 
+          <!-- Ogni pulsante aggiorna subito il numero di racchette scelto. -->
           <div class="racket-options" role="group" aria-label="Numero racchette da noleggiare">
             @for (option of racketOptions; track trackByRacketOption($index, option)) {
               <button
@@ -229,6 +232,8 @@
         </div>
 
         <div class="booking-actions">
+          <!-- Qui salvo solo gli extra e passo al riepilogo,
+          non confermo ancora la prenotazione. -->
           <button
             type="button"
             class="back-button"

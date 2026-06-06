@@ -97,6 +97,8 @@ export class BookingSportSelectionComponent {
     this.selectedSport = sport.code;
     sessionStorage.setItem('booking.selectedSport', sport.code);
 
+    // Metto lo sport anche nei query param,
+    // cosi la pagina dopo riesce a recuperarlo anche con refresh.
     void this.router.navigate(['/dashboard/prenotazioni/campi'], {
       queryParams: { sport: sport.code },
     });

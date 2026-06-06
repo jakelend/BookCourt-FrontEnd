@@ -153,6 +153,8 @@ export class BookingExtraSelectionComponent implements OnInit {
     this.loadBookingContext();
     this.restoreSavedExtras();
 
+    // Se apro questa pagina senza i dati minimi del flusso,
+    // torno allo step orario dove quei dati vengono rimessi a posto.
     if (!this.hasRequiredBookingContext()) {
       void this.router.navigate(['/dashboard/prenotazioni/orario']);
       return;
@@ -361,6 +363,8 @@ export class BookingExtraSelectionComponent implements OnInit {
   private loadAvailableInstructors(recreateBaseLockAfterLoad = false): void {
     const campoId = this.selectedFieldId();
 
+    // Se la durata non va bene per l'istruttore,
+    // evito proprio la chiamata perche so gia che non servirebbe.
     if (!this.canUseInstructorWithSelectedDuration()) {
       this.instructors.set([]);
       this.selectedInstructorId.set(null);
@@ -550,6 +554,8 @@ export class BookingExtraSelectionComponent implements OnInit {
     const instructor = this.selectedInstructor();
 
     if (!instructor) {
+      // Salvo in modo esplicito il caso "senza istruttore",
+      // cosi negli step dopo non devo interpretare valori mancanti.
       sessionStorage.setItem('booking.conIstruttore', 'false');
       sessionStorage.removeItem('booking.selectedInstructorId');
       sessionStorage.removeItem('booking.selectedInstructorName');

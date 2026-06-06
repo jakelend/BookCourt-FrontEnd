@@ -180,6 +180,8 @@ export class BookingPreviewComponent implements OnInit {
   ngOnInit(): void {
     this.loadBookingContext();
 
+    // Senza questi dati non posso ricostruire lock e riepilogo,
+    // quindi torno alla scelta orario.
     if (!this.hasRequiredBookingContext()) {
       void this.router.navigate(['/dashboard/prenotazioni/orario']);
       return;
@@ -244,6 +246,8 @@ export class BookingPreviewComponent implements OnInit {
 
     this.isConfirming.set(true);
 
+    // Qui il lock diventa una prenotazione vera,
+    // quindi prima controllo che esista ancora e non sia scaduto.
     this.bookingService
       .confermaPrenotazione({
         lockId,
@@ -400,6 +404,8 @@ export class BookingPreviewComponent implements OnInit {
       storedLockId > 0 &&
       storedSignature === currentSignature
     ) {
+      // Se il lock salvato corrisponde ancora alla scelta attuale,
+      // lo riuso e non ne creo un altro.
       this.loadPreviewFromLock(storedLockId, true);
       return;
     }

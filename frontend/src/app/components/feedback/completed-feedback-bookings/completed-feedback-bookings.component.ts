@@ -51,6 +51,8 @@ export class CompletedFeedbackBookingsComponent implements OnInit {
     this.isLoading.set(true);
     this.errorMessage.set('');
 
+    // Qui non faccio molte trasformazioni:
+    // salvo i dati e lascio al template il compito di mostrarli.
     this.feedbackService
       .getMieiFeedback()
       .pipe(finalize(() => this.isLoading.set(false)))
@@ -82,6 +84,8 @@ export class CompletedFeedbackBookingsComponent implements OnInit {
    */
   getComment(feedback: FeedbackPrenotazioneResponseDto): string {
     const commento = feedback.commento?.trim();
+    // Se manca il commento metto un testo chiaro,
+    // invece di lasciare la card mezza vuota.
     return commento ? commento : 'Nessun commento inserito.';
   }
 

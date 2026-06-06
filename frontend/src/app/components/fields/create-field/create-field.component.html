@@ -28,6 +28,8 @@
           </button>
         </div>
 
+        <!-- Tengo nascosto l'input file
+        e lo apro dai pulsanti del template. -->
         <input
           #fieldImagesInput
           type="file"
@@ -38,6 +40,8 @@
         />
 
         @if (imagePreviews().length) {
+          <!-- Le preview mi fanno controllare subito le immagini
+          prima dell'invio vero al backend. -->
           <div class="images-grid">
             @for (
               preview of imagePreviews();
@@ -71,6 +75,8 @@
         }
       </section>
 
+      <!-- Ogni input ha il suo errore,
+      sia per i controlli locali sia per quelli che possono arrivare dal backend. -->
       <section class="form-grid" aria-label="Dati campo">
         <label class="form-field">
           <span>Nome campo</span>

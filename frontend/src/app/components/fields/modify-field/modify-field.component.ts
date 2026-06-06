@@ -118,6 +118,8 @@ export class ModifyFieldComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     const fieldId = Number(this.route.snapshot.paramMap.get('id'));
 
+    // Mi servono sia i dati del campo sia le immagini,
+    // quindi con forkJoin aspetto entrambe le risposte.
     forkJoin({
       fields: this.managerService.getCampi(),
       images: this.managerService.getImmaginiCampo(fieldId),
@@ -323,6 +325,8 @@ export class ModifyFieldComponent implements OnInit, OnDestroy {
     }
 
     if (this.imagePreviews().length <= 1) {
+      // Anche in modifica tengo almeno una immagine,
+      // per non lasciare il campo senza copertina.
       this.setFieldError('images', 'Il campo deve avere almeno una immagine.');
       return;
     }
@@ -332,6 +336,8 @@ export class ModifyFieldComponent implements OnInit, OnDestroy {
     }
 
     if (!preview.uploaded && preview.existingImageId != null) {
+      // Le immagini vecchie non le elimino subito davvero:
+      // mi salvo l'id e lo mando al backend al submit.
       this.deletedExistingImageIds.add(preview.existingImageId);
     }
 

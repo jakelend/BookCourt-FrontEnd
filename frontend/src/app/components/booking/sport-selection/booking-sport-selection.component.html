@@ -26,6 +26,8 @@
     </header>
 
     <section class="sports-grid" aria-label="Scelta dello sport">
+      <!-- Cliccando una card salvo lo sport
+      e passo subito allo step dopo. -->
       @for (sport of sports; track trackBySportCode($index, sport)) {
         <button
           type="button"
@@ -43,6 +45,8 @@
       }
     </section>
 
+    <!-- Se torno indietro nel flusso mostro anche lo sport
+    che era rimasto salvato. -->
     @if (selectedSport) {
       <p class="selected-message">
         Sport selezionato:

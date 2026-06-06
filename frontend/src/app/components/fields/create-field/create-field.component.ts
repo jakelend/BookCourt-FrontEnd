@@ -106,6 +106,8 @@ export class CreateFieldComponent implements OnDestroy {
     const hourlyRateRaw = String(formData.get('hourlyRate') ?? '').trim();
     const costoOrario = this.toHourlyRate(hourlyRateRaw);
 
+    // Prima controllo i casi piu semplici lato frontend,
+    // cosi evito chiamate inutili per errori gia evidenti.
     const isValid = this.validateForm({
       nome,
       sport,
@@ -130,6 +132,8 @@ export class CreateFieldComponent implements OnDestroy {
       .creaCampo(payload, this.imagePreviews().map((preview) => preview.file))
       .pipe(
         switchMap(() =>
+          // Dopo la creazione provo anche ad aggiornare la lista campi,
+          // ma se questo refresh fallisce la creazione resta comunque valida.
           this.managerService.refreshCampi().pipe(
             catchError(() => of([])),
           ),
@@ -231,6 +235,8 @@ export class CreateFieldComponent implements OnDestroy {
     }
 
     for (const file of files) {
+      // Controllo formato e dimensione prima di creare la preview,
+      // cosi non mostro file che poi il backend rifiuterebbe.
       if (!['image/jpeg', 'image/png'].includes(file.type)) {
         input.value = '';
         this.setFieldError('images', 'Carica solo file JPG o PNG.');

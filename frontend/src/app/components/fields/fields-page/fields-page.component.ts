@@ -98,6 +98,8 @@ export class FieldsPageComponent implements OnInit, OnDestroy {
     this.toggleError = '';
     const previousActive = event.field.attivo;
 
+    // Se sullo stesso campo c'era gia una richiesta in corso la chiudo:
+    // mi interessa tenere valida solo l'ultima scelta fatta.
     this.toggleRequests.get(event.field.id)?.unsubscribe();
     this.setFieldActive(event.field.id, event.nextActive);
 
@@ -185,6 +187,8 @@ export class FieldsPageComponent implements OnInit, OnDestroy {
    * Aggiorna localmente lo stato del campo dopo una risposta positiva del backend.
    */
   private setFieldActive(id: number, active: boolean): void {
+    // Aggiorno subito la UI;
+    // se il backend fallisce rimetto lo stato di prima.
     this.fields = this.fields.map((field) =>
       field.id === id
         ? {

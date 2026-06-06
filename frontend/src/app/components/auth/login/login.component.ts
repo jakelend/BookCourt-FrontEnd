@@ -69,6 +69,8 @@ export class LoginComponent {
       password: this.password?.value ?? '',
     };
 
+    // Da qui blocco il form finche non arriva la risposta,
+    // cosi non parte due volte la stessa richiesta.
     this.isLoading.set(true);
 
     this.authService
@@ -90,6 +92,8 @@ export class LoginComponent {
       .subscribe({
         next: (profile) => {
           if (profile) {
+            // La foto non serve per il login in se,
+            // ma la aggiorno subito cosi header e sidebar restano allineati.
             this.authService.updateCurrentUserProfilePhoto(profile.fotoProfiloUrl);
           }
 

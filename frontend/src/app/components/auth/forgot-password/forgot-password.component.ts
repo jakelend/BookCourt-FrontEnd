@@ -58,6 +58,7 @@ export class ForgotPasswordComponent {
     }
 
     const payload: ForgotPasswordRequestDto = {
+      // Tolgo spazi inutili dall'email prima di inviarla.
       email: String(this.email?.value ?? '').trim(),
     };
 
