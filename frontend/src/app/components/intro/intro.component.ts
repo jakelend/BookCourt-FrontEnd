@@ -61,7 +61,6 @@ export class IntroComponent {
    */
   readonly sportCards: SportPreviewCard[] = [
     {
-      label: 'Calcetto',
       title: 'Campi da Calcio',
       description:
         'Prenota campi in erba sintetica premium per partite tra amici e tornei settimanali.',
@@ -70,7 +69,6 @@ export class IntroComponent {
       layoutClass: 'sport-card-large',
     },
     {
-      label: 'In Tendenza',
       title: 'Campi da Padel',
       description: 'Scopri lo sport in più rapida crescita con campi moderni e manto perfetto.',
       imageUrl: '/padel-bookcourt.jpg',

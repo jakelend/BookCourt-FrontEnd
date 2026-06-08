@@ -338,14 +338,17 @@
 }
 
 .management-inner {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  align-items: center;
-  gap: 64px;
+  display: flex;
+  justify-content: center;
+}
+
+.management-content {
+  width: min(820px, 100%);
 }
 
 .management-content h2 {
   margin-top: 18px;
+  text-align: center;
 }
 
 .management-description {
@@ -354,6 +357,7 @@
   font-size: 18px;
   line-height: 1.7;
   font-weight: 600;
+  text-align: center;
 }
 
 .feature-list {
@@ -556,7 +560,7 @@
   }
 
   .management-inner {
-    gap: 40px;
+    justify-content: center;
   }
 }
 
