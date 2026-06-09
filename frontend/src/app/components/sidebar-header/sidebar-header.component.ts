@@ -146,12 +146,14 @@ export class SidebarHeaderComponent implements OnInit, OnDestroy {
     this.preloadRoleData();
     this.loadCurrentProfile();
     this.startBookingLockTimer();
+    window.addEventListener('bookcourt-user-updated', this.handleUserUpdated);
   }
 
   /** Pulisce timer e listener globali quando il componente viene distrutto. */
   ngOnDestroy(): void {
     this.lockTimerSubscription?.unsubscribe();
     window.removeEventListener('booking-lock-updated', this.handleBookingLockUpdated);
+    window.removeEventListener('bookcourt-user-updated', this.handleUserUpdated);
   }
 
   /** Restituisce solo le voci di menu compatibili con il ruolo corrente. */
@@ -348,6 +350,14 @@ export class SidebarHeaderComponent implements OnInit, OnDestroy {
   /** Listener collegato all'evento custom emesso quando cambia il lock prenotazione. */
   private readonly handleBookingLockUpdated = (): void => {
     this.updateBookingLockTimer();
+  };
+
+  /** Listener collegato all'evento custom emesso quando i dati dell'utente vengono aggiornati. */
+  private readonly handleUserUpdated = (): void => {
+    const user = this.authService.getCurrentUser();
+    if (user && this.profile) {
+      this.profile = { ...this.profile, nome: user.nome, cognome: user.cognome, email: user.email };
+    }
   };
 
   /** Avvia il timer periodico e registra anche il listener custom sul browser. */
