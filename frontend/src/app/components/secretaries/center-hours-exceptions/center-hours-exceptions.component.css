@@ -370,6 +370,7 @@ textarea:disabled {
   min-height: 0;
   display: grid;
   grid-template-columns: minmax(0, 1fr) 380px;
+  grid-template-rows: 1fr;
   gap: 16px;
   align-items: stretch;
 }
