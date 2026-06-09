@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component } from '@angular/core';
+import { Component, signal } from '@angular/core';
 import {
   AbstractControl,
   FormBuilder,
@@ -28,13 +28,13 @@ export class ChangePasswordComponent {
   submitted = false;
 
   /** Indica se è in corso la chiamata HTTP di cambio password. */
-  isLoading = false;
+  readonly isLoading = signal(false);
 
   /** Messaggio di errore mostrato nella pagina. */
-  changePasswordError = '';
+  readonly changePasswordError = signal('');
 
   /** Messaggio di successo mostrato dopo il cambio password. */
-  changePasswordSuccess = '';
+  readonly changePasswordSuccess = signal('');
 
   /** Controlla la visibilità della password corrente. */
   showCurrentPassword = false;
@@ -58,7 +58,7 @@ export class ChangePasswordComponent {
         newPassword: ['', [Validators.required, Validators.minLength(6), Validators.maxLength(72)]],
         confirmNewPassword: ['', [Validators.required]],
       },
-      { validators: this.passwordsMatchValidator },
+      { validators: [this.passwordsMatchValidator, this.newPasswordDifferentValidator] },
     );
   }
 
@@ -85,8 +85,8 @@ export class ChangePasswordComponent {
    */
   onSubmit(): void {
     this.submitted = true;
-    this.changePasswordError = '';
-    this.changePasswordSuccess = '';
+    this.changePasswordError.set('');
+    this.changePasswordSuccess.set('');
 
     if (this.changePasswordForm.invalid) {
       this.changePasswordForm.markAllAsTouched();
@@ -98,11 +98,11 @@ export class ChangePasswordComponent {
     // Recupero l'email dalla sessione,
     // perche il backend deve sapere su quale account cambiare la password.
     if (!currentUser?.email) {
-      this.changePasswordError = 'Sessione non valida. Effettua di nuovo il login.';
+      this.changePasswordError.set('Sessione non valida. Effettua di nuovo il login.');
       return;
     }
 
-    this.isLoading = true;
+    this.isLoading.set(true);
 
     this.authService
       .changePassword({
@@ -111,15 +111,15 @@ export class ChangePasswordComponent {
         passwordNuova: String(this.newPassword?.value ?? ''),
         ripetutaPasswordNuova: String(this.confirmNewPassword?.value ?? ''),
       })
-      .pipe(finalize(() => (this.isLoading = false)))
+      .pipe(finalize(() => this.isLoading.set(false)))
       .subscribe({
         next: (response) => {
-          this.changePasswordSuccess = response.message || 'Password modificata correttamente.';
+          this.changePasswordSuccess.set(response.message || 'Password modificata correttamente.');
           this.changePasswordForm.reset();
           this.submitted = false;
         },
         error: (error) => {
-          this.changePasswordError = this.extractErrorMessage(error);
+          this.changePasswordError.set(this.extractErrorMessage(error));
         },
       });
   }
@@ -154,6 +154,23 @@ export class ChangePasswordComponent {
     }
 
     return newPassword === confirmNewPassword ? null : { passwordsMismatch: true };
+  }
+
+  /**
+   * Validatore custom che impedisce di impostare come nuova password quella già in uso.
+   *
+   * @param control FormGroup contenente i campi currentPassword e newPassword.
+   * @returns null se sono diverse, altrimenti errore passwordSameAsCurrent mostrato in UI.
+   */
+  private newPasswordDifferentValidator(control: AbstractControl): ValidationErrors | null {
+    const currentPassword = control.get('currentPassword')?.value;
+    const newPassword = control.get('newPassword')?.value;
+
+    if (!currentPassword || !newPassword) {
+      return null;
+    }
+
+    return currentPassword === newPassword ? { passwordSameAsCurrent: true } : null;
   }
 
   /**

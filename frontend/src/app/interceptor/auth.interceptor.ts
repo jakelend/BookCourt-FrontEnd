@@ -79,6 +79,10 @@ export class AuthInterceptor implements HttpInterceptor {
     const isUnauthorized = error.status === 401;
     const isLoginRequest = url.includes('/api/auth/login');
 
-    return isUnauthorized && !isLoginRequest;
+    // Un 401 su cambia-password significa "password corrente sbagliata", non "JWT scaduto":
+    // non va trattato come sessione invalida
+    const isChangePasswordRequest = url.includes('/api/auth/cambia-password');
+
+    return isUnauthorized && !isLoginRequest && !isChangePasswordRequest;
   }
 }
