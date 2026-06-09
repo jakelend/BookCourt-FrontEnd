@@ -1,12 +1,12 @@
 # BookCourt Frontend
 
-BookCourt Frontend e la single page application che fa da interfaccia alla web
+BookCourt Frontend è la single page application che fa da interfaccia alla web
 app BookCourt per la gestione di un centro sportivo. Permette di prenotare campi
 da tennis, padel e calcetto, gestire istruttori, segretarie, manutenzioni,
-disponibilita a calendario, chat operativa e funziona con ruoli diversi per
+disponibilità a calendario, chat operativa e funziona con ruoli diversi per
 clienti e staff.
 
-E sviluppata in Angular e dialoga con il backend Spring Boot tramite chiamate
+È sviluppata in Angular e dialoga con il backend Spring Boot tramite chiamate
 REST e WebSocket per la chat.
 
 ## Prerequisiti
@@ -15,9 +15,10 @@ Prima di avviare il progetto servono:
 
 - Node.js 20 o superiore installato e disponibile nel `PATH`.
 - npm (incluso con Node.js) per la gestione delle dipendenze.
+- Angular 21.x (gestito automaticamente da `npm install`).
 - Il backend BookCourt in esecuzione, tipicamente su `http://localhost:8080`.
 
-Angular CLI non e obbligatorio installarlo globalmente: viene usato tramite gli
+Angular CLI non è obbligatorio installarlo globalmente: viene usato tramite gli
 script npm del progetto (`npm start`, `npm run build`, `npm test`).
 
 ## Installazione delle dipendenze
@@ -65,7 +66,7 @@ In alternativa, con Angular CLI:
 ng serve
 ```
 
-L'applicazione e disponibile a:
+L'applicazione è disponibile a:
 
 ```text
 http://localhost:4200
@@ -101,7 +102,7 @@ L'applicazione gestisce quattro ruoli, ognuno con funzioni e rotte dedicate:
 | Cliente     | Flusso di prenotazione, annullamento, feedback, gestione account; chat.   |
 
 Le rotte private sono protette da `AuthGuard` (autenticazione) e da `RoleGuard`
-(autorizzazione in base al ruolo). Gli utenti gia autenticati non possono
+(autorizzazione in base al ruolo). Gli utenti già autenticati non possono
 accedere alle pagine pubbliche di login e registrazione grazie a `GuestGuard`.
 
 L'autenticazione si basa su token JWT: dopo il login il token viene allegato
@@ -109,22 +110,29 @@ automaticamente alle richieste HTTP protette tramite `AuthInterceptor`.
 
 ## Flusso consigliato per l'avvio
 
-1. Avvia il backend BookCourt (vedi il README del backend) su
-   `http://localhost:8080`.
-2. Installa le dipendenze del frontend, se non gia fatto:
+1. Clona il repository e spostati nella cartella del frontend:
 
 ```bash
-cd frontend
+git clone https://github.com/jakelend/BookCourt-FrontEnd.git
+cd BookCourt-FrontEnd/frontend
+```
+
+2. Avvia il backend BookCourt (vedi il README del backend) su
+   `http://localhost:8080`.
+
+3. Installa le dipendenze del frontend, se non già fatto:
+
+```bash
 npm install
 ```
 
-3. Avvia il server di sviluppo:
+4. Avvia il server di sviluppo:
 
 ```bash
 npm start
 ```
 
-4. Apri il browser su `http://localhost:4200` ed effettua il login.
+5. Apri il browser su `http://localhost:4200` ed effettua il login.
 
 Per provare l'applicazione con dati dimostrativi, applica il seed del backend
 e accedi con uno degli account inclusi (vedi il README del backend per
@@ -142,7 +150,7 @@ Il codice sorgente principale si trova in `frontend/src/app`:
 - `interceptor/` — interceptor HTTP per l'aggiunta del token JWT.
 - `dto/` — definizioni dei dati scambiati con il backend.
 - `enumeration/` — enumerazioni condivise (ruoli, sport).
-- `util/` — funzioni e helper di utilita.
+- `util/` — funzioni e helper di utilità.
 
 Le rotte dell'applicazione sono definite in `frontend/src/app/app.routes.ts`,
 mentre i provider globali (routing, HttpClient, Angular Material, localizzazione
@@ -151,5 +159,5 @@ italiana delle date) sono configurati in `frontend/src/app/app.config.ts`.
 ## Note
 
 - L'interfaccia usa Angular Material e Tailwind CSS per lo stile.
-- La localizzazione di date e calendari e impostata su italiano (`it-IT`).
+- La localizzazione di date e calendari è impostata su italiano (`it-IT`).
 - La chat operativa usa STOMP su WebSocket (SockJS) verso il backend.
