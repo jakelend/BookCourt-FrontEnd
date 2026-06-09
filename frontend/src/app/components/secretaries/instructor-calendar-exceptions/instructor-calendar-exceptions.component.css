@@ -4,12 +4,11 @@
 }
 
 .secretary-calendar-page {
-  height: calc(100vh - 64px);
+  min-height: calc(100vh - 64px);
   padding: 18px 28px 24px;
   background: #f7f9fb;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
 }
 
 .calendar-toolbar-card,
@@ -221,19 +220,16 @@ input:disabled {
 }
 
 .workspace-grid {
-  flex: 1;
-  min-height: 0;
   display: grid;
   grid-template-columns: minmax(0, 1fr) 380px;
   gap: 16px;
-  align-items: stretch;
+  align-items: start;
 }
 
 .side-panel {
   display: flex;
   flex-direction: column;
   gap: 14px;
-  overflow-y: auto;
 }
 
 .editor-panel,
@@ -328,7 +324,7 @@ input:disabled {
 }
 
 .calendar-shell {
-  min-height: 0;
+  height: clamp(480px, calc(100vh - 220px), 800px);
   min-width: 0;
   overflow: hidden;
   position: relative;
@@ -458,25 +454,18 @@ input:disabled {
 }
 
 @media (max-width: 1060px) {
-  .secretary-calendar-page {
-    height: auto;
-    min-height: calc(100vh - 64px);
-    overflow: visible;
-  }
-
   .workspace-grid {
     grid-template-columns: 1fr;
-    flex: 0 0 auto;
   }
 
   .calendar-shell {
+    height: auto;
     min-height: 720px;
   }
 
   .side-panel {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    overflow: visible;
   }
 }
 
