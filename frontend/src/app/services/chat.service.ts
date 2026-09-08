@@ -126,7 +126,7 @@ export class ChatService {
       );
 
     this.messagesRequests.set(conversazioneId, request$);
-    return request$;
+    return request$;33
   }
 
   /**

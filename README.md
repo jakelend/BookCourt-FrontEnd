@@ -1,3 +1,8 @@
+Project Developed by:
+
+- [Davide Gusella] (https://github.com/davidegusella)
+- [Edoardo Caccipuoti] (https://github.com/jakelend)
+
 # BookCourt Frontend
 
 BookCourt Frontend è la single page application che fa da interfaccia alla web
